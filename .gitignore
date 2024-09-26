@@ -1,1 +1,2 @@
-*.json
+**/old_reports/*
+# **/raw_extractions/*
