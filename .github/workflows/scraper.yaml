@@ -1,9 +1,9 @@
 name: Run Scraper and Commit Results
 
 on:
-#   schedule:
-    # Runs every day at midnight UTC (you can adjust the schedule as needed)
-    # - cron: '0 0 * * *'
+  schedule:
+    # Runs every day at 4AM UTC (midnight in Brasília)
+    - cron: '0 4 * * *'
   workflow_dispatch:
     # Allows manual triggering of the workflow from GitHub Actions UI
 
@@ -39,11 +39,11 @@ jobs:
       # Step 5: Run the scraper for the previous day
       - name: Run the scraper for yesterday
         run: |
-          python news_scraper.py 2024-01-01
+          python news_scraper.py $YESTERDAY
 
       # Step 6: Commit and push changes if there are any new files in raw_extractions
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-update: Scraped data for ${{ env.YESTERDAY }}"
+          commit_message: "Auto-update: Scraped data at ${{ env.YESTERDAY }}"
           branch: ${{ github.head_ref }}
