@@ -44,7 +44,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           # Check if any changes were made in raw_extractions
-          if [[ $(git status --porcelain raw_extractions/) ]]; then
+          CHANGES=$(git status --porcelain raw_extractions/)
+          if [ -n "$CHANGES" ]; then
             git add raw_extractions/
             git commit -m "Auto-update: Scraped data for $YESTERDAY"
             git push origin main
