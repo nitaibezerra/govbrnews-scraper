@@ -10,11 +10,15 @@ on:
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
+    permissions:
+        contents: write
 
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
 
       # Step 2: Set up Python
       - name: Set up Python 3.x
@@ -39,18 +43,9 @@ jobs:
 
       # Step 6: Commit and push changes if there are any new files in raw_extractions
       - name: Commit and push changes
-        run: |
-          set -e
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Check if any changes were made in raw_extractions
-          if git diff --quiet raw_extractions/; then
-            echo "No changes to commit."
-          else
-            git add raw_extractions/
-            git commit -m "Auto-update: Scraped data for $YESTERDAY"
-            git push origin main
-          fi
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+            commit_message: "Auto-update: Scraped data for $YESTERDAY"
+            branch: ${{ github.head_ref }}
         env:
           YESTERDAY: ${{ env.YESTERDAY }}
