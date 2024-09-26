@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 import requests
+import yaml
 from bs4 import BeautifulSoup
 
 # Set up logging configuration
@@ -19,6 +20,17 @@ logging.basicConfig(
 MAX_WORKERS = 3
 DESTINATION_FOLDER = "raw_extractions"
 SLEEP_TIME_INTERVAL = (1, 3)
+
+
+def load_urls_from_yaml(file_path: str) -> Dict[str, str]:
+    """
+    Load URLs from a YAML file.
+
+    :param file_path: The path to the YAML file.
+    :return: A dictionary with agency names as keys and URLs as values.
+    """
+    with open(file_path, "r") as f:
+        return yaml.safe_load(f)["agencies"]
 
 
 class GovBRNewsScraper:
@@ -310,91 +322,6 @@ class GovBRNewsScraper:
         return os.path.exists(filepath)
 
 
-urls = [
-    "https://www.gov.br/agricultura/pt-br/assuntos/noticias",
-    "https://www.gov.br/agu/pt-br/comunicacao/noticias",
-    "https://www.gov.br/casacivil/pt-br/assuntos/noticias",
-    "https://www.gov.br/cgu/pt-br/assuntos/noticias/ultimas-noticias",
-    "https://www.gov.br/cidades/pt-br/assuntos/noticias-1",
-    "https://www.gov.br/cultura/pt-br/assuntos/noticias",
-    "https://www.gov.br/defesa/pt-br/centrais-de-conteudo/noticias",
-    "https://www.gov.br/esporte/pt-br/noticias-e-conteudos/esporte",
-    "https://www.gov.br/fazenda/pt-br/assuntos/noticias",
-    "https://www.gov.br/gestao/pt-br/assuntos/noticias/noticias",
-    "https://www.gov.br/gsi/pt-br/centrais-de-conteudo/noticias/2024",
-    "https://www.gov.br/igualdaderacial/pt-br/assuntos/copy2_of_noticias",
-    "https://www.gov.br/mcom/pt-br/noticias",
-    "https://www.gov.br/mcti/pt-br/acompanhe-o-mcti/noticias/ultimas-noticias",
-    "https://www.gov.br/mda/pt-br/noticias",
-    "https://www.gov.br/mdh/pt-br/assuntos/noticias",
-    "https://www.gov.br/mdic/pt-br/assuntos/noticias",
-    "https://www.gov.br/mdr/pt-br/noticias",
-    "https://www.gov.br/mds/pt-br/noticias-e-conteudos/desenvolvimento-social/noticias-desenvolvimento-social",
-    "https://www.gov.br/mec/pt-br/assuntos/noticias",
-    "https://www.gov.br/memp/pt-br/assuntos/noticias",
-    "https://www.gov.br/mj/pt-br/assuntos/noticias",
-    "https://www.gov.br/mma/pt-br/assuntos/noticias/ultimas-noticias",
-    "https://www.gov.br/mme/pt-br/assuntos/noticias",
-    "https://www.gov.br/mpa/pt-br/assuntos/noticias",
-    "https://www.gov.br/mre/pt-br/canais_atendimento/imprensa/notas-a-imprensa/notas-a-imprensa",
-    "https://www.gov.br/mulheres/pt-br/central-de-conteudos/noticias",
-    "https://www.gov.br/planalto/pt-br/acompanhe-o-planalto/noticias",
-    "https://www.gov.br/planejamento/pt-br/assuntos/noticias",
-    "https://www.gov.br/portos-e-aeroportos/pt-br/assuntos/noticias",
-    "https://www.gov.br/previdencia/pt-br/noticias-e-conteudos",
-    "https://www.gov.br/reconstrucaors/pt-br/acompanhe-a-reconstrucao/noticias",
-    "https://www.gov.br/saude/pt-br/assuntos/noticias",
-    "https://www.gov.br/secom/pt-br/assuntos/noticias",
-    "https://www.gov.br/secretariageral/pt-br/noticias",
-    "https://www.gov.br/sri/pt-br/noticias/mais-noticias/ultimas-noticias",
-    "https://www.gov.br/trabalho-e-emprego/pt-br/noticias-e-conteudo",
-    "https://www.gov.br/transportes/pt-br/assuntos/noticias",
-    "https://www.gov.br/turismo/pt-br/assuntos/noticias",
-    "https://www.gov.br/aeb/pt-br/assuntos/noticias",
-    "https://www.gov.br/ana/pt-br/assuntos/noticias-e-eventos/noticias",
-    "https://www.gov.br/anac/pt-br/noticias/ultimas-noticias-1",
-    "https://www.gov.br/anatel/pt-br/assuntos/noticias",
-    "https://www.gov.br/ancine/pt-br/assuntos/noticias",
-    "https://www.gov.br/aneel/pt-br/assuntos/noticias",
-    "https://www.gov.br/anm/pt-br/assuntos/noticias/ultimas-noticias",
-    "https://www.gov.br/anp/pt-br/canais_atendimento/imprensa/noticias-comunicados",
-    "https://www.gov.br/anpd/pt-br/assuntos/noticias",
-    "https://www.gov.br/ans/pt-br/assuntos/noticias",
-    "https://www.gov.br/antaq/pt-br/noticias",
-    "https://www.gov.br/antt/pt-br/assuntos/ultimas-noticias",
-    "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa",
-    "https://www.gov.br/cade/pt-br/assuntos/noticias",
-    "https://www.gov.br/capes/pt-br/assuntos/noticias",
-    "https://www.gov.br/cnen/pt-br/assunto/ultimas-noticias",
-    "https://www.gov.br/cnpq/pt-br/assuntos/noticias",
-    "https://www.gov.br/cvm/pt-br/assuntos/noticias",
-    "https://www.gov.br/dnit/pt-br/assuntos/noticias/",
-    "https://www.gov.br/dnocs/pt-br/assuntos/noticias",
-    "https://www.gov.br/fnde/pt-br/assuntos/noticias",
-    "https://www.gov.br/fundacentro/pt-br/comunicacao/noticias/noticias/ultimas-noticias",
-    "https://www.gov.br/ibama/pt-br/assuntos/noticias/2024",
-    "https://www.gov.br/icmbio/pt-br/assuntos/noticias/ultimas-noticias",
-    "https://www.gov.br/incra/pt-br/assuntos/noticias",
-    "https://www.gov.br/inep/pt-br/assuntos/noticias",
-    "https://www.gov.br/inmetro/pt-br/centrais-de-conteudo/noticias",
-    "https://www.gov.br/inpa/pt-br/assuntos/noticias",
-    "https://www.gov.br/inpe/pt-br/assuntos/ultimas-noticias",
-    "https://www.gov.br/inpi/pt-br/central-de-conteudo/noticias",
-    "https://www.gov.br/inss/pt-br/noticias/ultimas-noticias",
-    "https://www.gov.br/iphan/pt-br/assuntos/noticias",
-    "https://www.gov.br/iti/pt-br/assuntos/noticias/indice-de-noticias/",
-    "https://www.gov.br/museus/pt-br/assuntos/noticias",
-    "https://www.gov.br/pf/pt-br/assuntos/noticias/noticias-destaque",
-    "https://www.gov.br/previc/pt-br/noticias",
-    "https://www.gov.br/prf/pt-br/noticias/nacionais",
-    "https://www.gov.br/sudam/pt-br/noticias-1",
-    "https://www.gov.br/sudeco/pt-br/assuntos/noticias",
-    "https://www.gov.br/sudene/pt-br/assuntos/noticias",
-    "https://www.gov.br/suframa/pt-br/publicacoes/noticias/ultimas-noticias",
-    "https://www.gov.br/susep/pt-br/central-de-conteudos/noticias",
-]
-
-
 def create_scrapers(urls: List[str], max_date: str) -> List[GovBRNewsScraper]:
     """
     Create a list of GovBRNewsScraper instances for each URL.
@@ -415,6 +342,8 @@ def main():
         "max_date", help="The maximum date for scraping news (format: YYYY-MM-DD)"
     )
     args = parser.parse_args()
+
+    urls = list(load_urls_from_yaml("site_urls.yaml").values())
 
     # Create scrapers for each URL
     scrapers = create_scrapers(urls, args.max_date)
