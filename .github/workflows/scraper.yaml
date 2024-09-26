@@ -40,16 +40,17 @@ jobs:
       # Step 6: Commit and push changes if there are any new files in raw_extractions
       - name: Commit and push changes
         run: |
+          set -e
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           # Check if any changes were made in raw_extractions
-          CHANGES=$(git status --porcelain raw_extractions/)
-          if [ -n "$CHANGES" ]; then
+          if git diff --quiet raw_extractions/; then
+            echo "No changes to commit."
+          else
             git add raw_extractions/
             git commit -m "Auto-update: Scraped data for $YESTERDAY"
             git push origin main
-          else
-            echo "No changes to commit."
+          fi
         env:
           YESTERDAY: ${{ env.YESTERDAY }}
