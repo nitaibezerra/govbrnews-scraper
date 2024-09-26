@@ -1,0 +1,18 @@
+[
+    {
+        "title": "Senado aprova acordo do Mercosul sobre assinatura digital",
+        "url": "https://www.gov.br/iti/pt-br/assuntos/noticias/indice-de-noticias/senado-aprova-acordo-do-mercosul-sobre-assinatura-digital",
+        "date": "2024-04-02",
+        "category": "Ciência e Tecnologia",
+        "tags": [],
+        "content": "Nesta terça-feira, 02 de abril, o Senado aprovou o Acordo de Reconhecimento Mútuo de Certificados de Assinatura Digital do Mercosul. O texto será promulgado pelo Congresso Nacional.\nCom o acordo, os certificados de assinatura digital emitidos no Brasil, na Argentina, no Paraguai e no Uruguai, estados membros do Mercosul, passarão a ser aceitos nesses quatro países de modo que as assinaturas digitais com certificados emitidos por prestadores de serviço credenciados terão o mesmo valor jurídico das assinaturas manuscritas. \nO objetivo é garantir a segurança e a eficácia dos certificados de assinatura digital, bem como a realização de auditorias nos prestadores de serviço de certificação. \nSaiba mais \nNo Brasil, o coordenador operacional do acordo será o Instituto Nacional de Tecnologia da Informação (ITI), que já é responsável por manter e executar as políticas da Infraestrutura de Chaves Públicas Brasileira (ICP-Brasil).\nFonte: Agência Senado"
+    },
+    {
+        "title": "Estagiários do ITI desenvolvem chat com criptografia avançada",
+        "url": "https://www.gov.br/iti/pt-br/assuntos/noticias/indice-de-noticias/estagiarios-do-iti-desenvolvem-chat-com-criptografia-avancada",
+        "date": "2024-04-02",
+        "category": "Ciência e Tecnologia",
+        "tags": [],
+        "content": "O ITI nasceu com a finalidade de ser a Autoridade Certificadora Raiz (AC Raiz) da Infraestrutura de Chaves Públicas Brasileira (ICP-Brasil), porém cada vez mais se converte também em um centro de desenvolvimento de tecnologia da informação. \nNa última segunda-feira, 01 de abril de 2024, a equipe da Coordenação de Comunicação (CCOM) entrevistou o grupo de estagiários da Coordenação Geral de Inovação, Cooperação e Projetos (CGICP) do Instituto, responsáveis pelo desenvolvimento de um protocolo de envio e recebimento de mensagens de texto com criptografia avançada.\nA criação do chat surgiu de um desafio proposto por Joelmo Oliveira, coordenador da CGICP, para que os estagiários entendessem a criptografia na prática e de forma didática. O desafio consistia em um jogo onde dois grupos distintos deveriam se comunicar com criptografia assimétrica e um terceiro grupo tentaria decifrar as mensagens trocadas.\nA tecnologia desenvolvida por Anderson Lima (23), Arthur Carneiro (24), Bruno Ricardo (20), Luca Clerot Aviani (20), Luís Braga (21), Gabriel Teles (23) e Miguel Moreira (22), sob a liderança de Thiago Krasauskas (39), levou por volta de 15 dias para ficar pronta e foi desenvolvida sem apoio de pesquisador ou grupo de pesquisa externo.\nO trabalho deverá ser disponibilizado para quem quiser baixar e fazer implementações.\nSaiba mais \nA criptografia assimétrica, também conhecida como criptografia de chave pública, é aquela baseada no uso de pares de chaves distintas (privada e pública) para cifrar/decifrar mensagens. As duas chaves são relacionadas através de um processo matemático, usando funções unidirecionais para a codificação da informação. Uma chave, chamada chave pública, é usada para cifrar, enquanto a outra, chamada chave secreta, é usada para decifrar."
+    }
+]

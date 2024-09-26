@@ -1,0 +1,22 @@
+[
+    {
+        "title": "Sistema PAG: usuários de algumas operadoras podem enfrentar problemas no acesso",
+        "url": "https://www.gov.br/inpi/pt-br/central-de-conteudo/noticias/acesso-ao-sistema-pag-usuarios-de-algumas-operadoras-podem-enfrentar-problemas-no-acesso",
+        "date": "2024-01-10",
+        "category": "No Category",
+        "tags": [
+            "PAG"
+        ],
+        "content": "O INPI informa que o acesso ao sistema PAG pode apresentar instabilidade para os usuários da rede fixa de algumas operadoras.\nAo tentar acessar o sistema, é apresentada a mensagem de erro DNS_PROBE_FINISHED_DOMAIN ou ERR_NAME_NOT_RESOLVED.\nIsso se deve à instabilidade da rede de algumas operadoras na conversão do URL do site do INPI em um endereço de IP, mecanismo necessário para acessar um link pelo navegador.\nO Instituto está investigando o caso junto às empresas a fim de agilizar a solução e atualizará este comunicado tão logo obtenha retorno."
+    },
+    {
+        "title": "INPI publica Plano Diretor de Tecnologia de Informação e Comunicação 2024-2026",
+        "url": "https://www.gov.br/inpi/pt-br/central-de-conteudo/noticias/inpi-publica-plano-diretor-de-tecnologia-de-informacao-e-comunicacao-2024-2026",
+        "date": "2024-01-10",
+        "category": "No Category",
+        "tags": [
+            "PDTIC"
+        ],
+        "content": "O INPI disponibiliza o seu Plano Diretor de Tecnologia de Informação e Comunicação (PDTIC) para o biênio 2024-2026, com o conjunto de metas e ações alinhadas ao Planejamento Estratégico do Instituto.\nO PDTIC é um instrumento que estabelece diretrizes e objetivos voltados às necessidades e desafios atuais, visando impulsionar o desenvolvimento tecnológico e promover a transformação digital nas operações de tecnologia da informação e de comunicação. \nTambém foi divulgada a última versão (2.2) do PDTIC 2022-2023, encerrando um ciclo que refletiu as diretrizes e estratégias para o uso efetivo das tecnologias no INPI naquele período.\nAcesse os Planos aqui."
+    }
+]

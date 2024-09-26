@@ -1,0 +1,80 @@
+[
+    {
+        "title": "Saiba mais sobre o projeto de Identificação Única de Dispositivos Médicos",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/saiba-mais-sobre-o-projeto-de-identificacao-unica-de-dispositivos-medicos",
+        "date": "2024-09-02",
+        "category": "PADRONIZAÇÃO",
+        "tags": [
+            "dispositivos médicos",
+            "identificação única",
+            "udi",
+            "padrão internacional"
+        ],
+        "content": "No último dia 20 de agosto, a Anvisa se reuniu com as empresas participantes do Piloto #1 do Projeto UDI-Anvisa (Unique Device Identification – Identificação Única de Dispositivos Médicos).  O UDI é um padrão internacional que utiliza uma série de caracteres numéricos ou alfanuméricos para identificar um produto no mercado. \nAs empresas tiveram a oportunidade de externar as suas percepções e contribuições sobre o sistema em teste pela Agência. A Anvisa apresentou as correções implementadas, decorrentes do retorno recebido no projeto-piloto, e as funcionalidades que serão incorporadas ao sistema.\nA fase 1 do projeto será finalizada neste mês de setembro, com a conclusão da primeira versão do sistema. Esta primeira versão contará com as seguintes funcionalidades básicas: acesso ao sistema, formulário de cadastro dos dados UDI via web, sistema de consultas (internas e externas) com rastreabilidade histórica, gestão de usuários terceiros e cadastro de dados em massa (em formato XLM – Extensible Markup Language) por meio do upload de arquivos pela interface do sistema.\nEm outubro de 2024, será dado prosseguimento à fase 2 do projeto – que irá se estender até o primeiro semestre de 2025 –, na qual novas funcionalidades serão implementadas. Estão previstos o cadastro de dados UDI em massa máquina-máquina, em complementação à funcionalidade de cadastro em massa por upload manual ao sistema, e a disponibilização de uma API (application programming interface – interface de programação de aplicativos) para consultas externas, ambos utilizando o padrão de comunicação HL7/FHIR.\nDestaca-se que, mesmo com a finalização da fase 1 do projeto, o sistema apenas será disponibilizado à sociedade após a publicação da instrução normativa (IN) prevista na  Resolução da Diretoria Colegiada (RDC) 591/2021. Após a publicação da IN, terá início a contagem dos prazos para a obrigatoriedade da transmissão dos dados UDI à Anvisa, conforme definido no art. 15 da Resolução da Diretoria Colegiada (RDC) 591/2021 (alterado pela RDC 884/2024)."
+    },
+    {
+        "title": "Anvisa atualiza lista das Denominações Comuns Brasileiras",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-atualiza-lista-das-denominacoes-comuns-brasileiras-1",
+        "date": "2024-09-02",
+        "category": "ATUALIZAÇÃO",
+        "tags": [
+            "denominação comum brasileira",
+            "dcb",
+            "lista das dcbs",
+            "atualização"
+        ],
+        "content": "A Anvisa atualizou a lista das Denominações Comuns Brasileiras (DCBs). A atualização foi publicada na Resolução da Diretoria Colegiada (RDC) 895/2024. Foram incluídas 31 novas denominações e uma foi alterada.\nA lista consolidada das DCBs está disponível em uma página específica do portal. Clique aqui e confira. Nesse espaço, você encontrará também outras informações relacionadas ao tema, tais como legislação, manual e formulários para inclusão, alteração e exclusão de denominações.\nEntenda\nDenominação Comum Brasileira (DCB) é a denominação do fármaco ou princípio ativo aprovada pelo órgão federal responsável pela vigilância sanitária (Lei 9.787/1999).\nAtualmente, com o registro eletrônico, adquiriu um conceito mais amplo e inclui também a denominação de insumos inativos, soros hiperimunes e vacinas, radiofármacos, plantas medicinais, substâncias homeopáticas e biológicas."
+    },
+    {
+        "title": "Sistema NDS será atualizado nesta terça-feira (3/9)",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/sistema-nds-sera-atualizado-nesta-terca-feira-3-9",
+        "date": "2024-09-02",
+        "category": "Controlados",
+        "tags": [
+            "NDS",
+            "controlados",
+            "importação"
+        ],
+        "content": "A Anvisa informa que o aplicativo web do Sistema NDS (NDS Web), que recebe os pedidos de Autorização de Importação e Exportação de produtos controlados, será atualizado para uma nova versão.\nPor esse motivo, o sistema ficará indisponível para peticionamento entre as 12h do dia 3/9 e as 8h do dia 4/9. Neste período, não devem ser realizadas petições de Autorização de Importação e Exportação. O manual de acesso ao sistema está disponível aqui.\nO Sistema Nacional de Controle de Drogas (National Drug Control System - NDS) foi projetado pelo Escritório das Nações Unidas sobre Drogas e Crime (United Nations Office on Drugs and Crime – UNODC) para facilitar o gerenciamento e o controle sobre movimentações lícitas de drogas psicoativas e precursores químicos. Além disso, permite que a troca de informações nos níveis nacional e internacional ocorra de forma ágil e oportuna. O NDS pode ser utilizado para atender às diversas necessidades nacionais de gerenciamento de controle de drogas."
+    },
+    {
+        "title": "Fique atento! Novas regras para regularização de alimentos entram em vigor",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/fique-atento-novas-regras-para-regularizacao-de-alimentos-entram-em-vigor",
+        "date": "2024-09-02",
+        "category": "ALIMENTOS",
+        "tags": [
+            "alimentos",
+            "regularização",
+            "registro",
+            "novas regras",
+            "marco regulatório",
+            "controle pós-mercado",
+            "critérios de risco"
+        ],
+        "content": "Já estão em vigor as novas normas para a regularização de alimentos no país. A Resolução da Diretoria Colegiada (RDC) 843/2024 e a Instrução Normativa (IN) 281/2024 introduzem um novo marco regulatório que irá aprimorar o controle pré-mercado de alimentos com base em critérios de risco.\nO regulamento entrou em vigor no dia 1º de setembro e estabelece três formas de regularização de alimentos: \n1. Registro junto à Anvisa: produtos com obrigatoriedade de registro, como fórmulas infantis e para nutrição enteral, continuarão precisando de aprovação prévia da Agência. A fórmula dietoterápica para erros inatos do metabolismo foi incluída nesse grupo.\n2. Notificação junto à Anvisa: alimentos considerados de risco intermediário, como água do mar dessalinizada, alimentos de transição, cereais para alimentação infantil, embalagens recicladas e produtos com alegações, agora poderão ser regularizados por meio de notificação. Essa nova forma permite uma entrada mais ágil no mercado, embora as empresas ainda precisem fornecer informações à Anvisa.\nSuplementos alimentares e alimentos para controle de peso, anteriormente regulados diretamente pelas Vigilâncias Sanitárias locais, também deverão ser notificados junto à Agência. Essa mudança visa melhorar a segurança e a qualidade dos produtos. A notificação permitirá à Anvisa estruturar uma base de dados sobre esses produtos, facilitando a organização de ações de controle pós-mercado, como monitoramento, inspeções e auditorias.  \n3. Comunicação aos órgãos locais de vigilância sanitária: as demais categorias consideradas de menor criticidade, ou seja, produtos com menores riscos, deverão manter sua forma de regularização por meio de comunicado de início de fabricação ou importação diretamente nos órgãos locais de vigilância sanitária.\nSaiba mais:\nAnvisa adota nova abordagem regulatória para área de Alimentos\nNovos regulamentos de alimentos e embalagens: Anvisa informa sobre iniciativas para esclarecer dúvidas\nWebinar trata da regularização de alimentos e embalagens\nWebinar apresenta novos formulários para regularização de alimentos e embalagens"
+    },
+    {
+        "title": "Anvisa e Unesco selecionam consultor para documentar etapas da pandemia de Covid-19",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-e-unesco-selecionam-consultor-para-documentar-etapas-da-pandemia-de-covid-19",
+        "date": "2024-09-02",
+        "category": "PROCESSO SELETIVO",
+        "tags": [
+            "processo seletivo",
+            "consultor técnico",
+            "unesco"
+        ],
+        "content": "O projeto de cooperação técnica internacional entre a Anvisa e a Organização das Nações Unidas para a Educação, a Ciência e a Cultura (Unesco) contrata um consultor técnico especializado, por tempo limitado.\nO selecionado irá apoiar a Agência na elaboração de material temático – físico e digital – para registrar e documentar as ações tomadas pela Anvisa e as etapas do enfrentamento à pandemia da Covid-19 no Brasil.\nSaiba mais no portal da Unesco ou no Edital 07/2024. \nSe o seu perfil profissional for adequado às qualificações acadêmicas e profissionais exigidas, favor seguir as orientações do Item 9 do edital.\nCaso haja dificuldade no preenchimento do formulário de inscrição, favor enviar e-mail para: ugp@anvisa.gov.br  \nO período para recebimentos dos currículos será de 2 a 6 de setembro de 2024."
+    },
+    {
+        "title": "Anvisa e Unesco selecionam consultor para elaborar conteúdo visual sobre pandemia de Covid-19",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-e-unesco-selecionam-consultor-para-elaborar-conteudo-visual-sobre-pandemia-de-covid-19",
+        "date": "2024-09-02",
+        "category": "PROCESSO SELETIVO",
+        "tags": [
+            "processo seletivo",
+            "consultor técnico",
+            "unesco"
+        ],
+        "content": "O projeto de cooperação técnica internacional entre a Anvisa e a Organização das Nações Unidas para a Educação, a Ciência e a Cultura (Unesco) contrata um consultor técnico especializado, por tempo limitado.\nO selecionado irá apoiar a Agência na elaboração de conteúdo visual (em formato físico e digital) sobre a atuação da instituição no enfrentamento à pandemia da Covid-19 no Brasil.\nSaiba mais no portal da Unesco ou no Edital 08/2024. \nSe o seu perfil profissional for adequado às qualificações acadêmicas e profissionais exigidas, favor seguir as orientações do Item 9 do edital.\nCaso haja dificuldade no preenchimento do formulário de inscrição, favor enviar e-mail para: ugp@anvisa.gov.br  \nO período para recebimentos dos currículos será de 2 a 6 de setembro de 2024."
+    }
+]

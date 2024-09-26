@@ -1,0 +1,27 @@
+[
+    {
+        "title": "Alerta para tentativa de fraude em nome da Anvisa",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/alerta-para-tentativa-de-fraude-em-nome-da-anvisa",
+        "date": "2024-08-16",
+        "category": "Saúde e Vigilância Sanitária",
+        "tags": [
+            "alerta",
+            "tentativa de fraude",
+            "e-mails fraudulentos"
+        ],
+        "content": "A Anvisa tem recebido denúncias e solicitações de informação sobre o recebimento de e-mails fraudulentos, supostamente enviados pela Agência, indicando a realização de vistorias em empresas. \nOs e-mails têm como remetente \"vistoria@anvisa.gov.br\", variando o número da vistoria, como vistoria 67, vistoria 1405 etc. Além disso, há relatos de e-mails falsos da Anvisa abordando assuntos como POP e solicitações de pagamento, entre outros.\nEsses e-mails não pertencem à Agência, caracterizando, portanto, tentativa de fraude. Trata-se de ataque de e-mail spoofing, ou seja, uma técnica usada por hackers para se passar por outra pessoa ou uma empresa legítima e roubar dados. Assim, o usuário malicioso induz o leitor a pensar que o e-mail veio de uma fonte confiável e o leva a clicar em algum link, compartilhar informações sensíveis ou baixar arquivos que podem causar danos. \nA Anvisa orienta o público em geral que, em caso de recebimento desse tipo de e-mail, não clique em nenhum link e faça a denúncia por meio de um dos nossos canais oficiais de atendimento."
+    },
+    {
+        "title": "Anvisa cria GT para monitorar ações sobre Mpox",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-cria-gt-para-monitorar-acoes-sobre-mpox",
+        "date": "2024-08-16",
+        "category": "Vigilância",
+        "tags": [
+            "emergência",
+            "mpox",
+            "grupo de trabalho",
+            "monkeypox"
+        ],
+        "content": "A Anvisa criou, nesta quinta-feira (15/8), um Grupo de Emergência em Saúde Pública para conduzir e monitorar as ações referentes à Mpox (varíola dos macacos). \nO grupo de trabalho terá prazo de duração indeterminado. Clique aqui para ver a portaria com os membros do GT."
+    }
+]

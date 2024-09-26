@@ -1,0 +1,10 @@
+[
+    {
+        "title": "ANM atualiza regras para entrega da Declaração de Informações Econômico-Fiscais da CFEM",
+        "url": "https://www.gov.br/anm/pt-br/assuntos/noticias/anm-atualiza-regras-para-entrega-da-declaracao-de-informacoes-economico-fiscais-da-cfem",
+        "date": "2024-05-29",
+        "category": "No Category",
+        "tags": [],
+        "content": "A Agência Nacional de Mineração (ANM) aprovou a Resolução ANM nº 156/2024. Ela informa que, a partir de 1º de julho, todas as empresas responsáveis por entregar a Declaração de Informações Econômico-Fiscais (DIEF) da Compensação Financeira pela Exploração de Recursos Minerais (CFEM) deverão autorizar o acesso da ANM ao conteúdo digital da Nota Fiscal Eletrônica (NF-e).\nPara cumprir a exigência, as empresas devem preencher o CNPJ da ANM-DF (29.406.625/0001-30) no campo específico do arquivo XML da NF-e, identificado pela tag “autXML”. Esse campo permite que as pessoas físicas ou jurídicas autorizadas acessem o XML da NF-e no portal nacional.\nEssa medida visa garantir maior transparência e eficiência no processo de fiscalização e controle da CFEM. A ANM está à disposição para esclarecer quaisquer dúvidas sobre o procedimento e reforça a importância do cumprimento das novas regras dentro do prazo estabelecido.\nPara mais informações, entre em contato com a ANM pelo e-mail cofis@anm.gov.br"
+    }
+]
