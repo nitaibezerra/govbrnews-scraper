@@ -133,7 +133,7 @@ class GovBRNewsScraper:
         title, url = self.extract_title_and_url(item)
         category = self.extract_category(item)
         news_date = self.extract_date(item)
-        if news_date and news_date <= self.max_date:
+        if news_date and news_date < self.max_date:
             logging.info(
                 f"Stopping scrape. Found news older than max date: {news_date.strftime('%Y-%m-%d')}"
             )
