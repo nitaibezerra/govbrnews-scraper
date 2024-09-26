@@ -47,5 +47,3 @@ jobs:
         with:
           commit_message: "Auto-update: Scraped data for ${{ env.YESTERDAY }}"
           branch: ${{ github.head_ref }}
-        env:
-          YESTERDAY: ${{ env.YESTERDAY }}
