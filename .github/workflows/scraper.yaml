@@ -45,7 +45,12 @@ jobs:
         run: |
           python news_scraper.py $YESTERDAY
 
-      # Step 7: Commit and push changes if there are any new files in raw_extractions
+      # Step 7: Consolidate JSON files into a CSV and compress
+      - name: Consolidate JSON into CSV and ZIP
+        run: |
+          python consolidate_json_to_csv.py
+
+      # Step 8: Commit and push changes if there are any new files in raw_extractions
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
