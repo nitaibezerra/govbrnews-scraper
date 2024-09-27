@@ -293,20 +293,11 @@ class GovBRNewsScraper:
             filename = f"{self.agency}_{news_date}.json"
             filepath = os.path.join(agency_folder, filename)
 
-            # Append to the existing JSON file if it exists, otherwise create a new one
-            if os.path.exists(filepath):
-                with open(filepath, "r+", encoding="utf-8") as f:
-                    existing_data = json.load(f)
-                    existing_data.append(news_item)
-                    f.seek(0)
-                    json.dump(existing_data, f, ensure_ascii=False, indent=4)
-            else:
-                with open(filepath, "w", encoding="utf-8") as f:
-                    json.dump([news_item], f, ensure_ascii=False, indent=4)
+            # Overwrite the file, do not append if it exists
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump([news_item], f, ensure_ascii=False, indent=4)
 
         logging.info(f"News data saved to {agency_folder}")
-
-    # List of URLs to scrape
 
     def json_file_exists(self) -> bool:
         """
