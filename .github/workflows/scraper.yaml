@@ -36,14 +36,18 @@ jobs:
       - name: Set date variable for yesterday
         run: echo "YESTERDAY=$(date -d 'yesterday' +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      # Step 5: Run the scraper for the previous day
+      # Step 5: Get the current date for commit message
+      - name: Set date variable for today
+        run: echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      # Step 6: Run the scraper for the previous day
       - name: Run the scraper for yesterday
         run: |
           python news_scraper.py $YESTERDAY
 
-      # Step 6: Commit and push changes if there are any new files in raw_extractions
+      # Step 7: Commit and push changes if there are any new files in raw_extractions
       - name: Commit and push changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-update: Scraped data at ${{ env.YESTERDAY }}"
+          commit_message: "Auto-update: Scraped data on ${{ env.TODAY }} for ${{ env.YESTERDAY }}"
           branch: ${{ github.head_ref }}
