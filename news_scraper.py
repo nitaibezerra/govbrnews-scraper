@@ -34,15 +34,15 @@ def load_urls_from_yaml(file_path: str) -> Dict[str, str]:
 
 
 class GovBRNewsScraper:
-    def __init__(self, max_date: str, base_url: str):
+    def __init__(self, min_date: str, base_url: str):
         """
-        Initialize the scraper with a maximum date and base URL.
+        Initialize the scraper with a minimum date and base URL.
 
-        :param max_date: The maximum date for scraping news (format: YYYY-MM-DD).
+        :param min_date: The minimum date for scraping news (format: YYYY-MM-DD).
         :param base_url: The base URL of the agency's news page.
         """
         self.base_url = base_url
-        self.max_date = datetime.strptime(max_date, "%Y-%m-%d")
+        self.min_date = datetime.strptime(min_date, "%Y-%m-%d")
         self.news_data = []
         self.agency = self.get_agency_name()
 
@@ -56,7 +56,7 @@ class GovBRNewsScraper:
 
     def scrape_news(self) -> List[Dict[str, str]]:
         """
-        Scrape news from the website until the max_date is reached.
+        Scrape news from the website until the min_date is reached.
 
         :return: A list of dictionaries containing news data.
         """
@@ -119,7 +119,7 @@ class GovBRNewsScraper:
                 return (
                     False,
                     items_per_page,
-                )  # Stop if news older than max_date is found
+                )  # Stop if news older than min_date is found
 
         return True, items_per_page
 
@@ -128,14 +128,14 @@ class GovBRNewsScraper:
         Extract the news information from an HTML element.
 
         :param item: A BeautifulSoup tag representing a single news item.
-        :return: A dictionary containing the news data or None if the news is older than the max_date.
+        :return: A dictionary containing the news data or None if the news is older than the min_date.
         """
         title, url = self.extract_title_and_url(item)
         category = self.extract_category(item)
         news_date = self.extract_date(item)
-        if news_date and news_date < self.max_date:
+        if news_date and news_date < self.min_date:
             logging.info(
-                f"Stopping scrape. Found news older than max date: {news_date.strftime('%Y-%m-%d')}"
+                f"Stopping scrape. Found news older than min date: {news_date.strftime('%Y-%m-%d')}"
             )
             return None
         tags = self.extract_tags(item)
@@ -316,21 +316,21 @@ class GovBRNewsScraper:
         """
         current_date = datetime.now().strftime("%Y-%m-%d")
         filename = (
-            f"{self.agency}_{self.max_date.strftime('%Y-%m-%d')}_{current_date}.json"
+            f"{self.agency}_{self.min_date.strftime('%Y-%m-%d')}_{current_date}.json"
         )
         filepath = os.path.join(DESTINATION_FOLDER, filename)
         return os.path.exists(filepath)
 
 
-def create_scrapers(urls: List[str], max_date: str) -> List[GovBRNewsScraper]:
+def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
     """
     Create a list of GovBRNewsScraper instances for each URL.
 
     :param urls: List of URLs to scrape.
-    :param max_date: The maximum date for scraping news.
+    :param min_date: The minimum date for scraping news.
     :return: List of GovBRNewsScraper instances.
     """
-    return [GovBRNewsScraper(max_date, url) for url in urls]
+    return [GovBRNewsScraper(min_date, url) for url in urls]
 
 
 def main():
@@ -339,14 +339,14 @@ def main():
         description="Scrape news from multiple gov.br agencies up to a given date."
     )
     parser.add_argument(
-        "max_date", help="The maximum date for scraping news (format: YYYY-MM-DD)"
+        "min_date", help="The minimum date for scraping news (format: YYYY-MM-DD)"
     )
     args = parser.parse_args()
 
     urls = list(load_urls_from_yaml("site_urls.yaml").values())
 
     # Create scrapers for each URL
-    scrapers = create_scrapers(urls, args.max_date)
+    scrapers = create_scrapers(urls, args.min_date)
 
     # Run scrapers in parallel with a maximum of 10 threads
     with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
