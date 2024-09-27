@@ -1,6 +1,7 @@
 beautifulsoup4==4.12.3
 json5==0.9.25
 Markdown==3.7
+pandas==2.2.3
 PyYAML==6.0.2
 reportlab==4.2.2
 Requests==2.32.3
