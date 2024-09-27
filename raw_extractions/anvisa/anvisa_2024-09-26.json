@@ -43,5 +43,64 @@
             "serviços de saúde"
         ],
         "content": "A Anvisa republicou a norma que proíbe o uso dos termômetros e esfigmomanômetros (aparelhos para medir a pressão arterial) com coluna de mercúrio em serviços de saúde. A publicação da Resolução da Diretoria Colegiada (RDC) 922, de 19 de setembro de 2024, na última terça-feira (24/9), não altera a proibição que já existe desde 2017.\nA norma é resultante do processo de revisão e consolidação dos atos normativos, cujas diretrizes estão estabelecidas no Decreto 12.002/2024, de 22 de abril de 2024, que estabelece normas para elaboração, redação, alteração e consolidação desses atos. O texto normativo foi alterado apenas para ajustes de forma, no âmbito do processo de revisão e consolidação de normas previsto no mencionado decreto. Sendo assim, a presente resolução revogou a RDC 145/2017, com o objetivo de atender ao disposto no Decreto 12.002/2024, mas manteve as mesmas diretrizes definidas em 2017, que proíbem a fabricação, a importação e a comercialização, assim como o uso em serviços de saúde, dos termômetros e esfigmomanômetros com coluna de mercúrio em todo o território nacional. Entenda\nOs objetivos desse processo de revisão são:\n\na revogação de atos anteriormente revogados tacitamente ou cujos efeitos tenham se exaurido no tempo ou perdido o significado; e\na consolidação e a melhoria da técnica legislativa dos atos vigentes, eliminando ambiguidades ou atualizando termos e linguagem."
+    },
+    {
+        "title": "Usuários poderão avaliar novos serviços no sistema Solicita",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/usuarios-poderao-avaliar-novos-servicos-no-sistema-solicita",
+        "date": "2024-09-26",
+        "category": "PETICIONAMENTO",
+        "tags": [
+            "peticionamento",
+            "sistema Solicita",
+            "notificação",
+            "registro",
+            "módulo de avaliação"
+        ],
+        "content": "Usuários que utilizam o peticionamento de serviços relacionados à notificação e ao registro de medicamentos, produtos derivados de Cannabis, produtos biológicos e radiofármacos já podem fazer uma avaliação do processo junto à Anvisa. Isso porque esses serviços foram integrados ao Módulo de Avaliação do Ministério da Gestão e da Inovação em Serviços Públicos (MGI).\nOs serviços de Certificação de Centros de Bioequivalência e de Habilitação de Centros de Equivalência Farmacêutica também foram incorporados a essa funcionalidade, que está sendo expandida, de maneira gradual, para todos os peticionamentos feitos no Solicita.\nAo final de cada processo de peticionamento, é disponibilizado um link para que o usuário envie sua opinião sobre a solicitação do serviço no sistema Solicita. O objetivo da avaliação é aprimorar a prestação do serviço oferecido pela Anvisa.\nA categorização dos assuntos em serviços também possibilita a utilização do seletor de serviços no Solicita para a localização dos assuntos desejados, em complementação aos demais filtros já disponíveis. Essa melhoria facilita a identificação dos assuntos pelo usuário, pois o sistema apresentará somente aqueles disponíveis para o processo selecionado, reduzindo a possibilidade de equívocos nos peticionamentos.\nÉ possível consultar a lista dos serviços iniciais (denominados “serviços-pai”) e dos serviços a eles vinculados (denominados \"serviços-filho\") na Consulta de Assuntos, utilizando o filtro de Serviços.\nCaso o usuário identifique alguma ausência de assunto ou serviço, solicita-se que entre em contato com a unidade responsável pelo serviço, por meio dos canais de atendimento da Agência, e descreva o problema."
+    },
+    {
+        "title": "Anvisa atualiza formulário de importação de produtos derivados de Cannabis por remessa expressa",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-atualiza-formulario-de-importacao-de-produtos-derivados-de-cannabis-por-remessa-expressa",
+        "date": "2024-09-26",
+        "category": "ATUALIZAÇÃO",
+        "tags": [
+            "cannabis",
+            "produtos derivados de cannabis",
+            "importação",
+            "formulário de importação",
+            "atualização",
+            "remessa expressa",
+            "sistema solicita"
+        ],
+        "content": "A partir da próxima terça-feira (1º/10), o formulário utilizado no sistema Solicita para importação de produtos derivados de Cannabis por remessa expressa por pessoa física, para uso próprio, será atualizado (código de assunto 90285).\nCom essa atualização, o sistema Solicita irá validar automaticamente os campos “Número da Autorização de Importação”, “CPF do Paciente” e “Nome Comercial do Produto Importado\". Serão utilizadas as informações que foram enviadas para solicitar autorização para importar produtos derivados de Cannabis.\nCaso o CPF inserido seja o mesmo solicitado para o número de autorização preenchido, será habilitado o campo “Nome Comercial do Produto Importado”. Nesse campo, estarão disponíveis para seleção somente os produtos que constam na autorização informada.\nCaso o número de autorização esteja incorreto ou seja inexistente, ou, ainda, não esteja válido, o sistema informará uma mensagem de erro.\nSe for preciso retificar algum dado do comprovante de cadastro da autorização, será necessário que o usuário realize uma nova solicitação no portal, indicando o tipo de solicitação como \"Alteração\".\nEsta melhoria irá proporcionar mais agilidade para o preenchimento do formulário de importação, além de maior qualificação do serviço e da segurança sanitária, uma vez que haverá a prévia conferência, via sistema, das informações enviadas já no protocolo do processo. \nTodas as orientações quanto ao preenchimento de cada campo podem ser encontradas no Manual de Peticionamento de Remessa Expressa no Solicita ou no Manual do Usuário do Solicita."
+    },
+    {
+        "title": "Anvisa publica código de assunto para projeto-piloto da bula digital",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-publica-codigo-de-assunto-para-projeto-piloto-da-bula-digital",
+        "date": "2024-09-26",
+        "category": "MEDICAMENTOS",
+        "tags": [
+            "medicamentos",
+            "bula digital",
+            "projeto-piloto",
+            "repositório de informações eletrônicas"
+        ],
+        "content": "No último dia 10 de setembro, entrou em vigor a Resolução da Diretoria Colegiada (RDC) 885/2024, que criou o projeto-piloto para implementação do repositório de informações eletrônicas do produto (Riep) e da bula digital. A medida vale para medicamentos registrados com princípio ativo, forma farmacêutica e concentração disponíveis no mercado nacional há pelo menos cinco anos.\nA Anvisa disponibilizou um novo código de assunto para as empresas notificarem a implementação do Riep. Também já está disponível um documento de Perguntas e Respostas sobre o tema. Mais informações estão disponíveis na página Bulas de medicamentos - Agência Nacional de Vigilância Sanitária - Anvisa (www.gov.br). \nEm alguns casos previstos na resolução, a implementação do Riep e da bula digital permitirá que a empresa escolha entre manter ou não a bula física (de papel) dentro da caixa do medicamento. Em todos os casos, se o paciente solicitar, a bula física deverá estar disponível a ele gratuitamente."
+    },
+    {
+        "title": "Anvisa revisa e consolida norma da área de Dispositivos Médicos",
+        "url": "https://www.gov.br/anvisa/pt-br/assuntos/noticias-anvisa/2024/anvisa-revisa-e-consolida-a-norma-da-area-de-dispositivos-medicos",
+        "date": "2024-09-26",
+        "category": "Mercúrio",
+        "tags": [
+            "dispositivos médicos",
+            "revisão de atos normativos",
+            "termômetros",
+            "esfigmomanômetros",
+            "mercúrio",
+            "proibição de uso",
+            "serviços de saúde"
+        ],
+        "content": "A Anvisa republicou a norma que proíbe o uso dos termômetros e esfigmomanômetros (aparelhos para medir a pressão arterial) com coluna de mercúrio em serviços de saúde. A publicação da Resolução da Diretoria Colegiada (RDC) 922, de 19 de setembro de 2024, na última terça-feira (24/9), não altera a proibição que já existe desde 2017.\nA norma é resultante do processo de revisão e consolidação dos atos normativos, cujas diretrizes estão estabelecidas no Decreto 12.002/2024, de 22 de abril de 2024, que estabelece normas para elaboração, redação, alteração e consolidação desses atos. O texto normativo foi alterado apenas para ajustes de forma, no âmbito do processo de revisão e consolidação de normas previsto no mencionado decreto. Sendo assim, a presente resolução revogou a RDC 145/2017, com o objetivo de atender ao disposto no Decreto 12.002/2024, mas manteve as mesmas diretrizes definidas em 2017, que proíbem a fabricação, a importação e a comercialização, assim como o uso em serviços de saúde, dos termômetros e esfigmomanômetros com coluna de mercúrio em todo o território nacional. Entenda\nOs objetivos desse processo de revisão são:\n\na revogação de atos anteriormente revogados tacitamente ou cujos efeitos tenham se exaurido no tempo ou perdido o significado; e\na consolidação e a melhoria da técnica legislativa dos atos vigentes, eliminando ambiguidades ou atualizando termos e linguagem."
     }
 ]
