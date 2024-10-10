@@ -150,50 +150,80 @@ class NewsAIClassifier:
 
     def process_files(self):
         """
-        Process all JSON files in the raw_extractions directory and save augmented files to the augmented_news directory,
-        preserving the directory structure.
+        Main method to process all JSON files in the raw_extractions directory
+        and save augmented files to the augmented_news directory.
         """
         for root, dirs, files in os.walk(self.raw_extractions_dir):
             for filename in files:
                 if filename.endswith(".json"):
                     file_path = os.path.join(root, filename)
-                    logging.info(f"Processing file: {file_path}")
+                    augmented_file_path = self.get_augmented_file_path(file_path)
 
-                    try:
-                        with open(file_path, "r", encoding="utf-8") as f:
-                            news_data = json.load(f)
-                    except (json.JSONDecodeError, OSError) as e:
-                        logging.error(
-                            f"Error reading JSON file: {file_path}. Error: {e}"
-                        )
+                    if self.should_skip_file(augmented_file_path):
                         continue
 
-                    for news_entry in news_data:
-                        is_ai_related_flag, ai_mention = self.is_ai_related(news_entry)
-                        news_entry["is_ai_related_flag"] = is_ai_related_flag
-                        if is_ai_related_flag:
-                            news_entry["ai_mention"] = ai_mention
+                    news_data = self.load_json_file(file_path)
+                    if news_data is None:
+                        continue
 
-                    # Construct the corresponding augmented file path
-                    relative_path = os.path.relpath(file_path, self.raw_extractions_dir)
-                    augmented_file_path = os.path.join(
-                        self.augmented_news_dir, relative_path
-                    )
+                    augmented_data = self.process_news_entries(news_data)
+                    self.save_augmented_file(augmented_file_path, augmented_data)
 
-                    # Ensure the output directory exists
-                    augmented_dir = os.path.dirname(augmented_file_path)
-                    if not os.path.exists(augmented_dir):
-                        os.makedirs(augmented_dir)
-                        logging.info(f"Created directory: {augmented_dir}")
+    def get_augmented_file_path(self, file_path: str) -> str:
+        """
+        Construct the augmented file path based on the raw file path, preserving the directory structure.
+        """
+        relative_path = os.path.relpath(file_path, self.raw_extractions_dir)
+        return os.path.join(self.augmented_news_dir, relative_path)
 
-                    try:
-                        with open(augmented_file_path, "w", encoding="utf-8") as f:
-                            json.dump(news_data, f, ensure_ascii=False, indent=4)
-                        logging.info(f"Saved augmented file: {augmented_file_path}")
-                    except OSError as e:
-                        logging.error(
-                            f"Error saving augmented file: {augmented_file_path}. Error: {e}"
-                        )
+    def should_skip_file(self, augmented_file_path: str) -> bool:
+        """
+        Check if the augmented file already exists to decide if the processing can be skipped.
+        """
+        if os.path.exists(augmented_file_path):
+            logging.info(f"Skipping already processed file: {augmented_file_path}")
+            return True
+        return False
+
+    def load_json_file(self, file_path: str) -> Optional[Dict]:
+        """
+        Load the JSON file and return its content. Log an error if the file cannot be read.
+        """
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError) as e:
+            logging.error(f"Error reading JSON file: {file_path}. Error: {e}")
+            return None
+
+    def process_news_entries(self, news_data: Dict) -> Dict:
+        """
+        Process each news entry in the JSON data to determine if it is AI-related and generate explanations.
+        """
+        for news_entry in news_data:
+            is_ai_related_flag, ai_mention = self.is_ai_related(news_entry)
+            news_entry["is_ai_related_flag"] = is_ai_related_flag
+            if is_ai_related_flag:
+                news_entry["ai_mention"] = ai_mention
+        return news_data
+
+    def save_augmented_file(self, augmented_file_path: str, augmented_data: Dict):
+        """
+        Save the augmented data to the specified file path, creating directories if necessary.
+        """
+        augmented_dir = os.path.dirname(augmented_file_path)
+        if not os.path.exists(augmented_dir):
+            os.makedirs(augmented_dir)
+            logging.info(f"Created directory: {augmented_dir}")
+
+        try:
+            with open(augmented_file_path, "w", encoding="utf-8") as f:
+                json.dump(augmented_data, f, ensure_ascii=False, indent=4)
+            logging.info(f"Saved augmented file: {augmented_file_path}")
+        except OSError as e:
+            logging.error(
+                f"Error saving augmented file: {augmented_file_path}. Error: {e}"
+            )
 
 
 if __name__ == "__main__":
