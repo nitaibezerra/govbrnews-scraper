@@ -99,13 +99,15 @@ class NewsAIClassifier:
         response_json = self.call_openai_api(prompt)
         return response_json.get("is_ai_related", False) if response_json else False
 
-    def generate_ai_explanation(self, news_entry: Dict[str, str]) -> str:
+    def generate_and_highlight_ai_explanation(self, news_entry: Dict[str, str]) -> str:
         """
-        Generate an explanation of the relation to AI for a news entry by calling the LLM.
+        Generate an explanation of the relation to AI for a news entry and highlight AI terms
+        in a single API call.
         """
         prompt = f"""
         O artigo de notícias a seguir foi classificado como relacionado à Inteligência Artificial (IA).
         Escreva um texto em português (Brasil), de no máximo 300 caracteres, explicando a relação do artigo com IA.
+        Além disso, destaque em negrito termos técnicos ou conceitos relacionados à Inteligência Artificial (IA) usando a tag <b></b>.
 
         Aqui estão os detalhes do artigo:
         Título: {news_entry['title']}
@@ -117,45 +119,24 @@ class NewsAIClassifier:
 
         Responda no seguinte formato JSON:
         {{
-            "ai_mention": "Texto explicando a relação com IA"
+            "ai_mention": "Texto explicando a relação com IA com os termos técnicos destacados em negrito"
         }}
         """
 
         response_json = self.call_openai_api(prompt)
         return response_json.get("ai_mention", "") if response_json else ""
 
-    def highlight_ai_explanation(self, text: str) -> str:
-        """
-        Highlight technical AI terms in the explanation text.
-        """
-        prompt = f"""
-        Formate o texto a seguir destacando em negrito termos técnicos ou conceitos relacionados à Inteligência Artificial (IA).
-        Utilize a tag <b></b> para destacar. Não utilize nenhuma outra tag HTML.
-
-        Aqui está o texto:
-        {text}
-
-        Responda no seguinte formato JSON:
-        {{
-            "highlighted_text": "Texto com destaques"
-        }}
-        """
-
-        response_json = self.call_openai_api(prompt)
-        return response_json.get("highlighted_text", "") if response_json else ""
-
     def is_ai_related(self, news_entry: Dict[str, str]) -> Tuple[bool, str]:
         """
-        Classify if the news is related to AI and generate an explanation.
+        Classify if the news is related to AI and generate a highlighted explanation.
         """
         is_related = self.classify_ai_related(news_entry)
         if is_related:
-            ai_mention = self.generate_ai_explanation(news_entry)
-            highlighted_text = self.highlight_ai_explanation(ai_mention)
+            ai_mention = self.generate_and_highlight_ai_explanation(news_entry)
             logging.info(
-                f"\n\nArtigo relacionado à IA:\nTítulo: {news_entry['title']}\n\nMenção original: {ai_mention}\n\nMenção destacada: {highlighted_text}\n"
+                f"\n\nArtigo relacionado à IA:\nTítulo: {news_entry['title']}\n\nMenção destacada: {ai_mention}\n"
             )
-            return True, highlighted_text
+            return True, ai_mention
         else:
             return False, ""
 
