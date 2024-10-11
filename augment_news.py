@@ -1,10 +1,17 @@
+import argparse
 import json
 import logging
 import os
 from typing import Dict, Optional, Tuple
 
 import json5
+import openai
 import requests
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Load environment variables from the .env file
+load_dotenv()
 
 # Set up logging configuration
 logging.basicConfig(
@@ -17,9 +24,17 @@ class NewsAIClassifier:
         self,
         raw_extractions_dir: str = "raw_extractions",
         augmented_news_dir: str = "augmented_news",
+        mode: str = "openai",
+        openai_api_key: Optional[str] = None,
     ):
         self.raw_extractions_dir = raw_extractions_dir
         self.augmented_news_dir = augmented_news_dir
+        self.mode = mode.lower()
+        self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
+
+        if self.mode == "openai" and not self.openai_api_key:
+            raise ValueError("OpenAI API key must be provided for OpenAI mode.")
+        openai.api_key = self.openai_api_key
 
         # Ensure the augmented_news directory exists
         if not os.path.exists(self.augmented_news_dir):
@@ -28,7 +43,48 @@ class NewsAIClassifier:
 
     def call_llm(self, prompt: str) -> Optional[Dict]:
         """
-        Call the LLM API with the given prompt and return the parsed JSON response.
+        Call the LLM API (OpenAI or Ollama) with the given prompt and return the parsed JSON response.
+        """
+        if self.mode == "openai":
+            return self.call_openai_api(prompt)
+        elif self.mode == "ollama":
+            return self.call_ollama_api(prompt)
+        else:
+            logging.error(f"Invalid mode: {self.mode}")
+            return None
+
+    def call_openai_api(self, prompt: str) -> Optional[Dict]:
+        """
+        Call the OpenAI API with the given prompt and return the parsed JSON response.
+        """
+        try:
+            # Create an OpenAI client instance with the API key
+            client = OpenAI(api_key=self.openai_api_key)
+
+            # Make the API call using the updated method
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",  # Specify the model you want to use
+                messages=[
+                    {"role": "system", "content": "You are an AI expert."},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=150,
+                n=1,
+                stop=None,
+                temperature=0.5,
+            )
+
+            # Extract and parse the response
+            response_text = response.choices[0].message.content.strip()
+            response_json = json.loads(response_text)
+            return response_json
+        except Exception as e:
+            logging.error(f"OpenAI API error: {e}")
+            return None
+
+    def call_ollama_api(self, prompt: str) -> Optional[Dict]:
+        """
+        Call the local LLM (Ollama) API with the given prompt and return the parsed JSON response.
         """
         headers = {"Content-Type": "application/json"}
         data = {
@@ -49,10 +105,10 @@ class NewsAIClassifier:
             response_json = json5.loads(response_data["response"])
             return response_json
         except requests.exceptions.RequestException as e:
-            logging.error(f"Error calling LLM API. Error: {e}")
+            logging.error(f"Error calling Ollama API. Error: {e}")
             return None
         except ValueError as e:
-            logging.error(f"Error parsing JSON response. Error: {e}")
+            logging.error(f"Error parsing JSON response from Ollama: {e}")
             return None
 
     def classify_ai_related(self, news_entry: Dict[str, str]) -> bool:
@@ -227,5 +283,27 @@ class NewsAIClassifier:
 
 
 if __name__ == "__main__":
-    classifier = NewsAIClassifier()
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(
+        description="Process news files and classify AI-related articles."
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["openai", "ollama"],
+        default="openai",
+        help="Select the mode for LLM API calls (default: openai).",
+    )
+    parser.add_argument(
+        "--openai_api_key",
+        type=str,
+        default=None,
+        help="OpenAI API key (if not provided, will use OPENAI_API_KEY environment variable).",
+    )
+    args = parser.parse_args()
+
+    classifier = NewsAIClassifier(
+        mode=args.mode,
+        openai_api_key=args.openai_api_key,
+    )
     classifier.process_files()

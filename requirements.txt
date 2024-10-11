@@ -1,7 +1,9 @@
 beautifulsoup4==4.12.3
 json5==0.9.25
 Markdown==3.7
+openai==1.51.2
 pandas==2.2.3
+python-dotenv==1.0.1
 PyYAML==6.0.2
 reportlab==4.2.2
 Requests==2.32.3
