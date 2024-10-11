@@ -4,9 +4,7 @@ import logging
 import os
 from typing import Dict, Optional, Tuple
 
-import json5
 import openai
-import requests
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -24,34 +22,20 @@ class NewsAIClassifier:
         self,
         raw_extractions_dir: str = "raw_extractions",
         augmented_news_dir: str = "augmented_news",
-        mode: str = "openai",
         openai_api_key: Optional[str] = None,
     ):
         self.raw_extractions_dir = raw_extractions_dir
         self.augmented_news_dir = augmented_news_dir
-        self.mode = mode.lower()
         self.openai_api_key = openai_api_key or os.getenv("OPENAI_API_KEY")
 
-        if self.mode == "openai" and not self.openai_api_key:
-            raise ValueError("OpenAI API key must be provided for OpenAI mode.")
+        if not self.openai_api_key:
+            raise ValueError("OpenAI API key must be provided.")
         openai.api_key = self.openai_api_key
 
         # Ensure the augmented_news directory exists
         if not os.path.exists(self.augmented_news_dir):
             os.makedirs(self.augmented_news_dir)
             logging.info(f"Created directory: {self.augmented_news_dir}")
-
-    def call_llm(self, prompt: str) -> Optional[Dict]:
-        """
-        Call the LLM API (OpenAI or Ollama) with the given prompt and return the parsed JSON response.
-        """
-        if self.mode == "openai":
-            return self.call_openai_api(prompt)
-        elif self.mode == "ollama":
-            return self.call_ollama_api(prompt)
-        else:
-            logging.error(f"Invalid mode: {self.mode}")
-            return None
 
     def call_openai_api(self, prompt: str) -> Optional[Dict]:
         """
@@ -68,7 +52,7 @@ class NewsAIClassifier:
                     {"role": "system", "content": "You are an AI expert."},
                     {"role": "user", "content": prompt},
                 ],
-                max_tokens=150,
+                max_tokens=250,
                 n=1,
                 stop=None,
                 temperature=0.5,
@@ -80,35 +64,6 @@ class NewsAIClassifier:
             return response_json
         except Exception as e:
             logging.error(f"OpenAI API error: {e}")
-            return None
-
-    def call_ollama_api(self, prompt: str) -> Optional[Dict]:
-        """
-        Call the local LLM (Ollama) API with the given prompt and return the parsed JSON response.
-        """
-        headers = {"Content-Type": "application/json"}
-        data = {
-            "model": "llama3.1",
-            "prompt": prompt,
-            "stream": False,
-            "format": "json",
-        }
-
-        try:
-            response = requests.post(
-                "http://localhost:11434/api/generate",
-                headers=headers,
-                data=json.dumps(data),
-            )
-            response.raise_for_status()
-            response_data = json5.loads(response.text)
-            response_json = json5.loads(response_data["response"])
-            return response_json
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Error calling Ollama API. Error: {e}")
-            return None
-        except ValueError as e:
-            logging.error(f"Error parsing JSON response from Ollama: {e}")
             return None
 
     def classify_ai_related(self, news_entry: Dict[str, str]) -> bool:
@@ -141,7 +96,7 @@ class NewsAIClassifier:
         }}
         """
 
-        response_json = self.call_llm(prompt)
+        response_json = self.call_openai_api(prompt)
         return response_json.get("is_ai_related", False) if response_json else False
 
     def generate_ai_explanation(self, news_entry: Dict[str, str]) -> str:
@@ -166,7 +121,7 @@ class NewsAIClassifier:
         }}
         """
 
-        response_json = self.call_llm(prompt)
+        response_json = self.call_openai_api(prompt)
         return response_json.get("ai_mention", "") if response_json else ""
 
     def highlight_ai_explanation(self, text: str) -> str:
@@ -186,7 +141,7 @@ class NewsAIClassifier:
         }}
         """
 
-        response_json = self.call_llm(prompt)
+        response_json = self.call_openai_api(prompt)
         return response_json.get("highlighted_text", "") if response_json else ""
 
     def is_ai_related(self, news_entry: Dict[str, str]) -> Tuple[bool, str]:
@@ -288,13 +243,6 @@ if __name__ == "__main__":
         description="Process news files and classify AI-related articles."
     )
     parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["openai", "ollama"],
-        default="openai",
-        help="Select the mode for LLM API calls (default: openai).",
-    )
-    parser.add_argument(
         "--openai_api_key",
         type=str,
         default=None,
@@ -303,7 +251,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     classifier = NewsAIClassifier(
-        mode=args.mode,
         openai_api_key=args.openai_api_key,
     )
     classifier.process_files()
