@@ -1,3 +1,5 @@
 .env
 **/old_reports/*
 # **/raw_extractions/*
+*.pyc
+.pytest_cache/
