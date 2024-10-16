@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+from datetime import datetime
 from typing import Dict, Optional, Tuple
 
 import openai
@@ -116,14 +117,27 @@ class NewsAIClassifier:
             )
         return is_related, ai_mention
 
-    def process_files(self):
+    def process_files(self, min_date: str, agency: str):
         """
         Main method to process all JSON files in the raw_extractions directory
-        and save augmented files to the augmented_news directory.
+        and save augmented files to the augmented_news directory. Filters by agency and minimum date.
         """
         for root, dirs, files in os.walk(self.raw_extractions_dir):
+            # Only process directories matching the agency filter
+            if agency and agency not in root:
+                continue
+
             for filename in files:
                 if filename.endswith(".json"):
+                    file_date_str = filename.split("_")[-1].split(".")[0]
+
+                    # Skip files older than the min_date
+                    if file_date_str < min_date:
+                        logging.info(
+                            f"Skipping file: {filename} (older than min_date: {min_date})"
+                        )
+                        continue
+
                     file_path = os.path.join(root, filename)
                     augmented_file_path = self.get_augmented_file_path(file_path)
 
@@ -205,9 +219,21 @@ if __name__ == "__main__":
         default=None,
         help="OpenAI API key (if not provided, will use OPENAI_API_KEY environment variable).",
     )
+    parser.add_argument(
+        "--min_date",
+        type=str,
+        required=True,
+        help="Minimum date (YYYY-MM-DD) to process files. Only process files with dates greater than or equal to this date.",
+    )
+    parser.add_argument(
+        "--agency",
+        type=str,
+        required=True,
+        help="Agency to filter the files for processing.",
+    )
     args = parser.parse_args()
 
     classifier = NewsAIClassifier(
         openai_api_key=args.openai_api_key,
     )
-    classifier.process_files()
+    classifier.process_files(min_date=args.min_date, agency=args.agency)
