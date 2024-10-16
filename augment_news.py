@@ -7,7 +7,11 @@ from typing import Dict, Optional, Tuple
 
 import openai
 from dotenv import load_dotenv
-from openai import OpenAI
+from langchain import OpenAI
+from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+from langchain.prompts import PromptTemplate
+
+# from openai import OpenAI
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -73,38 +77,84 @@ class NewsAIClassifier:
     ) -> Tuple[bool, str]:
         """
         Classify if the news is related to AI and generate a highlighted explanation in a single API call.
+        Uses Langchain for better output structuring.
         """
-        prompt = f"""
+        # Define the expected response schema
+        response_schemas = [
+            ResponseSchema(
+                name="is_ai_related",
+                description="A boolean indicating if the article is related to AI.",
+            ),
+            ResponseSchema(
+                name="ai_mention",
+                description="A brief explanation of the relationship with AI, highlighting technical terms in Markdown.",
+            ),
+        ]
+
+        # Create the output parser
+        output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
+
+        # Create the prompt template
+        prompt_template = """
         Analise o seguinte artigo de notícias e determine se ele está diretamente relacionado ao campo de Inteligência Artificial (IA).
-        Para ser considerado relacionado à IA, o artigo deve discutir explicitamente tecnologias de IA, como Aprendizado de Máquina (Machine Learning), Processamento de Imagem, Modelos de Linguagem de Grande Escala (LLM), IA Generativa, Redes Neurais, Processamento de Linguagem Natural (NLP), Visão Computacional, Deep Learning, ou outros temas específicos de IA.
+        Para ser considerado relacionado à IA, o artigo deve discutir explicitamente tecnologias de IA, como Aprendizado de Máquina (Machine Learning),
+        Processamento de Imagem, Modelos de Linguagem de Grande Escala (LLM), IA Generativa, Redes Neurais, Processamento de Linguagem Natural (NLP),
+        Visão Computacional, Deep Learning, ou outros temas específicos de IA.
 
         Se o artigo estiver relacionado à IA, escreva um texto em português (Brasil), de no máximo 300 caracteres, explicando a relação do artigo com IA.
         Além disso, destaque em Markdown os termos técnicos ou conceitos relacionados à Inteligência Artificial (IA) usando ** para destacar.
 
         Aqui estão os detalhes do artigo:
-        Título: {news_entry['title']}
-        Categoria: {news_entry['category']}
-        Tags: {', '.join(news_entry.get('tags', []))}
-        Conteúdo: {news_entry['content']}
+        Título: {title}
+        URL: {url}
+        Data: {date}
+        Categoria: {category}
+        Tags: {tags}
+        Conteúdo: {content}
 
         Responda no seguinte formato JSON:
-        {{
-            "is_ai_related": true,
-            "ai_mention": "Texto explicando a relação com IA com os termos técnicos destacados em Markdown"
-        }}
-
-        Se o artigo não estiver relacionado à IA, responda apenas:
-        {{
-            "is_ai_related": false
-        }}
+        {format_instructions}
         """
 
-        response_json = self.call_openai_api(prompt)
-        is_ai_related = (
-            response_json.get("is_ai_related", False) if response_json else False
+        # Use Langchain's prompt template with the news entry data
+        prompt = PromptTemplate(
+            input_variables=[
+                "title",
+                "url",
+                "date",
+                "category",
+                "tags",
+                "content",
+                "format_instructions",
+            ],
+            template=prompt_template,
+        ).format(
+            title=news_entry["title"],
+            url=news_entry["url"],
+            date=news_entry["date"],
+            category=news_entry["category"],
+            tags=", ".join(news_entry.get("tags", [])),
+            content=news_entry["content"],
+            format_instructions=output_parser.get_format_instructions(),
         )
-        ai_mention = response_json.get("ai_mention", "") if is_ai_related else ""
-        return is_ai_related, ai_mention
+
+        # Call the OpenAI API using Langchain with structured output parsing
+        try:
+            # Make the API call through Langchain's OpenAI integration
+            llm = OpenAI(api_key=self.openai_api_key)
+            response = llm(prompt)
+
+            # Parse the response
+            parsed_response = output_parser.parse(response)
+
+            is_ai_related = bool(parsed_response.get("is_ai_related", False))
+            ai_mention = parsed_response.get("ai_mention", "")
+
+            return is_ai_related, ai_mention
+
+        except Exception as e:
+            logging.error(f"Error processing LLM response: {e}")
+            return False, ""
 
     def is_ai_related(self, news_entry: Dict[str, str]) -> Tuple[bool, str]:
         """
