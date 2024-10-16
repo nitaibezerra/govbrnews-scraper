@@ -117,39 +117,45 @@ class NewsAIClassifier:
             )
         return is_related, ai_mention
 
-    def process_files(self, min_date: str, agency: str):
+    def process_files(
+        self, min_date: Optional[str] = None, agency: Optional[str] = None
+    ):
         """
-        Main method to process all JSON files in the raw_extractions directory
-        and save augmented files to the augmented_news directory. Filters by agency and minimum date.
+        Main method to process all JSON files in the raw_extractions directory and save augmented files to the augmented_news directory.
+        Only processes files from a specified agency (if provided) and files with a date greater than or equal to min_date (if provided).
+
+        :param min_date: Minimum date to process (format: 'YYYY-MM-DD').
+        :param agency: Agency to filter by (only process files from this agency).
         """
         for root, dirs, files in os.walk(self.raw_extractions_dir):
-            # Only process directories matching the agency filter
+            # Filter by agency if provided
             if agency and agency not in root:
                 continue
 
             for filename in files:
-                if filename.endswith(".json"):
-                    file_date_str = filename.split("_")[-1].split(".")[0]
+                # Skip non-JSON files
+                if not filename.endswith(".json"):
+                    continue
 
-                    # Skip files older than the min_date
-                    if file_date_str < min_date:
-                        logging.info(
-                            f"Skipping file: {filename} (older than min_date: {min_date})"
-                        )
-                        continue
+                # Extract the date from the filename (assuming filename has format like 'agency_YYYY-MM-DD.json')
+                file_date = filename.split("_")[-1].replace(".json", "")
 
-                    file_path = os.path.join(root, filename)
-                    augmented_file_path = self.get_augmented_file_path(file_path)
+                # Filter by date if provided
+                if min_date and file_date < min_date:
+                    continue
 
-                    if self.should_skip_file(augmented_file_path):
-                        continue
+                file_path = os.path.join(root, filename)
+                augmented_file_path = self.get_augmented_file_path(file_path)
 
-                    news_data = self.load_json_file(file_path)
-                    if news_data is None:
-                        continue
+                if self.should_skip_file(augmented_file_path):
+                    continue
 
-                    augmented_data = self.process_news_entries(news_data)
-                    self.save_augmented_file(augmented_file_path, augmented_data)
+                news_data = self.load_json_file(file_path)
+                if news_data is None:
+                    continue
+
+                augmented_data = self.process_news_entries(news_data)
+                self.save_augmented_file(augmented_file_path, augmented_data)
 
     def get_augmented_file_path(self, file_path: str) -> str:
         """
@@ -222,18 +228,20 @@ if __name__ == "__main__":
     parser.add_argument(
         "--min_date",
         type=str,
-        required=True,
-        help="Minimum date (YYYY-MM-DD) to process files. Only process files with dates greater than or equal to this date.",
+        default=None,
+        help="Minimum date to process files from (format: 'YYYY-MM-DD').",
     )
     parser.add_argument(
         "--agency",
         type=str,
-        required=True,
-        help="Agency to filter the files for processing.",
+        default=None,
+        help="Agency to filter the files by.",
     )
     args = parser.parse_args()
 
     classifier = NewsAIClassifier(
         openai_api_key=args.openai_api_key,
     )
+
+    # Pass the min_date and agency to the process_files method
     classifier.process_files(min_date=args.min_date, agency=args.agency)
