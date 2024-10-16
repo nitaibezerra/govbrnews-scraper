@@ -47,7 +47,8 @@ class NewsAIClassifier:
 
             # Make the API call using the updated method
             response = client.chat.completions.create(
-                model="gpt-3.5-turbo",  # Specify the model you want to use
+                # model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an AI expert."},
                     {"role": "user", "content": prompt},
@@ -66,79 +67,54 @@ class NewsAIClassifier:
             logging.error(f"OpenAI API error: {e}")
             return None
 
-    def classify_ai_related(self, news_entry: Dict[str, str]) -> bool:
+    def classify_and_generate_ai_explanation(
+        self, news_entry: Dict[str, str]
+    ) -> Tuple[bool, str]:
         """
-        Determine if the news is related to AI by calling the LLM.
-        """
-        prompt = f"""
-        Analyze the following news article and determine if it is directly related to any field of Artificial Intelligence (AI).
-        To be considered AI-related, the article must explicitly discuss AI technologies, such as machine learning, data science,
-        data engineering, neural networks, natural language processing, computer vision, or other AI-specific techniques and applications.
-
-        Disregard articles that:
-        - Mention general technological advancements or digital transformation without explicit reference to AI technologies.
-        - Focus on information technology (IT) infrastructure, cybersecurity, data privacy, digital governance, or public management, unless AI is a central theme.
-        - Discuss technology or innovation in a generic way without specifically addressing AI-related concepts or applications.
-
-        To classify the article as AI-related, there must be a clear and direct reference to AI technologies. Please avoid making inferences based on vague mentions of technology.
-
-        Here is the information:
-        Title: {news_entry['title']}
-        URL: {news_entry['url']}
-        Date: {news_entry['date']}
-        Category: {news_entry['category']}
-        Tags: {', '.join(news_entry.get('tags', []))}
-        Content: {news_entry['content']}
-
-        Please respond in the following JSON format:
-        {{
-            "is_ai_related": true
-        }}
-        """
-
-        response_json = self.call_openai_api(prompt)
-        return response_json.get("is_ai_related", False) if response_json else False
-
-    def generate_and_highlight_ai_explanation(self, news_entry: Dict[str, str]) -> str:
-        """
-        Generate an explanation of the relation to AI for a news entry and highlight AI terms
-        in a single API call.
+        Classify if the news is related to AI and generate a highlighted explanation in a single API call.
         """
         prompt = f"""
-        O artigo de notícias a seguir foi classificado como relacionado à Inteligência Artificial (IA).
-        Escreva um texto em português (Brasil), de no máximo 300 caracteres, explicando a relação do artigo com IA.
-        Além disso, destaque em negrito termos técnicos ou conceitos relacionados à Inteligência Artificial (IA) usando a tag <b></b>.
+        Analise o seguinte artigo de notícias e determine se ele está diretamente relacionado ao campo de Inteligência Artificial (IA).
+        Para ser considerado relacionado à IA, o artigo deve discutir explicitamente tecnologias de IA, como Aprendizado de Máquina (Machine Learning), Processamento de Imagem, Modelos de Linguagem de Grande Escala (LLM), IA Generativa, Redes Neurais, Processamento de Linguagem Natural (NLP), Visão Computacional, Deep Learning, ou outros temas específicos de IA.
+
+        Se o artigo estiver relacionado à IA, escreva um texto em português (Brasil), de no máximo 300 caracteres, explicando a relação do artigo com IA.
+        Além disso, destaque em Markdown os termos técnicos ou conceitos relacionados à Inteligência Artificial (IA) usando ** para destacar.
 
         Aqui estão os detalhes do artigo:
         Título: {news_entry['title']}
-        URL: {news_entry['url']}
-        Data: {news_entry['date']}
         Categoria: {news_entry['category']}
         Tags: {', '.join(news_entry.get('tags', []))}
         Conteúdo: {news_entry['content']}
 
         Responda no seguinte formato JSON:
         {{
-            "ai_mention": "Texto explicando a relação com IA com os termos técnicos destacados em negrito"
+            "is_ai_related": true,
+            "ai_mention": "Texto explicando a relação com IA com os termos técnicos destacados em Markdown"
+        }}
+
+        Se o artigo não estiver relacionado à IA, responda apenas:
+        {{
+            "is_ai_related": false
         }}
         """
 
         response_json = self.call_openai_api(prompt)
-        return response_json.get("ai_mention", "") if response_json else ""
+        is_ai_related = (
+            response_json.get("is_ai_related", False) if response_json else False
+        )
+        ai_mention = response_json.get("ai_mention", "") if is_ai_related else ""
+        return is_ai_related, ai_mention
 
     def is_ai_related(self, news_entry: Dict[str, str]) -> Tuple[bool, str]:
         """
         Classify if the news is related to AI and generate a highlighted explanation.
         """
-        is_related = self.classify_ai_related(news_entry)
+        is_related, ai_mention = self.classify_and_generate_ai_explanation(news_entry)
         if is_related:
-            ai_mention = self.generate_and_highlight_ai_explanation(news_entry)
             logging.info(
                 f"\n\nArtigo relacionado à IA:\nTítulo: {news_entry['title']}\n\nMenção destacada: {ai_mention}\n"
             )
-            return True, ai_mention
-        else:
-            return False, ""
+        return is_related, ai_mention
 
     def process_files(self):
         """
