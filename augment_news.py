@@ -2,16 +2,12 @@ import argparse
 import json
 import logging
 import os
-from datetime import datetime
 from typing import Dict, Optional, Tuple
 
-import openai
 from dotenv import load_dotenv
 from langchain import OpenAI
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain.prompts import PromptTemplate
-
-# from openai import OpenAI
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -35,7 +31,6 @@ class NewsAIClassifier:
 
         if not self.openai_api_key:
             raise ValueError("OpenAI API key must be provided.")
-        openai.api_key = self.openai_api_key
 
         # Ensure the augmented_news directory exists
         if not os.path.exists(self.augmented_news_dir):
