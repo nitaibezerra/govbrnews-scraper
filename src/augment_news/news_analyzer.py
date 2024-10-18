@@ -1,10 +1,10 @@
 import logging
 from typing import Dict, Tuple
 
-from langchain.chains import LLMChain  # Import LLMChain
-from langchain.chat_models import ChatOpenAI  # Updated import
+from langchain.chains import LLMChain
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 from langchain.prompts import PromptTemplate
+from langchain_community.chat_models import ChatOpenAI
 
 
 class NewsAnalyzer:
