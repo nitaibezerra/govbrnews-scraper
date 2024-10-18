@@ -107,21 +107,24 @@ class NewsProcessor:
 
     def process_news_entries(self, news_data: Dict) -> Dict:
         """
-        Process each news entry in the JSON data to determine if it is AI-related and generate explanations.
+        Process each news entry in the JSON data to classify and generate summaries.
 
         :param news_data: The news data loaded from the JSON file.
-        :return: The augmented news data with AI-related information.
+        :return: The augmented news data with classification and summary.
         """
         for news_entry in news_data:
-            is_ai_related_flag, ai_mention = (
-                self.analyzer.classify_and_generate_ai_explanation(news_entry)
-            )
-            news_entry["is_ai_related_flag"] = is_ai_related_flag
-            if is_ai_related_flag:
-                news_entry["ai_mention"] = ai_mention
+            result, _ = self.analyzer.classify_and_generate_summary(news_entry)
+            if result:
+                # Convert Pydantic models to dictionaries for serialization
+                news_entry["classified_themes"] = [
+                    theme.dict() for theme in result.classified_themes
+                ]
+                news_entry["news_summary"] = result.news_summary
                 logging.info(
-                    f"\n\nArtigo relacionado à IA:\nTítulo: {news_entry['title']}\n\nMenção destacada: {ai_mention}\n"
+                    f"\n\nNotícia processada:\nTítulo: {news_entry['title']}\n\nTemas classificados: {news_entry['classified_themes']}\nResumo: {news_entry['news_summary']}\n"
                 )
+            else:
+                logging.error(f"Failed to process news entry: {news_entry['title']}")
         return news_data
 
     def save_augmented_file(self, augmented_file_path: str, augmented_data: Dict):
