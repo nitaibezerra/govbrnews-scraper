@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "govbr-news-ai"
+version = "0.1.0"
+description = ""
+authors = ["Nitai Bezerra da Silva <nitaibezerra@protonmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+beautifulsoup4 = "^4.12.3"
+langchain = "^0.3.3"
+markdown = "^3.7"
+pandas = "^2.2.3"
+python-dotenv = "^1.0.1"
+pyyaml = "^6.0.2"
+reportlab = "^4.2.5"
+requests = "^2.32.3"
+langchain-community = "^0.3.2"
+openai = "^1.52.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "8.3.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
