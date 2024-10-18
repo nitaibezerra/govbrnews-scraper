@@ -3,3 +3,4 @@
 # **/raw_extractions/*
 *.pyc
 .pytest_cache/
+__pycache__
