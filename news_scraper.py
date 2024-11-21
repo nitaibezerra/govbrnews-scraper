@@ -1,16 +1,23 @@
 import argparse
 import concurrent.futures
+import hashlib
 import json
 import logging
 import os
 import random
 import time
+from collections import OrderedDict
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
 import requests
 import yaml
 from bs4 import BeautifulSoup
+from datasets import Dataset, load_dataset
+from dotenv import load_dotenv
+
+# Load environment variables from the .env file
+load_dotenv()
 
 # Set up logging configuration
 logging.basicConfig(
@@ -18,8 +25,11 @@ logging.basicConfig(
 )
 
 MAX_WORKERS = 3
-DESTINATION_FOLDER = "raw_extractions"
 SLEEP_TIME_INTERVAL = (1, 3)
+DATASET_PATH = "nitaibezerra/govbrnews"  # The name of the Hugging Face dataset
+RAW_EXTRACTIONS_PATH = (
+    "raw_extractions"  # Directory where existing JSON files are stored
+)
 
 
 def load_urls_from_yaml(file_path: str) -> Dict[str, str]:
@@ -61,10 +71,6 @@ class GovBRNewsScraper:
         :return: A list of dictionaries containing news data.
         """
 
-        if self.json_file_exists():
-            logging.info(f"JSON file already exists for {self.agency}. Skipping.")
-            return []
-
         current_offset = 0
 
         while True:
@@ -83,8 +89,8 @@ class GovBRNewsScraper:
             current_offset += items_per_page
             logging.info(f"Moving to next page with offset {current_offset}")
 
-        # Save the scraped data to a JSON file
-        self.save_news_to_json()
+        # Append the scraped data to the Hugging Face dataset
+        self.append_to_huggingface_dataset()
 
         return self.news_data
 
@@ -148,169 +154,144 @@ class GovBRNewsScraper:
             "category": category,
             "tags": tags,
             "content": content,
+            "agency": self.agency,
+            "extraction_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
 
-    def extract_title_and_url(self, item) -> Tuple[str, str]:
+    def append_to_huggingface_dataset(self):
         """
-        Extract the title and URL from a news item.
-
-        :param item: A BeautifulSoup tag representing a single news item.
-        :return: A tuple (title, url).
+        Append the scraped news data to a Hugging Face dataset, maintaining structure and ordering.
         """
-        # First structure: Look for 'a' with class 'summary url'
-        title_tag = item.find("a", class_="summary url")
+        if not self.news_data:
+            logging.info("No news data to append.")
+            return
 
-        # Second structure: Look for a plain 'a' tag if 'summary url' is not found
-        if not title_tag:
-            title_tag = item.find("a")
+        # Preprocess new data
+        new_data = preprocess_data(self.news_data)
 
-        title = title_tag.get_text().strip() if title_tag else "No Title"
-        url = title_tag["href"] if title_tag else "No URL"
-        return title, url
-
-    def extract_category(self, item) -> str:
-        """
-        Extract the category from a news item.
-
-        :param item: A BeautifulSoup tag representing a single news item.
-        :return: The category as a string.
-        """
-        # First structure: Look for 'span' with class 'subtitle'
-        category_tag = item.find("span", class_="subtitle")
-
-        # Second structure: Look for 'div' with class 'subtitulo-noticia'
-        if not category_tag:
-            category_tag = item.find("div", class_="subtitulo-noticia")
-
-        # Third structure: Look for 'div' with class 'categoria-noticia'
-        if not category_tag:
-            category_tag = item.find("div", class_="categoria-noticia")
-
-        return category_tag.get_text().strip() if category_tag else "No Category"
-
-    def extract_date(self, item) -> Optional[datetime]:
-        result = self.extract_date_1(item)
-        if not result:
-            result = self.extract_date_2(item)
-
-        if not result:
-            logging.error(f"\n\nNo date found!\n")
-
-        return result
-
-    def extract_date_1(self, item) -> Optional[datetime]:
-        """
-        Extract the date from a news item.
-
-        :param item: A BeautifulSoup tag representing a single news item.
-        :return: The date as a datetime object or None if the date is invalid.
-        """
-        date_tag = item.find("span", class_="documentByLine")
-        date_str = date_tag.get_text().strip() if date_tag else "No Date"
-        date_parts = date_str.split()
-        clean_date_str = date_parts[1] if len(date_parts) > 1 else "No Date"
-
+        # Check if the dataset already exists
         try:
-            return datetime.strptime(clean_date_str, "%d/%m/%Y")
-        except ValueError:
-            return None
+            existing_dataset = load_dataset(DATASET_PATH, split="train")
+            logging.info("Existing dataset loaded from Hugging Face Hub.")
 
-    def extract_date_2(self, item) -> Optional[datetime]:
-        """
-        Extract the date from a news item.
+            # Combine existing data with new data
+            combined_data = {
+                key: existing_dataset[key] + new_data[key] for key in new_data.keys()
+            }
+        except FileNotFoundError:
+            logging.info("No existing dataset found. Creating a new dataset.")
+            combined_data = new_data
 
-        :param item: A BeautifulSoup tag representing a single news item.
-        :return: The date as a datetime object or None if the date is invalid.
-        """
-        date_tag = item.find("span", class_="data")
+        # Create the combined dataset
+        combined_dataset = Dataset.from_dict(combined_data)
 
-        # Extract the date string
-        date_str = date_tag.get_text().strip() if date_tag else None
+        # Push the combined dataset to the Hub
+        push_dataset_to_hub(combined_dataset, DATASET_PATH)
 
-        if not date_str:
-            return None
 
-        # Try to extract the date from the string using common date formats
-        try:
-            # Assuming the format is 'dd/mm/yyyy' as per your previous script
-            return datetime.strptime(date_str, "%d/%m/%Y")
-        except ValueError:
-            return None
+def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
+    """
+    Preprocess data by:
+    - Adding the unique_id column.
+    - Sorting by agency and date.
+    - Reordering columns.
 
-    def extract_tags(self, item) -> List[str]:
-        """
-        Extract the tags from a news item.
-
-        :param item: A BeautifulSoup tag representing a single news item.
-        :return: A list of tags as strings.
-        """
-        # First structure: Look for 'div' with class 'keywords'
-        tags_div = item.find("div", class_="keywords")
-
-        # Second structure: Look for 'div' with class 'subject-noticia'
-        if not tags_div:
-            tags_div = item.find("div", class_="subject-noticia")
-
-        if tags_div:
-            tag_links = tags_div.find_all("a", class_="link-category")
-            return [tag.get_text().strip() for tag in tag_links]
-
-        return []
-
-    def get_article_content(self, url: str) -> str:
-        """
-        Get the content of a news article from its URL.
-
-        :param url: The URL of the article.
-        :return: The content of the article as a string.
-        """
-        try:
-            logging.info(f"Retrieving content from {url}")
-            response = requests.get(url)
-            soup = BeautifulSoup(response.content, "html.parser")
-            article_body = soup.find("div", id="content-core")
-            return (
-                article_body.get_text().strip() if article_body else "No content found"
-            )
-        except Exception as e:
-            logging.error(f"Error retrieving content from {url}: {str(e)}")
-            return "Error retrieving content"
-
-    def save_news_to_json(self):
-        """
-        Save the scraped news data to a JSON file in the raw_extractions/agency folder.
-        """
-        current_date = datetime.now().strftime("%Y-%m-%d")
-
-        # Create a folder for each agency inside raw_extractions
-        agency_folder = os.path.join(DESTINATION_FOLDER, self.agency)
-        if not os.path.exists(agency_folder):
-            os.makedirs(agency_folder)
-
-        # Save one JSON file for each day
-        for news_item in self.news_data:
-            news_date = news_item["date"]
-            filename = f"{self.agency}_{news_date}.json"
-            filepath = os.path.join(agency_folder, filename)
-
-            # Overwrite the file, do not append if it exists
-            with open(filepath, "w", encoding="utf-8") as f:
-                json.dump([news_item], f, ensure_ascii=False, indent=4)
-
-        logging.info(f"News data saved to {agency_folder}")
-
-    def json_file_exists(self) -> bool:
-        """
-        Check if the JSON file for the current scraping already exists.
-
-        :return: True if the file exists, False otherwise.
-        """
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        filename = (
-            f"{self.agency}_{self.min_date.strftime('%Y-%m-%d')}_{current_date}.json"
+    :param data: List of news items as dictionaries.
+    :return: An OrderedDict with the processed data.
+    """
+    # Generate unique_id for each record
+    for item in data:
+        item["unique_id"] = generate_unique_id(
+            item.get("agency", ""), item.get("date", ""), item.get("title", "")
         )
-        filepath = os.path.join(DESTINATION_FOLDER, filename)
-        return os.path.exists(filepath)
+
+    # Sort the data by 'agency' and 'date'
+    data.sort(key=lambda x: (x.get("agency", ""), x.get("date", "9999-12-31")))
+
+    # Convert to columnar format
+    column_data = {
+        key: [item.get(key, None) for item in data] for key in data[0].keys()
+    }
+
+    # Reorder columns
+    ordered_column_data = OrderedDict()
+    if "unique_id" in column_data:
+        ordered_column_data["unique_id"] = column_data.pop("unique_id")
+    if "agency" in column_data:
+        ordered_column_data["agency"] = column_data.pop("agency")
+    if "date" in column_data:
+        ordered_column_data["date"] = column_data.pop("date")
+    ordered_column_data.update(column_data)
+
+    return ordered_column_data
+
+
+def push_dataset_to_hub(dataset: Dataset, dataset_path: str):
+    """
+    Push a dataset to the Hugging Face Hub.
+
+    :param dataset: The dataset to push.
+    :param dataset_path: The Hugging Face Hub path.
+    """
+    dataset.push_to_hub(dataset_path, private=False)
+    logging.info(f"Dataset pushed to Hugging Face Hub at {dataset_path}.")
+
+
+def generate_unique_id(agency, date, title):
+    """
+    Generate a unique identifier based on the agency, date, and title.
+
+    :param agency: The agency name.
+    :param date: The date of the news item.
+    :param title: The title of the news item.
+    :return: A unique hash string.
+    """
+    hash_input = f"{agency}_{date}_{title}".encode("utf-8")
+    return hashlib.md5(hash_input).hexdigest()
+
+
+def migrate_existing_json_to_dataset():
+    """
+    Migrate existing JSON files in the raw_extractions subfolders to the Hugging Face dataset.
+    """
+    all_news_data = []
+    logging.info(f"Scanning {RAW_EXTRACTIONS_PATH} for JSON files...")
+
+    for root, _, files in os.walk(RAW_EXTRACTIONS_PATH):
+        for file in files:
+            if file.endswith(".json"):
+                file_path = os.path.join(root, file)
+                logging.info(f"Processing file: {file_path}")
+
+                # Extract the agency name from the file name
+                agency = file.split("_")[0]
+
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if isinstance(data, list):
+                            for item in data:
+                                item["agency"] = agency  # Add the agency column
+                            all_news_data.extend(data)
+                        else:
+                            logging.warning(
+                                f"File {file_path} does not contain a list of news items. Skipping."
+                            )
+                except Exception as e:
+                    logging.error(f"Failed to process file {file_path}: {e}")
+
+    if not all_news_data:
+        logging.info("No news data found in the JSON files.")
+        return
+
+    logging.info(f"Loaded {len(all_news_data)} news items from JSON files.")
+
+    # Preprocess all data
+    processed_data = preprocess_data(all_news_data)
+
+    # Create the dataset and push it to the Hub
+    combined_dataset = Dataset.from_dict(processed_data)
+    push_dataset_to_hub(combined_dataset, DATASET_PATH)
 
 
 def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
@@ -327,22 +308,31 @@ def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
 def main():
     # Set up argument parsing
     parser = argparse.ArgumentParser(
-        description="Scrape news from multiple gov.br agencies up to a given date."
+        description="Scrape or migrate news data to a Hugging Face dataset."
     )
     parser.add_argument(
-        "min_date", help="The minimum date for scraping news (format: YYYY-MM-DD)"
+        "command",
+        choices=["scrape", "migrate"],
+        help="Command to execute: 'scrape' to run the scraper, 'migrate' to migrate existing JSON data.",
+    )
+    parser.add_argument(
+        "--min_date",
+        help="The minimum date for scraping news (format: YYYY-MM-DD). Required for 'scrape'.",
     )
     args = parser.parse_args()
 
-    urls = list(load_urls_from_yaml("site_urls.yaml").values())
+    if args.command == "migrate":
+        migrate_existing_json_to_dataset()
+    elif args.command == "scrape":
+        if not args.min_date:
+            raise ValueError("The '--min_date' argument is required for 'scrape'.")
+        urls = list(load_urls_from_yaml("site_urls.yaml").values())
+        scrapers = create_scrapers(urls, args.min_date)
 
-    # Create scrapers for each URL
-    scrapers = create_scrapers(urls, args.min_date)
-
-    # Run scrapers in parallel with a maximum of 10 threads
-    with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        futures = [executor.submit(scraper.scrape_news) for scraper in scrapers]
-        concurrent.futures.wait(futures)
+        # Run scrapers in parallel
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = [executor.submit(scraper.scrape_news) for scraper in scrapers]
+            concurrent.futures.wait(futures)
 
 
 if __name__ == "__main__":

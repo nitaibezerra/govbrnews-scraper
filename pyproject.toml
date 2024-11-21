@@ -17,10 +17,14 @@ reportlab = "^4.2.5"
 requests = "^2.32.3"
 langchain-community = "^0.3.2"
 openai = "^1.52.0"
+langchain-openai = "^0.2.3"
+datasets = "^3.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.3"
+ipdb = "^0.13.13"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+package-mode = false
