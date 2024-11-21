@@ -6,7 +6,7 @@ import os
 import random
 import time
 from collections import OrderedDict
-from datetime import datetime
+from datetime import date, datetime
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -51,7 +51,7 @@ class GovBRNewsScraper:
         :param base_url: The base URL of the agency's news page.
         """
         self.base_url = base_url
-        self.min_date = datetime.strptime(min_date, "%Y-%m-%d")
+        self.min_date = datetime.strptime(min_date, "%Y-%m-%d").date()
         self.news_data = []
         self.agency = self.get_agency_name()
 
@@ -141,7 +141,7 @@ class GovBRNewsScraper:
         news_date = self.extract_date(item)
         if news_date and news_date < self.min_date:
             logging.info(
-                f"Stopping scrape. Found news older than min date: {news_date.strftime('%Y-%m-%d')}"
+                f"Stopping scrape. Found news older than min date: {news_date}"
             )
             return None
         tags = self.extract_tags(item)
@@ -150,12 +150,12 @@ class GovBRNewsScraper:
         return {
             "title": title,
             "url": url,
-            "date": news_date.strftime("%Y-%m-%d") if news_date else "Unknown Date",
+            "date": news_date if news_date else None,
             "category": category,
             "tags": tags,
             "content": content,
             "agency": self.agency,
-            "extraction_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "extraction_date": datetime.now(),
         }
 
     def extract_title_and_url(self, item) -> Tuple[str, str]:
@@ -196,12 +196,12 @@ class GovBRNewsScraper:
 
         return category_tag.get_text().strip() if category_tag else "No Category"
 
-    def extract_date(self, item) -> Optional[datetime]:
+    def extract_date(self, item) -> Optional[date]:
         """
         Extract the date from a news item using multiple strategies.
 
         :param item: A BeautifulSoup tag representing a single news item.
-        :return: The date as a datetime object or None if not found.
+        :return: The date as a datetime.date object or None if not found.
         """
         result = self.extract_date_1(item)
         if not result:
@@ -211,14 +211,14 @@ class GovBRNewsScraper:
             logging.error(f"No date found in news item.")
             return None
 
-        return result
+        return result.date()
 
     def extract_date_1(self, item) -> Optional[datetime]:
         """
         Extract the date from a news item using the first strategy.
 
         :param item: A BeautifulSoup tag representing a single news item.
-        :return: The date as a datetime object or None if not found.
+        :return: The date as a datetime.datetime object or None if not found.
         """
         date_tag = item.find("span", class_="documentByLine")
         date_str = date_tag.get_text().strip() if date_tag else ""
@@ -239,7 +239,7 @@ class GovBRNewsScraper:
         Extract the date from a news item using the second strategy.
 
         :param item: A BeautifulSoup tag representing a single news item.
-        :return: The date as a datetime object or None if not found.
+        :return: The date as a datetime.datetime object or None if not found.
         """
         date_tag = item.find("span", class_="data")
 
@@ -345,7 +345,7 @@ def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
         )
 
     # Sort the data by 'agency' and 'date'
-    data.sort(key=lambda x: (x.get("agency", ""), x.get("date", "9999-12-31")))
+    data.sort(key=lambda x: (x.get("agency", ""), x.get("date") or date.max))
 
     # Convert to columnar format
     column_data = {
@@ -376,16 +376,19 @@ def push_dataset_to_hub(dataset: Dataset, dataset_path: str):
     logging.info(f"Dataset pushed to Hugging Face Hub at {dataset_path}.")
 
 
-def generate_unique_id(agency, date, title):
+def generate_unique_id(agency, date_value, title):
     """
     Generate a unique identifier based on the agency, date, and title.
 
     :param agency: The agency name.
-    :param date: The date of the news item.
+    :param date_value: The date of the news item (datetime.date).
     :param title: The title of the news item.
     :return: A unique hash string.
     """
-    hash_input = f"{agency}_{date}_{title}".encode("utf-8")
+    date_str = (
+        date_value.isoformat() if isinstance(date_value, date) else "Unknown Date"
+    )
+    hash_input = f"{agency}_{date_str}_{title}".encode("utf-8")
     return hashlib.md5(hash_input).hexdigest()
 
 
@@ -413,14 +416,17 @@ def migrate_existing_json_to_dataset():
                                 item["agency"] = agency  # Add the agency column
 
                                 # Generate extraction_date from the date attribute
-                                date_str = item.get("date", "Unknown Date")
+                                date_str = item.get("date", None)
                                 try:
-                                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-                                    extraction_date = date_obj.strftime(
-                                        "%Y-%m-%d %H:%M:%S"
+                                    date_obj = datetime.strptime(
+                                        date_str, "%Y-%m-%d"
+                                    ).date()
+                                    item["date"] = date_obj
+                                    extraction_date = datetime.combine(
+                                        date_obj, datetime.min.time()
                                     )
-                                except ValueError:
-                                    extraction_date = "Unknown Extraction Date"
+                                except (ValueError, TypeError):
+                                    extraction_date = None
                                 item["extraction_date"] = extraction_date
 
                             all_news_data.extend(data)
