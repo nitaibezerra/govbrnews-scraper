@@ -150,12 +150,12 @@ class GovBRNewsScraper:
         return {
             "title": title,
             "url": url,
-            "date": news_date if news_date else None,
+            "published_at": news_date if news_date else None,
             "category": category,
             "tags": tags,
             "content": content,
             "agency": self.agency,
-            "extraction_date": datetime.now(),
+            "extracted_at": datetime.now(),
         }
 
     def extract_title_and_url(self, item) -> Tuple[str, str]:
@@ -332,7 +332,7 @@ def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
     """
     Preprocess data by:
     - Adding the unique_id column.
-    - Sorting by agency and date.
+    - Sorting by agency and published_at.
     - Reordering columns.
 
     :param data: List of news items as dictionaries.
@@ -341,11 +341,11 @@ def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
     # Generate unique_id for each record
     for item in data:
         item["unique_id"] = generate_unique_id(
-            item.get("agency", ""), item.get("date", ""), item.get("title", "")
+            item.get("agency", ""), item.get("published_at", ""), item.get("title", "")
         )
 
-    # Sort the data by 'agency' and 'date'
-    data.sort(key=lambda x: (x.get("agency", ""), x.get("date") or date.max))
+    # Sort the data by 'agency' and 'published_at'
+    data.sort(key=lambda x: (x.get("agency", ""), x.get("published_at") or date.max))
 
     # Convert to columnar format
     column_data = {
@@ -358,8 +358,8 @@ def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
         ordered_column_data["unique_id"] = column_data.pop("unique_id")
     if "agency" in column_data:
         ordered_column_data["agency"] = column_data.pop("agency")
-    if "date" in column_data:
-        ordered_column_data["date"] = column_data.pop("date")
+    if "published_at" in column_data:
+        ordered_column_data["published_at"] = column_data.pop("published_at")
     ordered_column_data.update(column_data)
 
     return ordered_column_data
@@ -376,17 +376,19 @@ def push_dataset_to_hub(dataset: Dataset, dataset_path: str):
     logging.info(f"Dataset pushed to Hugging Face Hub at {dataset_path}.")
 
 
-def generate_unique_id(agency, date_value, title):
+def generate_unique_id(agency, published_at_value, title):
     """
-    Generate a unique identifier based on the agency, date, and title.
+    Generate a unique identifier based on the agency, published_at, and title.
 
     :param agency: The agency name.
-    :param date_value: The date of the news item (datetime.date).
+    :param published_at_value: The published_at date of the news item (datetime.date).
     :param title: The title of the news item.
     :return: A unique hash string.
     """
     date_str = (
-        date_value.isoformat() if isinstance(date_value, date) else "Unknown Date"
+        published_at_value.isoformat()
+        if isinstance(published_at_value, date)
+        else "Unknown Date"
     )
     hash_input = f"{agency}_{date_str}_{title}".encode("utf-8")
     return hashlib.md5(hash_input).hexdigest()
@@ -415,19 +417,23 @@ def migrate_existing_json_to_dataset():
                             for item in data:
                                 item["agency"] = agency  # Add the agency column
 
-                                # Generate extraction_date from the date attribute
+                                # Generate extracted_at from the published_at attribute
                                 date_str = item.get("date", None)
                                 try:
                                     date_obj = datetime.strptime(
                                         date_str, "%Y-%m-%d"
                                     ).date()
-                                    item["date"] = date_obj
-                                    extraction_date = datetime.combine(
+                                    item["published_at"] = date_obj
+                                    extracted_at = datetime.combine(
                                         date_obj, datetime.min.time()
                                     )
                                 except (ValueError, TypeError):
-                                    extraction_date = None
-                                item["extraction_date"] = extraction_date
+                                    extracted_at = None
+                                    item["published_at"] = None
+                                item["extracted_at"] = extracted_at
+                                # Remove old 'date' and 'extraction_date' keys if they exist
+                                item.pop("date", None)
+                                item.pop("extraction_date", None)
 
                             all_news_data.extend(data)
                         else:
