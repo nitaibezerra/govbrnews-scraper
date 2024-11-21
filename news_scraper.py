@@ -411,6 +411,18 @@ def migrate_existing_json_to_dataset():
                         if isinstance(data, list):
                             for item in data:
                                 item["agency"] = agency  # Add the agency column
+
+                                # Generate extraction_date from the date attribute
+                                date_str = item.get("date", "Unknown Date")
+                                try:
+                                    date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+                                    extraction_date = date_obj.strftime(
+                                        "%Y-%m-%d %H:%M:%S"
+                                    )
+                                except ValueError:
+                                    extraction_date = "Unknown Extraction Date"
+                                item["extraction_date"] = extraction_date
+
                             all_news_data.extend(data)
                         else:
                             logging.warning(
