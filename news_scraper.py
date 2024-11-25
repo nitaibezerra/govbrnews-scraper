@@ -299,7 +299,7 @@ class GovBRNewsScraper:
 
 def append_to_huggingface_dataset(news_data: List[Dict[str, str]]):
     """
-    Append the scraped news data to a Hugging Face dataset, maintaining structure and ordering.
+    Append the scraped news data to a Hugging Face dataset, ensuring no duplicates are added.
     """
     if not news_data:
         logging.info("No news data to append.")
@@ -313,10 +313,38 @@ def append_to_huggingface_dataset(news_data: List[Dict[str, str]]):
         existing_dataset = load_dataset(DATASET_PATH, split="train")
         logging.info("Existing dataset loaded from Hugging Face Hub.")
 
-        # Combine existing data with new data
-        combined_data = {
-            key: existing_dataset[key] + new_data[key] for key in new_data.keys()
+        # Get the set of existing unique_ids
+        existing_unique_ids = set(existing_dataset["unique_id"])
+        logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
+
+        # Filter out new data that has duplicate unique_ids
+        new_unique_ids = set(new_data["unique_id"])
+        unique_ids_to_add = new_unique_ids - existing_unique_ids
+
+        if not unique_ids_to_add:
+            logging.info("No new unique news items to add. Dataset is up to date.")
+            return
+
+        # Create filtered new data
+        filtered_new_data = {
+            key: [
+                value
+                for idx, value in enumerate(values)
+                if new_data["unique_id"][idx] in unique_ids_to_add
+            ]
+            for key, values in new_data.items()
         }
+
+        logging.info(
+            f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
+        )
+
+        # Combine existing data with filtered new data
+        combined_data = {
+            key: existing_dataset[key] + filtered_new_data.get(key, [])
+            for key in existing_dataset.features.keys()
+        }
+
     except DatasetNotFoundError:
         logging.info("No existing dataset found. Creating a new dataset.")
         combined_data = new_data
