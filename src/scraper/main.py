@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 from typing import List
 
 import yaml
@@ -16,13 +17,18 @@ logging.basicConfig(
 )
 
 
-def load_urls_from_yaml(file_path: str) -> List[str]:
+def load_urls_from_yaml(file_name: str) -> List[str]:
     """
-    Load URLs from a YAML file.
+    Load URLs from a YAML file located in the same directory as this script.
 
-    :param file_path: The path to the YAML file.
+    :param file_name: The name of the YAML file.
     :return: A list of URLs.
     """
+    # Get the directory of the current script
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Construct the full path to the YAML file
+    file_path = os.path.join(script_dir, file_name)
+
     with open(file_path, "r") as f:
         agencies = yaml.safe_load(f)["agencies"]
         return list(agencies.values())
