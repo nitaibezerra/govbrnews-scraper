@@ -78,7 +78,7 @@ class GovBRNewsScraper:
 
             # If no items were found, break the loop to avoid infinite requests
             if items_per_page == 0:
-                logging.info(f"No more news items found. Stopping.")
+                logging.info("No more news items found. Stopping.")
                 break
 
             if not should_continue:
@@ -208,7 +208,7 @@ class GovBRNewsScraper:
             result = self.extract_date_2(item)
 
         if not result:
-            logging.error(f"No date found in news item.")
+            logging.error("No date found in news item.")
             return None
 
         return result.date()
@@ -299,7 +299,8 @@ class GovBRNewsScraper:
 
 def append_to_huggingface_dataset(news_data: List[Dict[str, str]]):
     """
-    Append the scraped news data to a Hugging Face dataset, ensuring no duplicates are added.
+    Append the scraped news data to a Hugging Face dataset, ensuring no duplicates are added,
+    and sort the final dataset by agency (asc) and published_at (desc).
     """
     if not news_data:
         logging.info("No news data to append.")
@@ -349,8 +350,28 @@ def append_to_huggingface_dataset(news_data: List[Dict[str, str]]):
         logging.info("No existing dataset found. Creating a new dataset.")
         combined_data = new_data
 
+    # Sort the combined data by 'agency' (asc) and 'published_at' (desc)
+    sorted_data = sorted(
+        [
+            {key: combined_data[key][i] for key in combined_data.keys()}
+            for i in range(len(combined_data["unique_id"]))
+        ],
+        key=lambda x: (
+            x.get("agency", ""),
+            -x.get("published_at").toordinal()
+            if isinstance(x.get("published_at"), date)
+            else float("-inf"),
+        ),
+    )
+
+    # Convert sorted data back to columnar format
+    column_data = {
+        key: [item.get(key, None) for item in sorted_data]
+        for key in combined_data.keys()
+    }
+
     # Create the combined dataset
-    combined_dataset = Dataset.from_dict(combined_data)
+    combined_dataset = Dataset.from_dict(column_data)
 
     # Push the combined dataset to the Hub
     push_dataset_to_hub(combined_dataset, DATASET_PATH)
@@ -360,7 +381,6 @@ def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
     """
     Preprocess data by:
     - Adding the unique_id column.
-    - Sorting by agency and published_at.
     - Reordering columns.
 
     :param data: List of news items as dictionaries.
@@ -371,9 +391,6 @@ def preprocess_data(data: List[Dict[str, str]]) -> OrderedDict:
         item["unique_id"] = generate_unique_id(
             item.get("agency", ""), item.get("published_at", ""), item.get("title", "")
         )
-
-    # Sort the data by 'agency' and 'published_at'
-    data.sort(key=lambda x: (x.get("agency", ""), x.get("published_at") or date.max))
 
     # Convert to columnar format
     column_data = {
