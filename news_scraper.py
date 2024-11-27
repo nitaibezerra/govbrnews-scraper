@@ -439,69 +439,6 @@ def generate_unique_id(agency, published_at_value, title):
     return hashlib.md5(hash_input).hexdigest()
 
 
-def migrate_existing_json_to_dataset():
-    """
-    Migrate existing JSON files in the raw_extractions subfolders to the Hugging Face dataset.
-    """
-    all_news_data = []
-    logging.info(f"Scanning {RAW_EXTRACTIONS_PATH} for JSON files...")
-
-    for root, _, files in os.walk(RAW_EXTRACTIONS_PATH):
-        for file in files:
-            if file.endswith(".json"):
-                file_path = os.path.join(root, file)
-                logging.info(f"Processing file: {file_path}")
-
-                # Extract the agency name from the file name
-                agency = file.split("_")[0]
-
-                try:
-                    with open(file_path, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                        if isinstance(data, list):
-                            for item in data:
-                                item["agency"] = agency  # Add the agency column
-
-                                # Generate extracted_at from the published_at attribute
-                                date_str = item.get("date", None)
-                                try:
-                                    date_obj = datetime.strptime(
-                                        date_str, "%Y-%m-%d"
-                                    ).date()
-                                    item["published_at"] = date_obj
-                                    extracted_at = datetime.combine(
-                                        date_obj, datetime.min.time()
-                                    )
-                                except (ValueError, TypeError):
-                                    extracted_at = None
-                                    item["published_at"] = None
-                                item["extracted_at"] = extracted_at
-                                # Remove old 'date' and 'extraction_date' keys if they exist
-                                item.pop("date", None)
-                                item.pop("extraction_date", None)
-
-                            all_news_data.extend(data)
-                        else:
-                            logging.warning(
-                                f"File {file_path} does not contain a list of news items. Skipping."
-                            )
-                except Exception as e:
-                    logging.error(f"Failed to process file {file_path}: {e}")
-
-    if not all_news_data:
-        logging.info("No news data found in the JSON files.")
-        return
-
-    logging.info(f"Loaded {len(all_news_data)} news items from JSON files.")
-
-    # Preprocess all data
-    processed_data = preprocess_data(all_news_data)
-
-    # Create the dataset and push it to the Hub
-    combined_dataset = Dataset.from_dict(processed_data)
-    push_dataset_to_hub(combined_dataset, DATASET_PATH)
-
-
 def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
     """
     Create a list of GovBRNewsScraper instances for each URL.
@@ -516,35 +453,26 @@ def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
 def main():
     # Set up argument parsing
     parser = argparse.ArgumentParser(
-        description="Scrape or migrate news data to a Hugging Face dataset."
-    )
-    parser.add_argument(
-        "command",
-        choices=["scrape", "migrate"],
-        help="Command to execute: 'scrape' to run the scraper, 'migrate' to migrate existing JSON data.",
+        description="Scrape news data to a Hugging Face dataset."
     )
     parser.add_argument(
         "--min-date",
-        help="The minimum date for scraping news (format: YYYY-MM-DD). Required for 'scrape'.",
+        required=True,
+        help="The minimum date for scraping news (format: YYYY-MM-DD).",
     )
     args = parser.parse_args()
 
-    if args.command == "migrate":
-        migrate_existing_json_to_dataset()
-    elif args.command == "scrape":
-        if not args.min_date:
-            raise ValueError("The '--min-date' argument is required for 'scrape'.")
-        urls = list(load_urls_from_yaml("site_urls.yaml").values())
-        scrapers = create_scrapers(urls, args.min_date)
+    urls = list(load_urls_from_yaml("site_urls.yaml").values())
+    scrapers = create_scrapers(urls, args.min_date)
 
-        all_news_data = []
+    all_news_data = []
 
-        for scraper in scrapers:
-            news_data = scraper.scrape_news()
-            all_news_data.extend(news_data)
+    for scraper in scrapers:
+        news_data = scraper.scrape_news()
+        all_news_data.extend(news_data)
 
-        # After collecting all news data, append to the dataset
-        append_to_huggingface_dataset(all_news_data)
+    # After collecting all news data, append to the dataset
+    append_to_huggingface_dataset(all_news_data)
 
 
 if __name__ == "__main__":
