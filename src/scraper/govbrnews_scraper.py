@@ -12,7 +12,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-SLEEP_TIME_INTERVAL = (1, 3)
+SLEEP_TIME_INTERVAL = (0.5, 1.5)
 
 
 class GovBRNewsScraper:
@@ -71,10 +71,6 @@ class GovBRNewsScraper:
         :return: A tuple (continue_scraping, items_per_page).
         """
         logging.info(f"Fetching news from {page_url}")
-
-        # Sleep for a random amount of time between 1 and 3 seconds
-        time.sleep(random.uniform(*SLEEP_TIME_INTERVAL))
-
         response = requests.get(page_url)
         soup = BeautifulSoup(response.content, "html.parser")
         news_items = soup.find_all("article", class_="tileItem")
@@ -91,6 +87,9 @@ class GovBRNewsScraper:
         logging.info(f"Found {items_per_page} news items on the page")
 
         for item in news_items:
+            # Sleep for a random amount of time between 1 and 3 seconds
+            time.sleep(random.uniform(*SLEEP_TIME_INTERVAL))
+
             news_info = self.extract_news_info(item)
             if news_info:
                 self.news_data.append(news_info)
@@ -119,6 +118,8 @@ class GovBRNewsScraper:
             return None
         tags = self.extract_tags(item)
         content = self.get_article_content(url)
+
+        logging.info(f"Retrieved news: {news_date} - {url}")
 
         return {
             "title": title,
@@ -257,8 +258,6 @@ class GovBRNewsScraper:
         :return: The content of the article as a string.
         """
         try:
-            logging.info(f"Retrieving content from {url}")
-            time.sleep(random.uniform(*SLEEP_TIME_INTERVAL))
             response = requests.get(url)
             soup = BeautifulSoup(response.content, "html.parser")
             article_body = soup.find("div", id="content-core")
