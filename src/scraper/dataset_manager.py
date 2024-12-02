@@ -1,6 +1,7 @@
 import hashlib
 import logging
 import os
+import tempfile
 from collections import OrderedDict
 from datetime import date
 from typing import Dict, List
@@ -48,7 +49,12 @@ class DatasetManager:
     def load_existing_and_merge_with_new(self, new_data: OrderedDict) -> OrderedDict:
         """
         Load the existing dataset from Hugging Face and merge it with the new data,
-        avoiding duplicates.
+        avoiding duplicates. If no new data is found, return the existing dataset
+        in columnar format.
+
+        :param new_data: The new data to be added, in columnar format.
+        :return: The combined dataset in columnar format, or the existing dataset
+                if no new data is found.
         """
         try:
             existing_dataset = load_dataset(self.dataset_path, split="train")
@@ -62,7 +68,11 @@ class DatasetManager:
             unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
             if not unique_ids_to_add:
                 logging.info("No new unique news items to add. Dataset is up to date.")
-                return new_data
+                # Return the existing dataset in columnar format
+                return {
+                    key: existing_dataset[key]
+                    for key in existing_dataset.features.keys()
+                }
 
             filtered_new_data = {
                 key: [
@@ -73,7 +83,8 @@ class DatasetManager:
                 for key, values in new_data.items()
             }
             logging.info(
-                f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
+                f"Adding {len(filtered_new_data['unique_id'])} "
+                "new unique news items to the dataset."
             )
 
             # Combine existing and filtered new data
@@ -121,14 +132,15 @@ class DatasetManager:
         Create a Hugging Face Dataset from the columnar data and push it to the Hub,
         along with a CSV file version for easy download.
         """
+        # Create the Dataset
         combined_dataset = Dataset.from_dict(column_data)
+
+        # Push the dataset
         self.push_dataset_to_hub(combined_dataset)
 
-        # Step 1: Save the dataset as a CSV file
-        csv_file_path = self.save_dataset_as_csv(combined_dataset)
-
-        # Step 2: Push the CSV file to Hugging Face
-        self.push_csv_to_huggingface(csv_file_path)
+        # Push the CSVs
+        self.push_global_csv(combined_dataset)
+        self.push_csvs_by_agency(combined_dataset)
 
     def preprocess_data(self, data: List[Dict[str, str]]) -> OrderedDict:
         """
@@ -173,24 +185,12 @@ class DatasetManager:
         dataset.push_to_hub(self.dataset_path, private=False)
         logging.info(f"Dataset pushed to Hugging Face Hub at {self.dataset_path}.")
 
-    def save_dataset_as_csv(self, dataset: Dataset) -> str:
+    def push_global_csv(self, dataset: Dataset):
         """
-        Save the dataset as a CSV file.
+        Save the dataset as a CSV file in a temporary directory and push it
+        to the Hugging Face dataset repository using git-lfs.
 
-        :param dataset: The dataset to save as CSV.
-        :return: The file path to the saved CSV.
-        """
-        csv_file_path = "govbr_news_dataset.csv"
-        dataset.to_csv(csv_file_path)
-        logging.info(f"Dataset saved as CSV at {csv_file_path}.")
-        return csv_file_path
-
-    def push_csv_to_huggingface(self, csv_file_path: str):
-        """
-        Push a CSV file to the Hugging Face dataset repository using git-lfs.
-        This avoids cloning the repository and directly uploads the file.
-
-        :param csv_file_path: The path to the CSV file to push.
+        :param dataset: The dataset to save and upload as a CSV file.
         """
         # Ensure the user is authenticated
         token = HfFolder.get_token()
@@ -199,25 +199,82 @@ class DatasetManager:
                 "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
             )
 
-        # Upload the file to the Hugging Face repository
-        api = HfApi()
-        repo_id = self.dataset_path  # e.g., "nitaibezerra/govbrnews"
+        # Create a temporary directory for storing the CSV file
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            csv_file_path = os.path.join(tmp_dir, "govbr_news_dataset.csv")
 
-        # Define the destination path for the CSV in the repository
-        path_in_repo = os.path.basename(csv_file_path)
+            # Save the dataset as a CSV file
+            dataset.to_csv(csv_file_path)
+            logging.info(f"Temporary CSV file created at {csv_file_path}")
 
-        # Use the HfApi.upload_file method to upload the file directly
-        api.upload_file(
-            path_or_fileobj=csv_file_path,
-            path_in_repo=path_in_repo,
-            repo_id=repo_id,
-            repo_type="dataset",  # Ensure this uploads to the dataset repository
-            token=token,
-        )
+            # Upload the file to the Hugging Face repository
+            api = HfApi()
+            repo_id = self.dataset_path  # e.g., "nitaibezerra/govbrnews"
 
-        logging.info(
-            f"CSV file uploaded to the Hugging Face repository: {repo_id}/{path_in_repo}"
-        )
+            # Define the destination path for the CSV in the repository
+            path_in_repo = os.path.basename(csv_file_path)
+
+            # Use the HfApi.upload_file method to upload the file directly
+            api.upload_file(
+                path_or_fileobj=csv_file_path,
+                path_in_repo=path_in_repo,
+                repo_id=repo_id,
+                repo_type="dataset",  # Ensure this uploads to the dataset repository
+                token=token,
+            )
+
+            logging.info(
+                f"CSV file uploaded to the Hugging Face repository: {repo_id}/{path_in_repo}"
+            )
+
+    def push_csvs_by_agency(self, dataset: Dataset):
+        """
+        Split the dataset by agency and publish one CSV file per agency to the Hugging Face dataset repository.
+
+        :param dataset: The dataset to split and upload as CSV files.
+        """
+        # Ensure the user is authenticated
+        token = HfFolder.get_token()
+        if not token:
+            raise ValueError(
+                "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
+            )
+
+        # Create a temporary directory for storing the CSV files
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Split dataset by agency
+            agency_groups = dataset.to_pandas().groupby("agency")
+
+            csv_paths = []
+            for agency, group in agency_groups:
+                # Create a CSV file for each agency
+                csv_file_path = os.path.join(tmp_dir, f"{agency}_news_dataset.csv")
+                group.to_csv(csv_file_path, index=False)
+                csv_paths.append((agency, csv_file_path))
+                logging.info(
+                    f"Temporary CSV for agency '{agency}' created at {csv_file_path}"
+                )
+
+            # Upload each CSV file to Hugging Face
+            api = HfApi()
+            repo_id = self.dataset_path  # e.g., "nitaibezerra/govbrnews"
+
+            for agency, csv_file_path in csv_paths:
+                # Define the destination path for the CSV in the repository
+                path_in_repo = f"{agency}_news_dataset.csv"
+
+                # Use the HfApi.upload_file method to upload the file directly
+                api.upload_file(
+                    path_or_fileobj=csv_file_path,
+                    path_in_repo=path_in_repo,
+                    repo_id=repo_id,
+                    repo_type="dataset",  # Ensure this uploads to the dataset repository
+                    token=token,
+                )
+
+                logging.info(
+                    f"CSV for agency '{agency}' uploaded to the Hugging Face repository: {repo_id}/{path_in_repo}"
+                )
 
     def generate_unique_id(
         self, agency: str, published_at_value: str, title: str
