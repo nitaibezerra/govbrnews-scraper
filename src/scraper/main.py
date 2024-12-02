@@ -17,11 +17,12 @@ logging.basicConfig(
 )
 
 
-def load_urls_from_yaml(file_name: str) -> List[str]:
+def load_urls_from_yaml(file_name: str, agency: str = None) -> List[str]:
     """
     Load URLs from a YAML file located in the same directory as this script.
 
     :param file_name: The name of the YAML file.
+    :param agency: Specific agency key to filter URLs. If None, load all URLs.
     :return: A list of URLs.
     """
     # Get the directory of the current script
@@ -31,7 +32,14 @@ def load_urls_from_yaml(file_name: str) -> List[str]:
 
     with open(file_path, "r") as f:
         agencies = yaml.safe_load(f)["agencies"]
-        return list(agencies.values())
+
+    if agency:
+        if agency in agencies:
+            return [agencies[agency]]
+        else:
+            raise ValueError(f"Agency '{agency}' not found in the YAML file.")
+
+    return list(agencies.values())
 
 
 def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
@@ -55,20 +63,47 @@ def main():
         required=True,
         help="The minimum date for scraping news (format: YYYY-MM-DD).",
     )
+    parser.add_argument(
+        "--agency",
+        help="The agency key to scrape news for a specific agency.",
+    )
+    parser.add_argument(
+        "--sequential",
+        action="store_true",
+        help="Process and upload each agency's news sequentially, one at a time.",
+    )
     args = parser.parse_args()
 
-    urls = load_urls_from_yaml("site_urls.yaml")
-    scrapers = create_scrapers(urls, args.min_date)
+    try:
+        urls = load_urls_from_yaml("site_urls.yaml", args.agency)
+        scrapers = create_scrapers(urls, args.min_date)
 
-    all_news_data = []
+        dataset_manager = DatasetManager()
 
-    for scraper in scrapers:
-        news_data = scraper.scrape_news()
-        all_news_data.extend(news_data)
+        if args.sequential:
+            # Process each agency's news sequentially
+            for scraper in scrapers:
+                news_data = scraper.scrape_news()
+                if news_data:
+                    logging.info(
+                        f"Appending news for {scraper.agency} to Hugging Face dataset."
+                    )
+                    dataset_manager.append_to_huggingface_dataset(news_data)
+                else:
+                    logging.info(f"No news found for {scraper.agency}.")
+        else:
+            # Accumulate all news and process together
+            all_news_data = []
+            for scraper in scrapers:
+                news_data = scraper.scrape_news()
+                all_news_data.extend(news_data)
 
-    # After collecting all news data, append to the dataset
-    dataset_manager = DatasetManager()
-    dataset_manager.append_to_huggingface_dataset(all_news_data)
+            if all_news_data:
+                dataset_manager.append_to_huggingface_dataset(all_news_data)
+            else:
+                logging.info("No news found for any agency.")
+    except ValueError as e:
+        logging.error(e)
 
 
 if __name__ == "__main__":
