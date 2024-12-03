@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 from bs4 import BeautifulSoup
+from retry import retry
 
 # Set up logging configuration
 logging.basicConfig(
@@ -63,15 +64,38 @@ class GovBRNewsScraper:
 
         return self.news_data
 
+    @retry(
+        exceptions=requests.exceptions.ConnectionError,
+        tries=5,
+        delay=2,
+        backoff=2,
+        jitter=(1, 3),
+    )
+    def fetch_page(self, url: str) -> requests.Response:
+        """
+        Fetch the page content from the given URL with retry logic.
+
+        :param url: The URL to fetch.
+        :return: The Response object.
+        """
+        response = requests.get(url)
+        response.raise_for_status()  # Raise an HTTPError if the response has an HTTP error status
+        return response
+
     def scrape_page(self, page_url: str) -> Tuple[bool, int]:
         """
-        Scrape a single page of news.
+        Scrape a single page of news with retry logic.
 
         :param page_url: The URL of the page to scrape.
         :return: A tuple (continue_scraping, items_per_page).
         """
-        logging.info(f"Fetching news from {page_url}")
-        response = requests.get(page_url)
+        logging.info(f"Fetching site news list: {page_url}")
+        try:
+            response = self.fetch_page(page_url)
+        except requests.exceptions.ConnectionError as e:
+            logging.error(f"Failed to fetch {page_url} after retries: {str(e)}")
+            raise e
+
         soup = BeautifulSoup(response.content, "html.parser")
         news_items = soup.find_all("article", class_="tileItem")
 
@@ -87,7 +111,7 @@ class GovBRNewsScraper:
         logging.info(f"Found {items_per_page} news items on the page")
 
         for item in news_items:
-            # Sleep for a random amount of time between 1 and 3 seconds
+            # Sleep for a random amount of time between intervals
             time.sleep(random.uniform(*SLEEP_TIME_INTERVAL))
 
             news_info = self.extract_news_info(item)
@@ -258,7 +282,7 @@ class GovBRNewsScraper:
         :return: The content of the article as a string.
         """
         try:
-            response = requests.get(url)
+            response = self.fetch_page(url)
             soup = BeautifulSoup(response.content, "html.parser")
             article_body = soup.find("div", id="content-core")
             return (
