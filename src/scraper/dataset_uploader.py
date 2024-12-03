@@ -1,6 +1,7 @@
 import logging
 import os
 import tempfile
+from typing import Dict, Any
 
 from datasets import Dataset
 from huggingface_hub import HfApi, HfFolder
@@ -9,112 +10,122 @@ from huggingface_hub import HfApi, HfFolder
 class HuggingFaceDatasetUploader:
     """
     A class responsible for uploading datasets and files to the Hugging Face Hub.
+
+    **Types of Uploads:**
+    - **Dataset Upload**: Pushes the entire dataset to the Hugging Face Hub, making it available for use with the 🤗 Datasets library.
+    - **Global CSV Upload**: Saves the entire dataset as a single CSV file and uploads it to the dataset repository.
+    - **CSV by Agency Upload**: Splits the dataset by the 'agency' column and uploads a separate CSV file for each agency.
+    - **CSV by Year Upload**: Splits the dataset by the 'published_at' year and uploads a separate CSV file for each year.
+
+    This class ensures efficient uploading by minimizing code duplication and handling authentication and temporary file management internally.
     """
 
     def __init__(self, dataset_path: str):
         self.dataset_path = dataset_path
+        self.api = HfApi()
+        self.token = HfFolder.get_token()
+        if not self.token:
+            raise ValueError(
+                "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
+            )
 
     def push_dataset_to_hub(self, dataset: Dataset):
         """
-        Push a dataset to the Hugging Face Hub.
+        Push the entire dataset to the Hugging Face Hub.
 
         :param dataset: The dataset to push.
         """
         dataset.push_to_hub(self.dataset_path, private=False)
         logging.info(f"Dataset pushed to Hugging Face Hub at {self.dataset_path}.")
 
-    def push_global_csv(self, dataset: Dataset):
+    def _save_and_upload_csv(
+        self, dataset: Dataset, file_name: str, subfolder: str = ""
+    ):
         """
-        Save the dataset as a CSV file in a temporary directory and push it
-        to the Hugging Face dataset repository using git-lfs.
+        Save a dataset to a CSV file and upload it to the Hugging Face dataset repository.
 
-        :param dataset: The dataset to save and upload as a CSV file.
+        :param dataset: The dataset to save and upload.
+        :param file_name: The name of the CSV file.
+        :param subfolder: Optional subfolder in the repository to place the CSV file.
         """
-        # Ensure the user is authenticated
-        token = HfFolder.get_token()
-        if not token:
-            raise ValueError(
-                "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
-            )
-
-        # Create a temporary directory for storing the CSV file
         with tempfile.TemporaryDirectory() as tmp_dir:
-            csv_file_path = os.path.join(tmp_dir, "govbr_news_dataset.csv")
-
-            # Save the dataset as a CSV file
+            csv_file_path = os.path.join(tmp_dir, file_name)
             dataset.to_csv(csv_file_path)
             logging.info(f"Temporary CSV file created at {csv_file_path}")
 
-            # Upload the file to the Hugging Face repository
-            api = HfApi()
-            repo_id = self.dataset_path
-
             # Define the destination path for the CSV in the repository
-            path_in_repo = os.path.basename(csv_file_path)
+            if subfolder:
+                path_in_repo = f"{subfolder}/{file_name}"
+            else:
+                path_in_repo = file_name
 
-            # Use the HfApi.upload_file method to upload the file directly
-            api.upload_file(
+            # Upload the file to the Hugging Face repository
+            self.api.upload_file(
                 path_or_fileobj=csv_file_path,
                 path_in_repo=path_in_repo,
-                repo_id=repo_id,
+                repo_id=self.dataset_path,
                 repo_type="dataset",
-                token=token,
+                token=self.token,
             )
 
             logging.info(
-                f"CSV file uploaded to the Hugging Face repository: {repo_id}/{path_in_repo}"
+                f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
+            )
+
+    def push_global_csv(self, dataset: Dataset):
+        """
+        Save the entire dataset as a CSV file and upload it to the Hugging Face dataset repository.
+
+        :param dataset: The dataset to save and upload as a CSV file.
+        """
+        self._save_and_upload_csv(dataset, "govbr_news_dataset.csv")
+
+    def push_csvs_by_group(
+        self, dataset: Dataset, group_by_column: str, subfolder: str = ""
+    ):
+        """
+        Split the dataset by a specified column and upload CSV files for each group.
+
+        :param dataset: The dataset to split and upload.
+        :param group_by_column: The column to group by (e.g., 'agency' or 'year').
+        :param subfolder: Optional subfolder in the repository to place the CSV files.
+        """
+        df = dataset.to_pandas()
+
+        # If grouping by 'year', extract the year from the 'published_at' column
+        if group_by_column == "year":
+            df["year"] = df["published_at"].apply(lambda x: x.year)
+            group_column = "year"
+        else:
+            group_column = group_by_column
+
+        groups = df.groupby(group_column)
+
+        for group_name, group_df in groups:
+            file_name = f"{group_name}_news_dataset.csv"
+            temp_dataset = Dataset.from_pandas(group_df.reset_index(drop=True))
+            self._save_and_upload_csv(temp_dataset, file_name, subfolder=subfolder)
+            logging.info(
+                f"CSV for '{group_name}' uploaded under '{subfolder}' directory."
             )
 
     def push_csvs_by_agency(self, dataset: Dataset):
         """
-        Split the dataset by agency and publish one CSV file per agency to the Hugging Face dataset repository.
+        Split the dataset by 'agency' and upload CSV files for each agency.
 
-        :param dataset: The dataset to split and upload as CSV files.
+        :param dataset: The dataset to split and upload.
         """
-        # Ensure the user is authenticated
-        token = HfFolder.get_token()
-        if not token:
-            raise ValueError(
-                "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
-            )
+        self.push_csvs_by_group(dataset, group_by_column="agency", subfolder="agencies")
 
-        # Create a temporary directory for storing the CSV files
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            # Split dataset by agency
-            agency_groups = dataset.to_pandas().groupby("agency")
+    def push_csvs_by_year(self, dataset: Dataset):
+        """
+        Split the dataset by 'published_at' year and upload CSV files for each year.
 
-            csv_paths = []
-            for agency, group in agency_groups:
-                # Create a CSV file for each agency
-                csv_file_path = os.path.join(tmp_dir, f"{agency}_news_dataset.csv")
-                group.to_csv(csv_file_path, index=False)
-                csv_paths.append((agency, csv_file_path))
-                logging.info(
-                    f"Temporary CSV for agency '{agency}' created at {csv_file_path}"
-                )
+        :param dataset: The dataset to split and upload.
+        """
+        self.push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
 
-            # Upload each CSV file to Hugging Face
-            api = HfApi()
-            repo_id = self.dataset_path
-
-            for agency, csv_file_path in csv_paths:
-                # Define the destination path for the CSV in the repository
-                path_in_repo = f"{agency}_news_dataset.csv"
-
-                # Use the HfApi.upload_file method to upload the file directly
-                api.upload_file(
-                    path_or_fileobj=csv_file_path,
-                    path_in_repo=path_in_repo,
-                    repo_id=repo_id,
-                    repo_type="dataset",
-                    token=token,
-                )
-
-                logging.info(
-                    f"CSV for agency '{agency}' uploaded to the Hugging Face repository: {repo_id}/{path_in_repo}"
-                )
-
-    def create_and_push_dataset(self, column_data: dict):
+    def create_and_push_dataset(self, column_data: Dict[str, Any]):
         """
         Create a Hugging Face Dataset from the columnar data and push it to the Hub,
         along with CSV file versions for easy download.
@@ -130,3 +141,4 @@ class HuggingFaceDatasetUploader:
         # Push the CSVs
         self.push_global_csv(combined_dataset)
         self.push_csvs_by_agency(combined_dataset)
+        self.push_csvs_by_year(combined_dataset)
