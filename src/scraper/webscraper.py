@@ -16,7 +16,7 @@ logging.basicConfig(
 SLEEP_TIME_INTERVAL = (0.5, 1.5)
 
 
-class GovBRNewsScraper:
+class WebScraper:
     def __init__(self, min_date: str, base_url: str):
         """
         Initialize the scraper with a minimum date and base URL.

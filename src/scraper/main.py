@@ -7,7 +7,7 @@ import yaml
 from data_processor import DataProcessor
 from dataset_uploader import HuggingFaceDatasetUploader
 from dotenv import load_dotenv
-from govbrnews_scraper import GovBRNewsScraper
+from webscraper import WebScraper
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -45,15 +45,15 @@ def load_urls_from_yaml(file_name: str, agency: str = None) -> List[str]:
     return list(agencies.values())
 
 
-def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
+def create_scrapers(urls: List[str], min_date: str) -> List[WebScraper]:
     """
-    Create a list of GovBRNewsScraper instances for each URL.
+    Create a list of WebScraper instances for each URL.
 
     :param urls: List of URLs to scrape.
     :param min_date: The minimum date for scraping news.
-    :return: List of GovBRNewsScraper instances.
+    :return: List of WebScraper instances.
     """
-    return [GovBRNewsScraper(min_date, url) for url in urls]
+    return [WebScraper(min_date, url) for url in urls]
 
 
 def process_and_upload_data(
