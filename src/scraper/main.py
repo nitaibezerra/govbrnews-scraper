@@ -1,10 +1,11 @@
 import argparse
 import logging
 import os
-from typing import List
+from typing import List, Dict
 
 import yaml
-from dataset_manager import DatasetManager
+from data_processor import DataProcessor
+from dataset_uploader import HuggingFaceDatasetUploader
 from dotenv import load_dotenv
 from govbrnews_scraper import GovBRNewsScraper
 
@@ -15,6 +16,8 @@ load_dotenv()
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+DATASET_PATH = "nitaibezerra/govbrnews"  # The name of the Hugging Face dataset
 
 
 def load_urls_from_yaml(file_name: str, agency: str = None) -> List[str]:
@@ -53,6 +56,27 @@ def create_scrapers(urls: List[str], min_date: str) -> List[GovBRNewsScraper]:
     return [GovBRNewsScraper(min_date, url) for url in urls]
 
 
+def process_and_upload_data(
+    news_data: List[Dict[str, str]],
+    data_processor: DataProcessor,
+    uploader: HuggingFaceDatasetUploader,
+):
+    """
+    Process the news data and upload it to the Hugging Face dataset.
+
+    :param news_data: List of news items as dictionaries.
+    :param data_processor: An instance of DataProcessor.
+    :param uploader: An instance of HuggingFaceDatasetUploader.
+    """
+    # Data preprocessing
+    new_data = data_processor.preprocess_data(news_data)
+    combined_data = data_processor.load_existing_and_merge_with_new(new_data)
+    sorted_data = data_processor.sort_combined_data(combined_data)
+    column_data = data_processor.convert_to_columnar_format(sorted_data)
+    # Create and push the dataset
+    uploader.create_and_push_dataset(column_data)
+
+
 def main():
     # Set up argument parsing
     parser = argparse.ArgumentParser(
@@ -78,7 +102,9 @@ def main():
         urls = load_urls_from_yaml("site_urls.yaml", args.agency)
         scrapers = create_scrapers(urls, args.min_date)
 
-        dataset_manager = DatasetManager()
+        # Initialize the DataProcessor and HuggingFaceDatasetUploader
+        data_processor = DataProcessor(DATASET_PATH)
+        uploader = HuggingFaceDatasetUploader(DATASET_PATH)
 
         if args.sequential:
             # Process each agency's news sequentially
@@ -88,7 +114,7 @@ def main():
                     logging.info(
                         f"Appending news for {scraper.agency} to Hugging Face dataset."
                     )
-                    dataset_manager.append_to_huggingface_dataset(news_data)
+                    process_and_upload_data(news_data, data_processor, uploader)
                 else:
                     logging.info(f"No news found for {scraper.agency}.")
         else:
@@ -96,10 +122,14 @@ def main():
             all_news_data = []
             for scraper in scrapers:
                 news_data = scraper.scrape_news()
-                all_news_data.extend(news_data)
+                if news_data:
+                    all_news_data.extend(news_data)
+                else:
+                    logging.info(f"No news found for {scraper.agency}.")
 
             if all_news_data:
-                dataset_manager.append_to_huggingface_dataset(all_news_data)
+                logging.info("Appending all collected news to Hugging Face dataset.")
+                process_and_upload_data(all_news_data, data_processor, uploader)
             else:
                 logging.info("No news found for any agency.")
     except ValueError as e:
