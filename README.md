@@ -2,7 +2,7 @@
 
 ## Introdução
 
-O **GovBR News Scraper** é uma ferramenta automatizada, em fase beta, desenvolvida pelo **Ministério da Gestão e Inovação em Serviços Públicos (MGI)**. Este projeto experimental visa coletar notícias de vários sites de agências governamentais dentro do domínio gov.br ([sites incluídos](https://github.com/nitaibezerra/govbrnews-scraper/blob/main/site_urls.yaml)), facilitando o monitoramento e o arquivamento de dados de notícias governamentais. A ferramenta faz a raspagem e extração de artigos de notícias, incluindo metadados como título, data, categoria e conteúdo, e os armazena em um formato estruturado.
+O **GovBR News Scraper** é uma ferramenta automatizada, em fase beta, desenvolvida pelo **Ministério da Gestão e Inovação em Serviços Públicos (MGI)**. Este projeto experimental visa coletar notícias de vários sites de agências governamentais dentro do domínio gov.br ([sites incluídos](https://github.com/nitaibezerra/govbrnews-scraper/blob/main/src/scraper/site_urls.yaml)), facilitando o monitoramento e o arquivamento de dados de notícias governamentais. A ferramenta faz a raspagem e extração de artigos de notícias, incluindo metadados como título, data, categoria e conteúdo, e os armazena em um formato estruturado.
 
 A ferramenta é executada de forma programada, raspando as notícias do dia anterior e atualizando o repositório automaticamente. Este projeto é útil para pesquisadores, jornalistas e desenvolvedores interessados em monitorar e analisar notícias governamentais.
 
