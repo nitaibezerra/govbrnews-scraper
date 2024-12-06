@@ -17,15 +17,20 @@ SLEEP_TIME_INTERVAL = (0.5, 1.5)
 
 
 class WebScraper:
-    def __init__(self, min_date: str, base_url: str):
+    def __init__(self, min_date: str, base_url: str, max_date: Optional[str] = None):
         """
-        Initialize the scraper with a minimum date and base URL.
+        Initialize the scraper with minimum and maximum dates, and base URL.
 
         :param min_date: The minimum date for scraping news (format: YYYY-MM-DD).
         :param base_url: The base URL of the agency's news page.
+        :param max_date: The maximum date for scraping news (format: YYYY-MM-DD).
         """
         self.base_url = base_url
         self.min_date = datetime.strptime(min_date, "%Y-%m-%d").date()
+        if max_date:
+            self.max_date = datetime.strptime(max_date, "%Y-%m-%d").date()
+        else:
+            self.max_date = None
         self.news_data = []
         self.agency = self.get_agency_name()
 
@@ -43,7 +48,6 @@ class WebScraper:
 
         :return: A list of dictionaries containing news data.
         """
-
         current_offset = 0
 
         while True:
@@ -65,10 +69,10 @@ class WebScraper:
         return self.news_data
 
     @retry(
-        exceptions=requests.exceptions.ConnectionError,
+        exceptions=requests.exceptions.RequestException,
         tries=5,
         delay=2,
-        backoff=2,
+        backoff=3,
         jitter=(1, 3),
     )
     def fetch_page(self, url: str) -> requests.Response:
@@ -78,13 +82,13 @@ class WebScraper:
         :param url: The URL to fetch.
         :return: The Response object.
         """
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an HTTPError if the response has an HTTP error status
+        response = requests.get(url, timeout=20)
+        response.raise_for_status()
         return response
 
     def scrape_page(self, page_url: str) -> Tuple[bool, int]:
         """
-        Scrape a single page of news with retry logic.
+        Scrape a single page of news with logic to skip pages where news is newer than max_date.
 
         :param page_url: The URL of the page to scrape.
         :return: A tuple (continue_scraping, items_per_page).
@@ -110,51 +114,76 @@ class WebScraper:
         items_per_page = len(news_items)
         logging.info(f"Found {items_per_page} news items on the page")
 
+        if items_per_page == 0:
+            return False, 0  # No items to process
+
+        # Check the date of the last news item to decide whether to process the page
+        last_news_item = news_items[-1]
+        last_news_date = self.extract_date(last_news_item)
+        if not last_news_date:
+            logging.warning(
+                "Could not extract date from last news item; processing page."
+            )
+        elif self.max_date and last_news_date > self.max_date:
+            logging.info(
+                f"Last news date {last_news_date} is newer than max_date {self.max_date}. Skipping page."
+            )
+            return True, items_per_page  # Skip this page
+
+        # Process all items on the page
         for item in news_items:
             # Sleep for a random amount of time between intervals
             time.sleep(random.uniform(*SLEEP_TIME_INTERVAL))
 
-            news_info = self.extract_news_info(item)
-            if news_info:
-                self.news_data.append(news_info)
-            else:
-                return (
-                    False,
-                    items_per_page,
-                )  # Stop if news older than min_date is found
+            must_continue = self.extract_news_info(item)
+            if not must_continue:
+                # Stop if news older than min_date is found
+                return False, items_per_page
 
         return True, items_per_page
 
-    def extract_news_info(self, item) -> Optional[Dict[str, str]]:
+    def extract_news_info(self, item) -> bool:
         """
         Extract the news information from an HTML element.
 
         :param item: A BeautifulSoup tag representing a single news item.
-        :return: A dictionary containing the news data or None if the news is older than the min_date.
+        :return: A dictionary containing the news data or None if the news is outside date bounds.
         """
         title, url = self.extract_title_and_url(item)
         category = self.extract_category(item)
         news_date = self.extract_date(item)
-        if news_date and news_date < self.min_date:
-            logging.info(
-                f"Stopping scrape. Found news older than min date: {news_date}"
-            )
-            return None
+
+        if news_date:
+            if news_date < self.min_date:
+                logging.info(
+                    f"Stopping scrape. Found news older than min_date: {news_date}"
+                )
+                return False  # Stop processing items
+            if self.max_date and news_date > self.max_date:
+                logging.info(
+                    f"Skipping news dated {news_date} as it is newer than max_date {self.max_date}."
+                )
+                return True  # Skip this item
+
         tags = self.extract_tags(item)
         content = self.get_article_content(url)
 
         logging.info(f"Retrieved news: {news_date} - {url}")
 
-        return {
-            "title": title,
-            "url": url,
-            "published_at": news_date if news_date else None,
-            "category": category,
-            "tags": tags,
-            "content": content,
-            "agency": self.agency,
-            "extracted_at": datetime.now(),
-        }
+        self.news_data.append(
+            {
+                "title": title,
+                "url": url,
+                "published_at": news_date if news_date else None,
+                "category": category,
+                "tags": tags,
+                "content": content,
+                "agency": self.agency,
+                "extracted_at": datetime.now(),
+            }
+        )
+
+        return True  # Continue processing items
 
     def extract_title_and_url(self, item) -> Tuple[str, str]:
         """

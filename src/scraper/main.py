@@ -45,15 +45,18 @@ def load_urls_from_yaml(file_name: str, agency: str = None) -> List[str]:
     return list(agencies.values())
 
 
-def create_scrapers(urls: List[str], min_date: str) -> List[WebScraper]:
+def create_scrapers(
+    urls: List[str], min_date: str, max_date: str = None
+) -> List[WebScraper]:
     """
     Create a list of WebScraper instances for each URL.
 
     :param urls: List of URLs to scrape.
     :param min_date: The minimum date for scraping news.
+    :param max_date: The maximum date for scraping news.
     :return: List of WebScraper instances.
     """
-    return [WebScraper(min_date, url) for url in urls]
+    return [WebScraper(min_date, url, max_date=max_date) for url in urls]
 
 
 def process_and_upload_data(
@@ -88,6 +91,10 @@ def main():
         help="The minimum date for scraping news (format: YYYY-MM-DD).",
     )
     parser.add_argument(
+        "--max-date",
+        help="The maximum date for scraping news (format: YYYY-MM-DD).",
+    )
+    parser.add_argument(
         "--agency",
         help="The agency key to scrape news for a specific agency.",
     )
@@ -100,7 +107,7 @@ def main():
 
     try:
         urls = load_urls_from_yaml("site_urls.yaml", args.agency)
-        scrapers = create_scrapers(urls, args.min_date)
+        scrapers = create_scrapers(urls, args.min_date, args.max_date)
 
         # Initialize the DataProcessor and HuggingFaceDatasetUploader
         data_processor = DataProcessor(DATASET_PATH)
