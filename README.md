@@ -1,4 +1,5 @@
-
+# Create the content for the README.md file
+readme_content = """
 # GovBR News Scraper
 
 ## Introdução
@@ -7,25 +8,23 @@ O **GovBR News Scraper** é uma ferramenta automatizada, em fase beta, desenvolv
 
 A ferramenta é executada de forma programada, raspando as notícias do dia anterior e atualizando o repositório automaticamente. Este projeto é útil para pesquisadores, jornalistas e desenvolvedores interessados em monitorar e analisar notícias governamentais.
 
-## Dados Disponíveis no Hugging Face
+---
 
-Os dados resultantes da raspagem estão disponíveis no [Hugging Face Hub](https://huggingface.co/datasets/nitaibezerra/govbrnews), permitindo acesso fácil e centralizado ao dataset atualizado.
+## Dados Disponíveis
 
-**Como utilizar o dataset:**
+Os dados extraídos estão disponíveis de forma centralizada no [Hugging Face Hub](https://huggingface.co/datasets/nitaibezerra/govbrnews), em dois formatos: **dataset estruturado** (compatível com a biblioteca `datasets`) e **arquivos CSV**.
 
-1. **Acesse o Dataset no Hugging Face:**
+### Dataset Estruturado no Hugging Face
 
-   Visite [nitaibezerra/govbrnews](https://huggingface.co/datasets/nitaibezerra/govbrnews) para visualizar informações sobre o dataset, incluindo exemplos e detalhes sobre os campos disponíveis.
+Para carregar o dataset diretamente no Python utilizando a biblioteca `datasets`:
 
-2. **Instale a Biblioteca `datasets`:**
-
-   Certifique-se de ter a biblioteca `datasets` instalada:
+1. **Instale a Biblioteca `datasets`:**
 
    ```bash
    pip install datasets
    ```
 
-3. **Carregue o Dataset em Seu Código Python:**
+2. **Carregue o Dataset em Seu Código Python:**
 
    ```python
    from datasets import load_dataset
@@ -33,12 +32,9 @@ Os dados resultantes da raspagem estão disponíveis no [Hugging Face Hub](https
    dataset = load_dataset("nitaibezerra/govbrnews")
    ```
 
-   Isso permite que você trabalhe com os dados de forma eficiente, aproveitando as funcionalidades oferecidas pela biblioteca `datasets`.
-
-4. **Explore o Dataset:**
+3. **Explore o Dataset:**
 
    O dataset inclui os seguintes campos:
-
    - `unique_id`: Identificador único de cada notícia.
    - `agency`: Agência governamental que publicou a notícia.
    - `published_at`: Data de publicação da notícia.
@@ -49,7 +45,25 @@ Os dados resultantes da raspagem estão disponíveis no [Hugging Face Hub](https
    - `content`: Conteúdo completo da notícia.
    - `extracted_at`: Data e hora em que a notícia foi extraída.
 
-   Você pode explorar e manipular esses campos conforme necessário para suas análises e projetos.
+---
+
+### Dados Disponíveis em CSV
+
+Além do dataset estruturado, os dados estão disponíveis em arquivos CSV para facilitar o uso em ferramentas como Excel, Google Sheets, ou scripts personalizados:
+
+1. **Arquivo Global CSV:**
+   - Um único arquivo contendo todas as notícias disponíveis.
+   - Acesse aqui: [govbr_news_dataset.csv](https://huggingface.co/datasets/nitaibezerra/govbrnews/blob/main/govbr_news_dataset.csv)
+
+2. **Arquivos CSV por Agência (Órgão):**
+   - Dados separados por agência governamental.
+   - Acesse os arquivos por agência nesta pasta: [Agências](https://huggingface.co/datasets/nitaibezerra/govbrnews/tree/main/agencies)
+
+3. **Arquivos CSV por Ano:**
+   - Dados separados por ano de publicação.
+   - Acesse os arquivos por ano nesta pasta: [Anos](https://huggingface.co/datasets/nitaibezerra/govbrnews/tree/main/years)
+
+---
 
 ## Agendamento de Raspagem Automatizada
 
@@ -61,6 +75,8 @@ Todos os dias, o agendamento realiza as seguintes tarefas:
 - Atualiza o dataset no Hugging Face com as novas notícias.
 
 Essa configuração assegura que os dados permaneçam atualizados e acessíveis para todos os que utilizam o dataset.
+
+---
 
 ## Contribuições
 
