@@ -1,10 +1,12 @@
 import logging
 import os
 import tempfile
-from typing import Dict, Any
+from typing import Any, Dict
 
+import requests
 from datasets import Dataset
 from huggingface_hub import HfApi, HfFolder
+from retry import retry
 
 
 class HuggingFaceDatasetUploader:
@@ -60,17 +62,27 @@ class HuggingFaceDatasetUploader:
                 path_in_repo = file_name
 
             # Upload the file to the Hugging Face repository
-            self.api.upload_file(
-                path_or_fileobj=csv_file_path,
-                path_in_repo=path_in_repo,
-                repo_id=self.dataset_path,
-                repo_type="dataset",
-                token=self.token,
-            )
+            self._upload_file(csv_file_path, path_in_repo, self.dataset_path)
 
             logging.info(
                 f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
             )
+
+    @retry(
+        exceptions=requests.exceptions.RequestException,
+        tries=5,
+        delay=2,
+        backoff=3,
+        jitter=(1, 3),
+    )
+    def _upload_file(self, path_or_fileobj, path_in_repo, repo_id):
+        self.api.upload_file(
+            path_or_fileobj=path_or_fileobj,
+            path_in_repo=path_in_repo,
+            repo_id=repo_id,
+            repo_type="dataset",
+            token=self.token,
+        )
 
     def push_global_csv(self, dataset: Dataset):
         """

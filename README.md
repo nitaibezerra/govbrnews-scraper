@@ -1,5 +1,3 @@
-# Create the content for the README.md file
-readme_content = """
 # GovBR News Scraper
 
 ## Introdução
