@@ -23,11 +23,6 @@ class DataProcessor:
     - Merging new data with an existing dataset, ensuring no duplicates by comparing unique IDs.
     - Sorting the combined dataset by specified criteria (e.g., agency and publication date).
     - Preparing the final processed data into columnar format suitable for integration with a dataset manager.
-
-    This class does not handle interactions with the Hugging Face Hub or other I/O operations.
-    Instead, it focuses strictly on in-memory transformations of the data. By isolating data
-    processing logic, you can more easily maintain, test, and extend the code responsible for
-    shaping the data before it is persisted or shared.
     """
 
     def __init__(self, dataset_path: str):
