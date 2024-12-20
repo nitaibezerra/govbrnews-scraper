@@ -1,11 +1,11 @@
 import argparse
 import logging
 import os
-from typing import List, Dict
+from typing import Dict, List
 
 import yaml
 from data_processor import DataProcessor
-from dataset_uploader import HuggingFaceDatasetUploader
+from dataset_manager import DatasetManager
 from dotenv import load_dotenv
 from webscraper import WebScraper
 
@@ -62,26 +62,33 @@ def create_scrapers(
 def process_and_upload_data(
     news_data: List[Dict[str, str]],
     data_processor: DataProcessor,
-    uploader: HuggingFaceDatasetUploader,
+    dataset_manager: DatasetManager,
 ):
     """
     Process the news data and upload it to the Hugging Face dataset.
 
     :param news_data: List of news items as dictionaries.
     :param data_processor: An instance of DataProcessor.
-    :param uploader: An instance of HuggingFaceDatasetUploader.
+    :param dataset_manager: An instance of DatasetManager.
     """
     # Data preprocessing
     new_data = data_processor.preprocess_data(news_data)
-    combined_data = data_processor.load_existing_and_merge_with_new(new_data)
+
+    # Load existing dataset from the Hugging Face Hub
+    existing_data = dataset_manager.load_existing_dataset()
+
+    # Merge with existing data
+    combined_data = data_processor.load_existing_and_merge_with_new(
+        new_data, existing_data
+    )
     sorted_data = data_processor.sort_combined_data(combined_data)
     column_data = data_processor.convert_to_columnar_format(sorted_data)
+
     # Create and push the dataset
-    uploader.create_and_push_dataset(column_data)
+    dataset_manager.create_and_push_dataset(column_data)
 
 
 def main():
-    # Set up argument parsing
     parser = argparse.ArgumentParser(
         description="Scrape news data to a Hugging Face dataset."
     )
@@ -109,9 +116,9 @@ def main():
         urls = load_urls_from_yaml("site_urls.yaml", args.agency)
         scrapers = create_scrapers(urls, args.min_date, args.max_date)
 
-        # Initialize the DataProcessor and HuggingFaceDatasetUploader
+        # Initialize the DataProcessor and DatasetManager
         data_processor = DataProcessor(DATASET_PATH)
-        uploader = HuggingFaceDatasetUploader(DATASET_PATH)
+        dataset_manager = DatasetManager(DATASET_PATH)
 
         if args.sequential:
             # Process each agency's news sequentially
@@ -121,7 +128,7 @@ def main():
                     logging.info(
                         f"Appending news for {scraper.agency} to Hugging Face dataset."
                     )
-                    process_and_upload_data(news_data, data_processor, uploader)
+                    process_and_upload_data(news_data, data_processor, dataset_manager)
                 else:
                     logging.info(f"No news found for {scraper.agency}.")
         else:
@@ -136,7 +143,7 @@ def main():
 
             if all_news_data:
                 logging.info("Appending all collected news to Hugging Face dataset.")
-                process_and_upload_data(all_news_data, data_processor, uploader)
+                process_and_upload_data(all_news_data, data_processor, dataset_manager)
             else:
                 logging.info("No news found for any agency.")
     except ValueError as e:

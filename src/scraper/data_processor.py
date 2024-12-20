@@ -2,10 +2,9 @@ import hashlib
 import logging
 from collections import OrderedDict
 from datetime import date
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-from datasets import load_dataset
-from datasets.exceptions import DatasetNotFoundError
+from datasets import Dataset
 
 # Set up logging configuration
 logging.basicConfig(
@@ -74,56 +73,42 @@ class DataProcessor:
         hash_input = f"{agency}_{date_str}_{title}".encode("utf-8")
         return hashlib.md5(hash_input).hexdigest()
 
-    def load_existing_and_merge_with_new(self, new_data: OrderedDict) -> OrderedDict:
+    def load_existing_and_merge_with_new(
+        self, new_data: OrderedDict, existing_data: Optional[Dataset]
+    ) -> OrderedDict:
         """
-        Load the existing dataset from Hugging Face and merge it with the new data,
-        avoiding duplicates. If no new data is found, return the existing dataset
-        in columnar format.
-
-        :param new_data: The new data to be added, in columnar format.
-        :return: The combined dataset in columnar format, or the existing dataset
-                if no new data is found.
+        existing_data is now passed in from outside. If it is None, it means no existing dataset.
         """
-        try:
-            existing_dataset = load_dataset(self.dataset_path, split="train")
-            logging.info("Existing dataset loaded from Hugging Face Hub.")
-
-            # Identify unique IDs already in the existing dataset
-            existing_unique_ids = set(existing_dataset["unique_id"])
-            logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
-
-            # Filter out new data that has duplicate unique_ids
-            unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
-            if not unique_ids_to_add:
-                logging.info("No new unique news items to add. Dataset is up to date.")
-                # Return the existing dataset in columnar format
-                return {
-                    key: existing_dataset[key]
-                    for key in existing_dataset.features.keys()
-                }
-
-            filtered_new_data = {
-                key: [
-                    value
-                    for idx, value in enumerate(values)
-                    if new_data["unique_id"][idx] in unique_ids_to_add
-                ]
-                for key, values in new_data.items()
-            }
-            logging.info(
-                f"Adding {len(filtered_new_data['unique_id'])} "
-                "new unique news items to the dataset."
-            )
-
-            # Combine existing and filtered new data
-            combined_data = {
-                key: existing_dataset[key] + filtered_new_data.get(key, [])
-                for key in existing_dataset.features.keys()
-            }
-
-        except DatasetNotFoundError:
+        if existing_data is None:
             logging.info("No existing dataset found. Initializing with new data.")
-            combined_data = new_data
+            return new_data
+
+        logging.info("Existing dataset loaded from outside.")
+        existing_unique_ids = set(existing_data["unique_id"])
+        logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
+
+        unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
+        if not unique_ids_to_add:
+            logging.info("No new unique news items to add. Dataset is up to date.")
+            return {key: existing_data[key] for key in existing_data.features.keys()}
+
+        filtered_new_data = {
+            key: [
+                value
+                for idx, value in enumerate(values)
+                if new_data["unique_id"][idx] in unique_ids_to_add
+            ]
+            for key, values in new_data.items()
+        }
+
+        logging.info(
+            f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
+        )
+
+        combined_data = {
+            key: existing_data[key] + filtered_new_data.get(key, [])
+            for key in existing_data.features.keys()
+        }
 
         return combined_data
 

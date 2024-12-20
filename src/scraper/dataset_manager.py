@@ -1,25 +1,27 @@
 import logging
 import os
 import tempfile
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import requests
-from datasets import Dataset
+from datasets import Dataset, load_dataset
+from datasets.exceptions import DatasetNotFoundError
 from huggingface_hub import HfApi, HfFolder
 from retry import retry
 
 
-class HuggingFaceDatasetUploader:
+class DatasetManager:
     """
-    A class responsible for uploading datasets and files to the Hugging Face Hub.
+    A class responsible for interacting with the Hugging Face Hub for datasets.
 
-    **Types of Uploads:**
-    - **Dataset Upload**: Pushes the entire dataset to the Hugging Face Hub, making it available for use with the 🤗 Datasets library.
-    - **Global CSV Upload**: Saves the entire dataset as a single CSV file and uploads it to the dataset repository.
-    - **CSV by Agency Upload**: Splits the dataset by the 'agency' column and uploads a separate CSV file for each agency.
-    - **CSV by Year Upload**: Splits the dataset by the 'published_at' year and uploads a separate CSV file for each year.
+    Responsibilities:
+    - Load an existing dataset from the Hugging Face Hub.
+    - Push new or updated datasets to the Hub.
+    - Save datasets as CSV files and upload them for easy download.
+    - Split and upload datasets by specific attributes (e.g., by 'agency' or 'year').
 
-    This class ensures efficient uploading by minimizing code duplication and handling authentication and temporary file management internally.
+    By separating these responsibilities from data processing, the data processing code can
+    remain focused solely on merging, cleaning, and transforming the data.
     """
 
     def __init__(self, dataset_path: str):
@@ -31,6 +33,19 @@ class HuggingFaceDatasetUploader:
                 "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
             )
 
+    def load_existing_dataset(self) -> Optional[Dataset]:
+        """
+        Attempt to load an existing dataset from the Hugging Face Hub.
+        If the dataset does not exist, return None.
+        """
+        try:
+            existing_dataset = load_dataset(self.dataset_path, split="train")
+            logging.info(f"Existing dataset loaded from {self.dataset_path}.")
+            return existing_dataset
+        except DatasetNotFoundError:
+            logging.info(f"No existing dataset found at {self.dataset_path}.")
+            return None
+
     def push_dataset_to_hub(self, dataset: Dataset):
         """
         Push the entire dataset to the Hugging Face Hub.
@@ -39,6 +54,22 @@ class HuggingFaceDatasetUploader:
         """
         dataset.push_to_hub(self.dataset_path, private=False)
         logging.info(f"Dataset pushed to Hugging Face Hub at {self.dataset_path}.")
+
+    @retry(
+        exceptions=requests.exceptions.RequestException,
+        tries=5,
+        delay=2,
+        backoff=3,
+        jitter=(1, 3),
+    )
+    def _upload_file(self, path_or_fileobj, path_in_repo, repo_id):
+        self.api.upload_file(
+            path_or_fileobj=path_or_fileobj,
+            path_in_repo=path_in_repo,
+            repo_id=repo_id,
+            repo_type="dataset",
+            token=self.token,
+        )
 
     def _save_and_upload_csv(
         self, dataset: Dataset, file_name: str, subfolder: str = ""
@@ -67,22 +98,6 @@ class HuggingFaceDatasetUploader:
             logging.info(
                 f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
             )
-
-    @retry(
-        exceptions=requests.exceptions.RequestException,
-        tries=5,
-        delay=2,
-        backoff=3,
-        jitter=(1, 3),
-    )
-    def _upload_file(self, path_or_fileobj, path_in_repo, repo_id):
-        self.api.upload_file(
-            path_or_fileobj=path_or_fileobj,
-            path_in_repo=path_in_repo,
-            repo_id=repo_id,
-            repo_type="dataset",
-            token=self.token,
-        )
 
     def push_global_csv(self, dataset: Dataset):
         """
