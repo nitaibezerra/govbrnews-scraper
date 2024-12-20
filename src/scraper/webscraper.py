@@ -128,6 +128,7 @@ class WebScraper:
             logging.info(
                 f"Last news date {last_news_date} is newer than max_date {self.max_date}. Skipping page."
             )
+            time.sleep(random.uniform(*SLEEP_TIME_INTERVAL))
             return True, items_per_page  # Skip this page
 
         # Process all items on the page
