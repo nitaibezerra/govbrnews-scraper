@@ -14,7 +14,20 @@ logging.basicConfig(
 
 class DataProcessor:
     """
-    A class responsible for data preprocessing, manipulation, and formatting.
+    A class that focuses on the preprocessing, transformation, and preparation of raw news data
+    into a well-structured format ready for dataset creation and analysis.
+
+    Responsibilities:
+    - Generating unique identifiers for news items based on their attributes (agency, published date, and title).
+    - Converting raw data from a list-of-dictionaries format into a columnar (OrderedDict) format.
+    - Merging new data with an existing dataset, ensuring no duplicates by comparing unique IDs.
+    - Sorting the combined dataset by specified criteria (e.g., agency and publication date).
+    - Preparing the final processed data into columnar format suitable for integration with a dataset manager.
+
+    This class does not handle interactions with the Hugging Face Hub or other I/O operations.
+    Instead, it focuses strictly on in-memory transformations of the data. By isolating data
+    processing logic, you can more easily maintain, test, and extend the code responsible for
+    shaping the data before it is persisted or shared.
     """
 
     def __init__(self, dataset_path: str):

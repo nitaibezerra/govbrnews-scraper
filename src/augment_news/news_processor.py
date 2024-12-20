@@ -7,6 +7,42 @@ from news_analyzer import NewsAnalyzer
 
 
 class NewsProcessor:
+    """
+    A class for processing and augmenting news data.
+
+    The NewsProcessor is designed to handle the ingestion, processing, and augmentation
+    of news data stored in JSON files. It filters news entries based on specified criteria,
+    classifies the content using a NewsAnalyzer instance, and generates summaries for
+    enhanced analysis and reporting.
+
+    Attributes:
+        raw_extractions_dir (str): Directory containing raw news extractions.
+        augmented_news_dir (str): Directory where augmented news will be saved.
+        analyzer (Optional[NewsAnalyzer]): An instance of NewsAnalyzer for analyzing and
+            classifying news entries.
+
+    Methods:
+        process_files(min_date: Optional[str], agency: Optional[str]):
+            Process JSON files, filter based on criteria, and augment with classification
+            and summaries.
+
+        get_augmented_file_path(file_path: str) -> str:
+            Generate the augmented file path based on the raw file path.
+
+        should_skip_file(augmented_file_path: str) -> bool:
+            Check if a file has already been processed to avoid redundant processing.
+
+        load_json_file(file_path: str) -> Optional[Dict]:
+            Load and parse a JSON file, handling potential errors.
+
+        process_news_entries(news_data: Dict) -> Dict:
+            Process news entries to classify content and generate summaries.
+
+        save_augmented_file(augmented_file_path: str, augmented_data: Dict):
+            Save the augmented news data to the specified file path, ensuring
+            directory structures are created as needed.
+    """
+
     def __init__(
         self,
         raw_extractions_dir: str = "raw_extractions",
