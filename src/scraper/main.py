@@ -4,10 +4,10 @@ import os
 from typing import Dict, List
 
 import yaml
-from data_processor import DataProcessor
-from dataset_manager import DatasetManager
+from .data_processor import DataProcessor
+from ..dataset_manager import DatasetManager
 from dotenv import load_dotenv
-from webscraper import WebScraper
+from .webscraper import WebScraper
 
 # Load environment variables from the .env file
 load_dotenv()
