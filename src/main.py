@@ -4,10 +4,11 @@ import os
 from typing import Dict, List
 
 import yaml
-from .data_processor import DataProcessor
-from ..dataset_manager import DatasetManager
 from dotenv import load_dotenv
-from .webscraper import WebScraper
+
+from .dataset_manager import DatasetManager
+from .scraper.data_processor import DataProcessor
+from .scraper.webscraper import WebScraper
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -113,7 +114,7 @@ def main():
     args = parser.parse_args()
 
     try:
-        urls = load_urls_from_yaml("site_urls.yaml", args.agency)
+        urls = load_urls_from_yaml("scraper/site_urls.yaml", args.agency)
         scrapers = create_scrapers(urls, args.min_date, args.max_date)
 
         # Initialize the DataProcessor and DatasetManager
