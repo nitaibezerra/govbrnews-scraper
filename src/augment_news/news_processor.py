@@ -3,7 +3,7 @@ import logging
 import os
 from typing import Dict, Optional
 
-from news_analyzer import NewsAnalyzer
+from augment_news.news_analyzer import NewsAnalyzer
 
 
 class NewsProcessor:
