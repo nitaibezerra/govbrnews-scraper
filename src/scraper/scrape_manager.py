@@ -99,7 +99,7 @@ class ScrapeManager:
         Process the news data and upload it to the Hugging Face dataset.
         """
         new_data = self._preprocess_data(new_data)
-        self.dataset_manager.add_new_data(new_data)
+        self.dataset_manager.insert(new_data)
 
     def _preprocess_data(self, data: List[Dict[str, str]]) -> OrderedDict:
         """

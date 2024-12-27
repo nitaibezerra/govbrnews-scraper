@@ -36,12 +36,13 @@ class DatasetManager:
                 "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
             )
 
-    def add_new_data(self, new_data: OrderedDict):
+    def insert(self, new_data: OrderedDict):
         """
         Add new data to the existing dataset and upload to Hugging Face.
+        It ignores duplicates based on unique_id keeping the current values.
         """
         updated_dataset = self._merge_new_data_into_existing(new_data)
-        self.create_and_push_dataset(updated_dataset)
+        self._create_and_push_dataset(updated_dataset)
 
     def _merge_new_data_into_existing(self, new_data: OrderedDict) -> OrderedDict:
         """
@@ -118,7 +119,7 @@ class DatasetManager:
             ),
         )
 
-    def create_and_push_dataset(self, dataset: List[Dict[str, str]]):
+    def _create_and_push_dataset(self, dataset: List[Dict[str, str]]):
         """
         Create a Hugging Face Dataset from the columnar data and push it to the Hub,
         along with CSV file versions for easy download.
@@ -213,7 +214,7 @@ class DatasetManager:
         """
         self._save_and_upload_csv(dataset, "govbr_news_dataset.csv")
 
-    def push_csvs_by_group(
+    def _push_csvs_by_group(
         self, dataset: Dataset, group_by_column: str, subfolder: str = ""
     ):
         """
@@ -248,7 +249,9 @@ class DatasetManager:
 
         :param dataset: The dataset to split and upload.
         """
-        self.push_csvs_by_group(dataset, group_by_column="agency", subfolder="agencies")
+        self._push_csvs_by_group(
+            dataset, group_by_column="agency", subfolder="agencies"
+        )
 
     def _push_csvs_by_year(self, dataset: Dataset):
         """
@@ -256,4 +259,4 @@ class DatasetManager:
 
         :param dataset: The dataset to split and upload.
         """
-        self.push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
+        self._push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
