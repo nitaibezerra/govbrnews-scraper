@@ -44,9 +44,20 @@ class DatasetManager:
         updated_dataset = self._merge_new_data_into_existing(new_data)
         self._create_and_push_dataset(updated_dataset)
 
+    def update(self, updated_data: OrderedDict):
+        """
+        Update existing rows in the dataset based on the matching unique_id,
+        overwriting fields in those rows with the new values provided.
+
+        Only rows with a matching unique_id are affected. Fields that appear in
+        updated_data replace their counterparts in the existing dataset.
+        """
+        updated_dataset = self._apply_updates_to_existing(updated_data)
+        self._create_and_push_dataset(updated_dataset)
+
     def _merge_new_data_into_existing(self, new_data: OrderedDict) -> OrderedDict:
         """
-        existing_data is now passed in from outside. If it is None, it means no existing dataset.
+        Merge new rows into existing dataset, ignoring duplicates based on unique_id.
         """
         existing_data = self._load_existing_dataset()
 
@@ -54,16 +65,19 @@ class DatasetManager:
             logging.info("No existing dataset found. Initializing with new data.")
             return new_data
 
-        logging.info("Existing dataset loaded from outside.")
+        logging.info("Existing dataset loaded.")
 
         existing_unique_ids = set(existing_data["unique_id"])
         logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
 
+        # Identify new items not present in the existing dataset
         unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
         if not unique_ids_to_add:
             logging.info("No new unique news items to add. Dataset is up to date.")
+            # Return the dataset in its original structure (columnar).
             return {key: existing_data[key] for key in existing_data.features.keys()}
 
+        # Filter the new data to only include rows with unique_ids_to_add
         filtered_new_data = {
             key: [
                 value
@@ -77,14 +91,105 @@ class DatasetManager:
             f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
         )
 
+        # Combine the existing data and the filtered new data
         combined_data = {
             key: existing_data[key] + filtered_new_data.get(key, [])
             for key in existing_data.features.keys()
         }
 
+        # Sort the data by 'agency' ascending and 'published_at' descending
         sorted_data = self._sort_data(combined_data)
 
         return sorted_data
+
+    def _apply_updates_to_existing(self, updated_data: OrderedDict) -> OrderedDict:
+        """
+        Update existing rows in the dataset with values from updated_data,
+        matched by unique_id. Only columns present in updated_data are overwritten.
+        """
+        existing_dataset = self._load_existing_dataset()
+        if existing_dataset is None:
+            logging.info(
+                "No existing dataset found. Cannot update non-existent dataset."
+            )
+            return None
+
+        # Convert existing dataset to a list-of-dicts for easier updates
+        existing_list = [
+            {key: existing_dataset[key][i] for key in existing_dataset.features.keys()}
+            for i in range(len(existing_dataset["unique_id"]))
+        ]
+
+        # Build a map from unique_id -> index
+        unique_id_to_index = {
+            record["unique_id"]: idx for idx, record in enumerate(existing_list)
+        }
+
+        # Convert updated_data to a list-of-dicts as well
+        updated_list = [
+            {key: updated_data[key][i] for key in updated_data.keys()}
+            for i in range(len(updated_data["unique_id"]))
+        ]
+
+        # For each updated record, if the unique_id is found in existing_list,
+        # overwrite only the provided fields
+        update_count = 0
+        for record in updated_list:
+            uid = record["unique_id"]
+            if uid in unique_id_to_index:
+                existing_idx = unique_id_to_index[uid]
+                for field, value in record.items():
+                    # Overwrite existing fields
+                    if field in existing_list[existing_idx]:
+                        existing_list[existing_idx][field] = value
+                update_count += 1
+
+        logging.info(f"Updated {update_count} records based on unique_id.")
+
+        # Sort the updated list-of-dicts
+        sorted_data = self._sort_data_list_of_dicts(existing_list)
+
+        return self._convert_list_of_dicts_to_columnar(sorted_data)
+
+    def _sort_data(self, ordered_data: OrderedDict) -> List[Dict[str, str]]:
+        """
+        Sort the dataset by 'agency' (asc) and 'published_at' (desc).
+
+        :param ordered_data: The combined data in columnar format.
+        :return: A list of dictionaries representing the sorted data.
+        """
+        list_of_dicts = [
+            {key: ordered_data[key][i] for key in ordered_data.keys()}
+            for i in range(len(ordered_data["unique_id"]))
+        ]
+        return self._sort_data_list_of_dicts(list_of_dicts)
+
+    def _sort_data_list_of_dicts(
+        self, list_of_dicts: List[Dict[str, str]]
+    ) -> List[Dict[str, str]]:
+        """
+        Sort a list of dicts by 'agency' ascending and 'published_at' descending.
+        """
+        return sorted(
+            list_of_dicts,
+            key=lambda x: (
+                x.get("agency", ""),
+                -x.get("published_at").toordinal()
+                if isinstance(x.get("published_at"), date)
+                else float("-inf"),
+            ),
+        )
+
+    def _convert_list_of_dicts_to_columnar(
+        self, data_list: List[Dict[str, str]]
+    ) -> OrderedDict:
+        """
+        Convert from list-of-dicts format to columnar format.
+        """
+        if not data_list:
+            return None
+        columns = data_list[0].keys()
+        return {col: [row[col] for row in data_list] for col in columns}
 
     def _load_existing_dataset(self) -> Optional[Dataset]:
         """
@@ -99,37 +204,17 @@ class DatasetManager:
             logging.info(f"No existing dataset found at {self.dataset_path}.")
             return None
 
-    def _sort_data(self, ordered_data: OrderedDict) -> List[Dict[str, str]]:
+    def _create_and_push_dataset(self, dataset):
         """
-        Sort the dataset by 'agency' (asc) and 'published_at' (desc).
-
-        :param ordered_data: The combined data in columnar format.
-        :return: A list of dictionaries representing the sorted data.
+        Create a Hugging Face Dataset from the columnar (or list-of-dicts) data
+        and push it to the Hub, along with CSV file versions for easy download.
         """
-        return sorted(
-            [
-                {key: ordered_data[key][i] for key in ordered_data.keys()}
-                for i in range(len(ordered_data["unique_id"]))
-            ],
-            key=lambda x: (
-                x.get("agency", ""),
-                -x.get("published_at").toordinal()
-                if isinstance(x.get("published_at"), date)
-                else float("-inf"),
-            ),
-        )
-
-    def _create_and_push_dataset(self, dataset: List[Dict[str, str]]):
-        """
-        Create a Hugging Face Dataset from the columnar data and push it to the Hub,
-        along with CSV file versions for easy download.
-
-        :param column_data: The data in columnar format.
-        """
-        column_data = self._convert_to_columnar_format(dataset)
+        # If the dataset is already a list-of-dicts, convert to columnar
+        if isinstance(dataset, list):
+            dataset = self._convert_to_columnar_format(dataset)
 
         # Create the Dataset
-        combined_dataset = Dataset.from_dict(column_data)
+        combined_dataset = Dataset.from_dict(dataset)
 
         # Push the dataset
         self._push_dataset_to_hub(combined_dataset)
