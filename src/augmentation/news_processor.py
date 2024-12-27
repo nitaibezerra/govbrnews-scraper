@@ -3,9 +3,7 @@ import logging
 import os
 from typing import Dict, Optional
 
-from augment_news.classifier_summarizer import (
-    ClassifierSummarizer,
-)
+from augmentation.classifier_summarizer import ClassifierSummarizer
 
 
 class NewsProcessor:

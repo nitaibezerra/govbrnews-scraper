@@ -2,7 +2,7 @@ import os
 import pytest
 import yaml
 
-from src.augment_news.classifier_summarizer import (
+from src.augmentation.classifier_summarizer import (
     ClassifierSummarizer,
 )
 

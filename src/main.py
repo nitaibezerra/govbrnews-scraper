@@ -1,8 +1,8 @@
 import argparse
 import logging
 
-from augment_news.classifier_summarizer import ClassifierSummarizer
-from augment_news.news_processor import NewsProcessor
+from augmentation.classifier_summarizer import ClassifierSummarizer
+from augmentation.news_processor import NewsProcessor
 from dataset_manager import DatasetManager
 from dotenv import load_dotenv
 from scraper.scrape_manager import ScrapeManager
