@@ -1,17 +1,24 @@
 import logging
 import os
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
+from dotenv import load_dotenv
 from langchain.chains import LLMChain
 from langchain.output_parsers import PydanticOutputParser
 from langchain.prompts import PromptTemplate
-from langchain_community.chat_models import ChatOpenAI
-from pydantic import BaseModel, Field, conint
+from langchain_openai import ChatOpenAI
+
+# from langchain_community.chat_models import ChatOpenAI
+from pydantic import BaseModel, Field
+
+
+# Load environment variables from .env
+load_dotenv()
 
 
 class ClassifiedTheme(BaseModel):
     theme: str = Field(..., description="The third-level theme identified")
-    score: conint(ge=1, le=10) = Field(..., description="Relevance score from 1 to 10")
+    theme_code: str = Field(..., description="The code associated with the theme")
 
 
 class NewsClassificationResult(BaseModel):
@@ -20,27 +27,27 @@ class NewsClassificationResult(BaseModel):
     )
     news_summary: str = Field(
         ...,
-        description="A summary of the news up to 300 characters, focusing on the first theme",
+        description="A summary of the news up to 500 characters, referring to the classified themes",
     )
 
 
 class NewsAnalyzer:
-    def __init__(self, openai_api_key: str):
+    def __init__(self):
         """
         Initialize the NewsAnalyzer with the OpenAI API key.
         """
-        self.openai_api_key = openai_api_key
+        self.openai_api_key = os.getenv("OPENAI_API_KEY")
         if not self.openai_api_key:
             raise ValueError("OpenAI API key must be provided.")
 
-        self.themes_tree_content = self.load_themes_tree()
+        self.themes_tree_content = self._load_themes_tree()
 
         # Define the output parser using Pydantic
         self.output_parser = PydanticOutputParser(
             pydantic_object=NewsClassificationResult
         )
 
-    def load_themes_tree(self) -> str:
+    def _load_themes_tree(self) -> str:
         """
         Load the themes tree from the 'themes_tree.yaml' file.
         """
@@ -54,27 +61,27 @@ class NewsAnalyzer:
             logging.error(f"Error reading themes_tree.yaml: {e}")
             return ""
 
-    def classify_and_generate_summary(
+    def get_themes_and_summary(
         self, news_entry: Dict[str, str]
-    ) -> Tuple[Optional[NewsClassificationResult], str]:
+    ) -> Tuple[List[str], str]:
         """
         Classify the news entry and generate a summary.
 
         :param news_entry: A dictionary containing news entry data.
-        :return: A tuple containing the parsed response and the raw response.
+        :return: The parsed response.
         """
         # Get the format instructions from the output parser
         format_instructions = self.output_parser.get_format_instructions()
 
         # Build the prompt
         prompt_template_str = """
-Você é um assistente especializado em classificar notícias com base em uma árvore temática de três níveis. Sua tarefa é analisar o **título** e o **texto** de uma notícia fornecida e:
+Você é um assistente especializado em classificar notícias com base em uma árvore temática hierárquica de três níveis. Sua tarefa é analisar uma notícia fornecida e:
 
-1. **Identificar os 3 temas mais relevantes do terceiro nível** da árvore que se relacionam com a notícia, listando-os em ordem de prioridade (do mais relevante ao menos relevante).
+1. **Identificar os 3 temas mais relevantes e mais específicos (do terceiro nível) da árvore** que se relacionam com a notícia. Os temas de terceiro nível possuem 3 partes numéricas (ex.: 16.04.01). Tenha certeza de que os temas selecionados são de terceiro nível.
 
-2. Para cada tema identificado, **atribuir uma pontuação de 1 a 10** que represente o grau de correlação entre o tema e a notícia.
+2. Selecione temas que são complementares e não redundantes. Temas em posições distantes na árvore são mais complementares.
 
-3. Elaborar um **resumo da notícia com até 300 caracteres**, destacando e correlacionando principalmente com o **primeiro tema escolhido**.
+3. Elaborar um **resumo da notícia com até 500 caracteres**, destacando e correlacionando com os **temas escolhidos**.
 
 **Árvore Temática:**
 
@@ -88,7 +95,7 @@ Você é um assistente especializado em classificar notícias com base em uma á
 
 **Instruções Adicionais:**
 
-- Certifique-se de que os temas selecionados são os mais relevantes para o conteúdo da notícia.
+- Certifique-se de que os temas selecionados são os mais relevantes para o conteúdo da notícia e que não são redundantes.
 
 - A pontuação deve refletir a relevância e a importância de cada tema em relação à notícia.
 
@@ -97,7 +104,6 @@ Você é um assistente especializado em classificar notícias com base em uma á
 Aqui estão os detalhes da notícia:
 
 Título: {title}
-URL: {url}
 Data: {date}
 Categoria: {category}
 Tags: {tags}
@@ -110,7 +116,6 @@ Conteúdo: {content}
             input_variables=[
                 "themes_tree",
                 "title",
-                "url",
                 "date",
                 "category",
                 "tags",
@@ -123,7 +128,6 @@ Conteúdo: {content}
         input_variables = {
             "themes_tree": self.themes_tree_content,
             "title": news_entry["title"],
-            "url": news_entry["url"],
             "date": news_entry["date"],
             "category": news_entry["category"],
             "tags": ", ".join(news_entry.get("tags", [])),
@@ -133,20 +137,17 @@ Conteúdo: {content}
         # Create the LLM instance using ChatOpenAI
         llm = ChatOpenAI(
             openai_api_key=self.openai_api_key,
-            temperature=0.5,
-            model_name="gpt-3.5-turbo",
+            temperature=0.7,
+            model_name="gpt-4o",
         )
 
         # Create the LLMChain with the output parser
         chain = LLMChain(llm=llm, prompt=prompt, output_parser=self.output_parser)
 
         # Call the chain
-        try:
-            parsed_response = chain.predict_and_parse(**input_variables)
-            return (
-                parsed_response,
-                "",
-            )  # Return the parsed response and an empty raw response
-        except Exception as e:
-            logging.error(f"Error processing LLM response: {e}")
-            return None, ""
+        parsed_response = chain.predict_and_parse(**input_variables)
+
+        themes = [theme.model_dump() for theme in parsed_response.classified_themes]
+        summary = parsed_response.news_summary
+
+        return themes, summary

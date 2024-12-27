@@ -103,12 +103,8 @@ def run_augment(args):
     Executes the augmentation (news classification) logic using the arguments
     provided by the 'augment' subcommand.
     """
-    openai_api_key = args.openai_api_key or os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise ValueError("OpenAI API key must be provided.")
-
     # Initialize the NewsAnalyzer and NewsProcessor
-    analyzer = NewsAnalyzer(openai_api_key=openai_api_key)
+    analyzer = NewsAnalyzer()
     processor = NewsProcessor(analyzer=analyzer)
 
     # Process the files (e.g., classify AI-related articles)
