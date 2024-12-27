@@ -1,11 +1,14 @@
 import hashlib
 import logging
+import os
 from collections import OrderedDict
 from datetime import date
 from typing import Dict, List, Optional
 
+import yaml
 from dataset_manager import DatasetManager
 from datasets import Dataset
+from scraper.webscraper import WebScraper
 
 # Set up logging configuration
 logging.basicConfig(
@@ -13,7 +16,70 @@ logging.basicConfig(
 )
 
 
-class DataProcessor:
+def _load_urls_from_yaml(file_name: str, agency: str = None) -> List[str]:
+    """
+    Load URLs from a YAML file located in the same directory as this script.
+
+    :param file_name: The name of the YAML file.
+    :param agency: Specific agency key to filter URLs. If None, load all URLs.
+    :return: A list of URLs.
+    """
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(script_dir, file_name)
+
+    with open(file_path, "r") as f:
+        agencies = yaml.safe_load(f)["agencies"]
+
+    if agency:
+        if agency in agencies:
+            return [agencies[agency]]
+        else:
+            raise ValueError(f"Agency '{agency}' not found in the YAML file.")
+
+    return list(agencies.values())
+
+
+def run_scraper(agency: str, min_date: str, max_date: str, sequential: bool):
+    """
+    Executes the scraping.
+    """
+    try:
+        urls = _load_urls_from_yaml("site_urls.yaml", agency)
+        webscrapers = [WebScraper(min_date, url, max_date=max_date) for url in urls]
+
+        # Initialize the DatasetManager and ScrapeManager
+        dataset_manager = DatasetManager()
+        scrape_manager = ScrapeManager(dataset_manager=dataset_manager)
+
+        if sequential:
+            # Process each agency's news sequentially
+            for scraper in webscrapers:
+                scraped_data = scraper.scrape_news()
+                if scraped_data:
+                    logging.info(f"Appending news for {scraper.agency} to HF dataset.")
+                    scrape_manager.process_and_upload_data(scraped_data)
+                else:
+                    logging.info(f"No news found for {scraper.agency}.")
+        else:
+            # Accumulate all news and process together
+            all_news_data = []
+            for scraper in webscrapers:
+                scraped_data = scraper.scrape_news()
+                if scraped_data:
+                    all_news_data.extend(scraped_data)
+                else:
+                    logging.info(f"No news found for {scraper.agency}.")
+
+            if all_news_data:
+                logging.info("Appending all collected news to HF dataset.")
+                scrape_manager.process_and_upload_data(all_news_data)
+            else:
+                logging.info("No news found for any agency.")
+    except ValueError as e:
+        logging.error(e)
+
+
+class ScrapeManager:
     """
     A class that focuses on the preprocessing, transformation, and preparation of raw news data
     into a well-structured format ready for dataset creation and analysis.
