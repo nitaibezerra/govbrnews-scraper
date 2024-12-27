@@ -1,7 +1,7 @@
 import logging
 import os
 import tempfile
-from typing import Any, Dict, List, Optional, OrderedDict
+from typing import Dict, List, Optional, OrderedDict
 
 import requests
 from datasets import Dataset, load_dataset
