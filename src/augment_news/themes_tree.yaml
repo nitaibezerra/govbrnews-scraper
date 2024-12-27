@@ -1,1034 +1,740 @@
-Economia e Finanças:
-  Política Econômica:
-    Política Fiscal:
-      - Ajuste Fiscal
-      - Gastos Públicos
-      - Dívida Pública
-      - Reforma Tributária
-      - Orçamento Federal
-    Política Monetária:
-      - Taxa de Juros
-      - Inflação
-      - Política de Crédito
-      - Reservas Monetárias
-      - Operações do Banco Central
-    Política Cambial:
-      - Taxa de Câmbio
-      - Controle Cambial
-      - Reservas Internacionais
-      - Desvalorização Monetária
-      - Política de Exportação
-  Fiscalização e Tributação:
-    Impostos Federais:
-      - Imposto de Renda
-      - IPI
-      - COFINS
-      - CSLL
-    Combate à Sonegação:
-      - Fiscalização Tributária
-      - Operações Especiais
-      - Denúncias Anônimas
-      - Multas e Penalidades
-    Reforma Tributária:
-      - Simplificação de Impostos
-      - Tributação Progressiva
-      - Imposto Único
-      - Redução da Carga Tributária
-  Investimentos e Comércio Exterior:
-    Acordos Comerciais:
-      - Mercosul
-      - Acordos Bilaterais
-      - OMC
-      - BRICS
-    Investimento Estrangeiro Direto:
-      - Captação de Investimentos
-      - Parcerias Público-Privadas
-      - Zonas Francas
-    Exportações e Importações:
-      - Balança Comercial
-      - Tarifas Alfandegárias
-      - Licenças de Importação
+01 - Economia e Finanças:
+  01.01 - Política Econômica:
+    - 01.01.01 - Política Fiscal
+    - 01.01.02 - Autonomia Econômica
+    - 01.01.03 - Análise Econômica
+    - 01.01.04 - Boletim Econômico
 
-Educação:
-  Ensino Básico:
-    Alfabetização:
-      - Programas de Alfabetização
-      - Educação de Jovens e Adultos
-      - Formação de Professores
-    Ensino Fundamental:
-      - Currículo Escolar
-      - Merenda Escolar
-      - Infraestrutura das Escolas
-    Ensino Médio:
-      - Ensino Técnico
-      - Preparação para o ENEM
-      - Educação Integral
-  Ensino Superior:
-    Universidades Federais:
-      - Expansão de Campi
-      - Autonomia Universitária
-      - Assistência Estudantil
-    Pesquisa Acadêmica:
-      - Fomento à Pesquisa
-      - Parcerias Internacionais
-      - Iniciação Científica
-    Pós-Graduação:
-      - Mestrado e Doutorado
-      - Bolsas de Estudo
-      - Capacitação Docente
-  Programas Educacionais:
-    Bolsas de Estudo:
-      - PROUNI
-      - FIES
-      - Ciências Sem Fronteiras
-    Educação à Distância:
-      - Plataformas Online
-      - Cursos EAD
-      - Inclusão Digital
-    Programas de Inclusão:
-      - Educação Especial
-      - Cotistas
-      - Educação Indígena
+  01.02 - Fiscalização e Tributação:
+    - 01.02.01 - Fiscalização Econômica
+    - 01.02.02 - Tributação e Impostos
+    - 01.02.03 - Combate à Evasão Fiscal
+    - 01.02.04 - Regulamentação Financeira
 
-Saúde:
-  Sistema Único de Saúde (SUS):
-    Atendimento Hospitalar:
-      - Hospitais Públicos
-      - Urgência e Emergência
-      - Cirurgias Eletivas
-    Unidades Básicas de Saúde:
-      - Estratégia Saúde da Família
-      - Consultas Ambulatoriais
-      - Vacinação
-    Medicamentos Gratuitos:
-      - Farmácia Popular
-      - Distribuição de Medicamentos
-      - Medicamentos de Alto Custo
-  Campanhas de Saúde Pública:
-    Vacinação:
-      - Calendário Nacional
-      - Campanhas Sazonais
-      - Cobertura Vacinal
-    Combate ao Tabagismo:
-      - Programas de Cessação
-      - Legislação Antitabagismo
-      - Campanhas Educativas
-    Prevenção de Doenças:
-      - DST/AIDS
-      - Diabetes e Hipertensão
-      - Saúde Mental
-  Vigilância Sanitária:
-    Segurança Alimentar:
-      - Inspeção de Alimentos
-      - Certificação Sanitária
-      - Controle de Agrotóxicos
-    Controle de Medicamentos:
-      - Registro de Medicamentos
-      - Fiscalização de Farmácias
-      - Uso Racional de Medicamentos
-    Inspeção de Estabelecimentos:
-      - Fiscalização de Serviços de Saúde
-      - Licenciamento Sanitário
-      - Controle de Infecções
+  01.03 - Investimentos e Comércio Exterior:
+    - 01.03.01 - Atração de Investimentos
+    - 01.03.02 - Investimentos no Exterior
+    - 01.03.03 - Investimentos Verdes
+    - 01.03.04 - Balança Comercial
+    - 01.03.05 - Política de Comércio Internacional
 
-Segurança Pública:
-  Policiamento:
-    Polícia Federal:
-      - Combate ao Tráfico de Drogas
-      - Crimes Cibernéticos
-      - Controle de Fronteiras
-    Polícia Rodoviária:
-      - Fiscalização de Rodovias
-      - Combate ao Roubo de Cargas
-      - Educação no Trânsito
-    Polícia Civil:
-      - Investigações Criminais
-      - Delegacias Especializadas
-      - Serviço de Inteligência
-  Combate ao Crime Organizado:
-    Narcotráfico:
-      - Apreensão de Drogas
-      - Desmantelamento de Quadrilhas
-      - Cooperação Internacional
-    Lavagem de Dinheiro:
-      - Rastreamento Financeiro
-      - Legislação Anticorrupção
-      - Confisco de Bens
-    Tráfico de Armas:
-      - Controle de Armas
-      - Operações Policiais
-      - Parcerias Internacionais
-  Prevenção à Violência:
-    Programas Sociais:
-      - Jovens em Situação de Risco
-      - Esporte e Cultura
-      - Capacitação Profissional
-    Políticas de Desarmamento:
-      - Campanhas de Entrega Voluntária
-      - Controle de Armas
-      - Fiscalização
-    Educação para a Paz:
-      - Projetos em Escolas
-      - Conscientização Comunitária
-      - Mediação de Conflitos
+  01.04 - Financiamento e Apoio Financeiro:
+    - 01.04.01 - Apoio Financeiro a Pequenas Empresas
+    - 01.04.02 - Apoio Financeiro para Inovação
+    - 01.04.03 - Financiamento de Infraestrutura
+    - 01.04.04 - Microcrédito e Inclusão Financeira
 
-Meio Ambiente e Sustentabilidade:
-  Conservação Ambiental:
-    Unidades de Conservação:
-      - Parques Nacionais
-      - Reservas Biológicas
-      - Áreas de Proteção Ambiental
-    Biodiversidade:
-      - Proteção de Espécies
-      - Pesquisa Científica
-      - Conservação de Ecossistemas
-    Proteção de Florestas:
-      - Combate ao Desmatamento
-      - Reflorestamento
-      - Manejo Sustentável
-  Mudanças Climáticas:
-    Redução de Emissões:
-      - Energias Renováveis
-      - Eficiência Energética
-      - Transporte Sustentável
-    Acordos Internacionais:
-      - Protocolo de Kyoto
-      - Acordo de Paris
-      - COP
-    Energia Limpa:
-      - Energia Solar
-      - Energia Eólica
-      - Biomassa
-  Energia Renovável:
-    Energia Solar:
-      - Tecnologias Fotovoltaicas
-      - Microgeração Distribuída
-      - Projetos Residenciais
-    Energia Eólica:
-      - Parques Eólicos
-      - Investimentos
-      - Impactos Ambientais
-    Biomassa:
-      - Biocombustíveis
-      - Aproveitamento de Resíduos
-      - Sustentabilidade
+  01.05 - Novas Economias e Inovações Financeiras:
+    - 01.05.01 - Economia Circular
+    - 01.05.02 - Economia Digital
+    - 01.05.03 - Economia Solidária
+    - 01.05.04 - Criptomoedas e Finanças Descentralizadas
 
-Ciência, Tecnologia e Inovação:
-  Pesquisa Científica:
-    Fomento à Pesquisa:
-      - Financiamento Governamental
-      - Bolsas de Estudo
-      - Parcerias Privadas
-    Institutos de Pesquisa:
-      - Embrapa
-      - Fiocruz
-      - INPE
-    Publicações Científicas:
-      - Revistas Indexadas
-      - Conferências
-      - Acesso Aberto
-  Desenvolvimento Tecnológico:
-    Tecnologia da Informação:
-      - Segurança Cibernética
-      - Inteligência Artificial
-      - Internet das Coisas
-    Biotecnologia:
-      - Engenharia Genética
-      - Biofármacos
-      - Agricultura Biotecnológica
-    Nanotecnologia:
-      - Aplicações Médicas
-      - Materiais Avançados
-      - Pesquisa e Inovação
-  Inovação e Startups:
-    Incubadoras de Empresas:
-      - Apoio ao Empreendedor
-      - Mentorias
-      - Programas de Aceleração
-    Financiamento à Inovação:
-      - Investimento Anjo
-      - Venture Capital
-      - Incentivos Fiscais
-    Propriedade Intelectual:
-      - Patentes
-      - Marcas e Registro
-      - Legislação
+02 - Educação:
+  02.01 - Ensino Básico:
+    02.01.01 - Educação Infantil
+    02.01.02 - Ensino Fundamental
+    02.01.03 - Alimentação Escolar
+    02.01.04 - Internet nas Escolas
+  02.02 - Ensino Superior:
+    02.02.01 - Pesquisa Acadêmica e Inovação
+  02.03 - Educação Profissional e Capacitação:
+    02.03.01 - Aprendizagem Profissional
+    02.03.02 - Capacitação Profissional
+    02.03.03 - Formação Profissional
+    02.03.04 - Políticas de Incentivo à Educação Profissional
+  02.04 - Programas e Políticas Educacionais:
+    02.04.01 - Políticas Educacionais
+    02.04.02 - Campanhas Educativas
+    02.04.03 - Bolsas e Incentivos
+    02.04.04 - Educação Inclusiva
+    02.04.05 - Apoio e Desenvolvimento Acadêmico
 
-Infraestrutura e Transportes:
-  Obras Públicas:
-    Rodovias:
-      - Construção de Estradas
-      - Manutenção Viária
-      - Concessões
-    Ferrovias:
-      - Expansão Ferroviária
-      - Transporte de Cargas
-      - Parcerias Público-Privadas
-    Portos e Aeroportos:
-      - Modernização
-      - Logística
-      - Comércio Exterior
-  Mobilidade Urbana:
-    Transporte Público:
-      - Ônibus
-      - Metrô
-      - VLT
-    Ciclovias:
-      - Expansão de Ciclovias
-      - Bike Sharing
-      - Segurança do Ciclista
-    Planejamento Urbano:
-      - Zoneamento
-      - Desenvolvimento Sustentável
-      - Habitação
-  Logística e Transporte:
-    Transporte de Cargas:
-      - Caminhoneiros
-      - Regulamentação
-      - Infraestrutura
-    Correios e Encomendas:
-      - Serviços Postais
-      - Modernização
-      - Atendimento ao Cliente
-    Infraestrutura Logística:
-      - Centros de Distribuição
-      - Tecnologia em Logística
-      - Integração Multimodal
+03 - Saúde:
+  03.01 - Sistema Único de Saúde (SUS):
+    03.01.01 - Atenção Primária
+    03.01.02 - Assistência em Saúde
+    03.01.03 - Atenção Integral
+    03.01.04 - Linhas de Cuidado
+    03.01.05 - Manejo Clínico
 
-Cultura, Artes e Patrimônio:
-  Eventos Culturais:
-    Festivais:
-      - Festivais de Música
-      - Festivais de Cinema
-      - Festivais Regionais
-    Exposições:
-      - Artes Visuais
-      - Fotografia
-      - Ciência e Tecnologia
-    Concertos:
-      - Música Clássica
-      - Música Popular
-      - Apresentações ao Ar Livre
-  Preservação do Patrimônio:
-    Patrimônio Histórico:
-      - Tombamento
-      - Restauração de Edifícios
-      - Centros Históricos
-    Museus:
-      - Acervos
-      - Programação Cultural
-      - Acessibilidade
-    Arquivos Nacionais:
-      - Documentação Histórica
-      - Digitalização
-      - Preservação Digital
-  Incentivo às Artes:
-    Lei de Incentivo à Cultura:
-      - Mecenato
-      - Projetos Aprovados
-      - Transparência
-    Fomento às Artes:
-      - Editais
-      - Prêmios Culturais
-      - Formação Artística
-    Educação Artística:
-      - Escolas de Arte
-      - Oficinas Culturais
-      - Projetos Sociais
+  03.02 - Campanhas de Saúde Pública:
+    03.02.01 - Combate à Dengue
+    03.02.02 - Saúde da Criança
+    03.02.03 - Saúde Mental
+    03.02.04 - Alimentação Saudável
 
-Esportes e Lazer:
-  Competições Esportivas:
-    Olimpíadas:
-      - Participação Brasileira
-      - Investimento em Atletas
-      - Modalidades
-    Campeonatos Nacionais:
-      - Futebol
-      - Voleibol
-      - Basquetebol
-    Esportes de Base:
-      - Escolinhas de Esporte
-      - Competições Escolares
-      - Infraestrutura
-  Políticas de Lazer:
-    Parques Públicos:
-      - Manutenção e Segurança
-      - Programação Cultural
-      - Acessibilidade
-    Atividades Recreativas:
-      - Eventos Comunitários
-      - Feiras e Festas
-      - Projetos Itinerantes
-    Programas Comunitários:
-      - Inclusão Social
-      - Saúde e Bem-Estar
-      - Educação Ambiental
-  Incentivo ao Esporte:
-    Bolsa Atleta:
-      - Critérios de Seleção
-      - Modalidades Contempladas
-      - Resultados Alcançados
-    Infraestrutura Esportiva:
-      - Construção de Centros Esportivos
-      - Modernização de Instalações
-      - Acesso Gratuito
-    Inclusão Esportiva:
-      - Esporte Adaptado
-      - Programas para Idosos
-      - Comunidades Carentes
+  03.03 - Vigilância Sanitária:
+    03.03.01 - Vigilância em Saúde
+    03.03.02 - Inovação em Saúde
+    03.03.03 - Controle de Doenças
+    03.03.04 - Inspeção de Produtos
+    03.03.05 - Fiscalização de Serviços de Saúde
 
-Agricultura, Pecuária e Abastecimento:
-  Agronegócio:
-    Exportação Agrícola:
-      - Soja
-      - Milho
-      - Carne Bovina
-    Tecnologia no Campo:
-      - Agricultura de Precisão
-      - Biotecnologia
-      - Irrigação
-    Gestão Agrícola:
-      - Planejamento
-      - Sustentabilidade
-      - Certificações
-  Segurança Alimentar:
-    Programas de Alimentação:
-      - PNAE
-      - PAA
-      - Bancos de Alimentos
-    Combate ao Desperdício:
-      - Logística de Distribuição
-      - Educação Alimentar
-      - Aproveitamento Integral
-    Agricultura Familiar:
-      - Crédito Rural
-      - Assistência Técnica
-      - Comercialização
-  Política Agrícola:
-    Crédito Rural:
-      - Pronaf
-      - Financiamentos
-      - Taxas de Juros
-    Seguro Agrícola:
-      - Coberturas Oferecidas
-      - Gestão de Riscos
-      - Adesão
-    Preços Mínimos:
-      - Política de Garantia
-      - Produtos Contemplados
-      - Armazenagem
+  03.04 - Saúde Pública:
+    03.04.01 - Políticas de Saúde Pública
+    03.04.02 - Epidemiologia
+    03.04.03 - Educação em Saúde
+    03.04.04 - Controle de Fatores Ambientais
 
-Indústria e Comércio:
-  Desenvolvimento Industrial:
-    Indústria de Transformação:
-      - Setor Automotivo
-      - Indústria Química
-      - Indústria Têxtil
-    Política Industrial:
-      - Incentivos Fiscais
-      - Zonas de Processamento
-      - Inovação Tecnológica
-    Parques Industriais:
-      - Infraestrutura
-      - Sustentabilidade
-      - Clusters
-  Comércio Interno:
-    Varejo:
-      - Comércio Eletrônico
-      - Pequenos Negócios
-      - Franchising
-    Comércio Eletrônico:
-      - Marketplaces
-      - Segurança Online
-      - Logística
-    Defesa do Consumidor:
-      - PROCON
-      - Legislação
-      - Recall de Produtos
-  Pequenas e Médias Empresas:
-    MEI:
-      - Formalização
-      - Benefícios
-      - Obrigações
-    Acesso ao Crédito:
-      - Linhas de Financiamento
-      - Microcrédito
-      - Garantias
-    Capacitação Empresarial:
-      - Sebrae
-      - Cursos e Workshops
-      - Consultorias
+  03.05 - Programas e Projetos em Saúde:
+    03.05.01 - Saúde Bucal
+    03.05.02 - Saúde do Idoso
+    03.05.03 - Saúde do Trabalhador
+    03.05.04 - Pesquisa e Desenvolvimento em Saúde
 
-Relações Internacionais e Diplomacia:
-  Acordos Internacionais:
-    Tratados Comerciais:
-      - Acordos Bilaterais
-      - Tarifas e Quotas
-      - Negociações
-    Acordos Bilaterais:
-      - Cooperação Econômica
-      - Educação e Cultura
-      - Segurança
-    Organizações Internacionais:
-      - ONU
-      - OEA
-      - OMS
-  Cooperação Internacional:
-    Ajuda Humanitária:
-      - Desastres Naturais
-      - Crises Humanitárias
-      - Programas de Assistência
-    Programas de Cooperação:
-      - Saúde
-      - Educação
-      - Meio Ambiente
-    Intercâmbio Cultural:
-      - Programas de Intercâmbio
-      - Festivais Internacionais
-      - Diplomacia Cultural
-  Política Externa:
-    Diplomacia Econômica:
-      - Promoção de Exportações
-      - Investimentos Externos
-      - Missões Comerciais
-    Segurança Global:
-      - Participação em Missões de Paz
-      - Combate ao Terrorismo
-      - Controle de Armas
-    Política de Vistos:
-      - Facilitação de Vistos
-      - Acordos de Isenção
-      - Turismo
+04 - Segurança Pública:
+  04.01 - Policiamento:
+    - 04.01.01 - Policiamento Ostensivo
+    - 04.01.02 - Policiamento Comunitário
+    - 04.01.03 - Policiamento Preventivo
+    - 04.01.04 - Patrulhamento Urbano
+    - 04.01.05 - Policiamento em Áreas Rurais
 
-Justiça e Direitos Humanos:
-  Sistema Judiciário:
-    Reformas Judiciais:
-      - Modernização
-      - Desburocratização
-      - Acesso Digital
-    Acesso à Justiça:
-      - Defensoria Pública
-      - Juizados Especiais
-      - Assistência Jurídica Gratuita
-    Tribunais Superiores:
-      - STF
-      - STJ
-      - TST
-  Direitos Humanos:
-    Combate à Tortura:
-      - Mecanismos de Prevenção
-      - Monitoramento de Presídios
-      - Legislação
-    Direitos das Mulheres:
-      - Lei Maria da Penha
-      - Igualdade de Gênero
-      - Empoderamento Econômico
-    Direitos das Crianças:
-      - Combate ao Trabalho Infantil
-      - Proteção contra a Violência
-      - Conselho Tutelar
-  Políticas Antidiscriminatórias:
-    Igualdade Racial:
-      - Políticas de Ação Afirmativa
-      - Combate ao Racismo
-      - Educação e Cultura
-    Direitos LGBTQIA+:
-      - Casamento Igualitário
-      - Combate à Homofobia
-      - Inclusão Social
-    Inclusão de Pessoas com Deficiência:
-      - Acessibilidade
-      - Educação Inclusiva
-      - Mercado de Trabalho
+  04.02 - Combate ao Crime Organizado:
+    - 04.02.01 - Investigação de Organizações Criminosas
+    - 04.02.02 - Operações Contra o Tráfico de Drogas
+    - 04.02.03 - Combate ao Tráfico de Armas
+    - 04.02.04 - Combate ao Crime Cibernético
+    - 04.02.05 - Repressão a Facções Criminosas
 
-Trabalho e Emprego:
-  Mercado de Trabalho:
-    Taxa de Desemprego:
-      - Indicadores Econômicos
-      - Análises Setoriais
-      - Políticas de Emprego
-    Empregos Formais:
-      - Carteira Assinada
-      - Direitos Trabalhistas
-      - Crescimento do Emprego
-    Trabalho Informal:
-      - Microempreendedorismo
-      - Economia Compartilhada
-      - Regulamentação
-  Legislação Trabalhista:
-    Reforma Trabalhista:
-      - Contratos de Trabalho
-      - Terceirização
-      - Jornada de Trabalho
-    Direitos Trabalhistas:
-      - FGTS
-      - Férias e 13º Salário
-      - Licença-Maternidade
-    Fiscalização do Trabalho:
-      - Combate ao Trabalho Escravo
-      - Condições de Trabalho
-      - Inspeções
-  Programas de Emprego:
-    Jovem Aprendiz:
-      - Qualificação Profissional
-      - Inserção no Mercado
-      - Parcerias com Empresas
-    Qualificação Profissional:
-      - Pronatec
-      - Cursos Técnicos
-      - Educação Continuada
-    Incentivos à Contratação:
-      - Redução de Encargos
-      - Programas de Estágio
-      - Apoio a Pequenas Empresas
+  04.03 - Prevenção e Enfrentamento à Violência:
+    - 04.03.01 - Prevenção à Violência
+    - 04.03.02 - Campanhas de Conscientização
+    - 04.03.03 - Enfrentamento à Violência Doméstica
+    - 04.03.04 - Enfrentamento ao Bullying e Cyberbullying
+    - 04.03.05 - Resolução de Conflitos
 
-Desenvolvimento Social:
-  Programas Sociais:
-    Bolsa Família:
-      - Condicionalidades
-      - Impacto na Pobreza
-      - Gestão e Fiscalização
-    Auxílio Emergencial:
-      - Beneficiários
-      - Impacto Econômico
-      - Fraudes e Controles
-    Programas de Habitação:
-      - Minha Casa Minha Vida
-      - Urbanização de Favelas
-      - Parcerias com Municípios
-  Combate à Pobreza:
-    Inclusão Produtiva:
-      - Economia Solidária
-      - Microcrédito
-      - Empreendedorismo
-    Transferência de Renda:
-      - Programas de Assistência
-      - Impactos Sociais
-      - Sustentabilidade
-    Segurança Alimentar:
-      - Restaurante Popular
-      - Cestas Básicas
-      - Educação Nutricional
-  Inclusão Social:
-    Políticas para Idosos:
-      - Estatuto do Idoso
-      - Centros de Convivência
-      - Saúde e Bem-Estar
-    Inclusão Digital:
-      - Acesso à Internet
-      - Centros de Informática
-      - Educação Tecnológica
-    Combate à Desigualdade:
-      - Distribuição de Renda
-      - Acesso a Serviços
-      - Políticas Afirmativas
+  04.04 - Justiça e Segurança:
+    - 04.04.01 - Cooperação entre Polícia e Sistema Judiciário
+    - 04.04.02 - Execução Penal e Reintegração Social
+    - 04.04.03 - Garantia de Direitos Humanos no Sistema Penal
+    - 04.04.04 - Atuação da Defensoria Pública
+    - 04.04.05 - Investigação de Crimes de Colarinho Branco
 
-Turismo:
-  Promoção Turística:
-    Campanhas Publicitárias:
-      - Destinos Nacionais
-      - Ecoturismo
-      - Turismo Cultural
-    Feiras de Turismo:
-      - Participação Internacional
-      - Networking
-      - Parcerias Comerciais
-    Marketing Digital:
-      - Mídias Sociais
-      - Plataformas Online
-      - Conteúdo Multimídia
-  Infraestrutura Turística:
-    Rede Hoteleira:
-      - Ampliação de Hotéis
-      - Qualidade de Serviços
-      - Sustentabilidade
-    Sinalização Turística:
-      - Placas Informativas
-      - Mapas e Guias
-      - Acessibilidade
-    Acessibilidade:
-      - Infraestrutura Adaptada
-      - Destinos Acessíveis
-      - Legislação
-  Eventos Turísticos:
-    Festivais Regionais:
-      - Carnaval
-      - Festas Juninas
-      - Festivais Gastronômicos
-    Turismo de Negócios:
-      - Feiras e Congressos
-      - Infraestrutura para Eventos
-      - Serviços Especializados
-    Ecoturismo:
-      - Parques Nacionais
-      - Turismo de Aventura
-      - Comunidades Locais
+05 - Meio Ambiente e Sustentabilidade:
+  05.01 - Conservação Ambiental:
+    - 05.01.01 - Proteção da Vida Selvagem
+    - 05.01.02 - Conservação Marinha
+    - 05.01.03 - Qualidade da Água
+    - 05.01.04 - Qualidade do Ar
+    - 05.01.05 - Recursos Hídricos
+    - 05.01.06 - Agricultura Sustentável
 
-Energia e Recursos Minerais:
-  Petróleo e Gás:
-    Exploração Offshore:
-      - Plataformas Marítimas
-      - Tecnologia de Extração
-      - Segurança Operacional
-    Pré-Sal:
-      - Reservas
-      - Investimentos
-      - Regulamentação
-    Refino e Distribuição:
-      - Refinarias
-      - Logística
-      - Mercado Interno
-  Mineração:
-    Recursos Minerais:
-      - Minério de Ferro
-      - Ouro
-      - Nióbio
-    Licenciamento Ambiental:
-      - Estudos de Impacto
-      - Compensações Ambientais
-      - Fiscalização
-    Segurança na Mineração:
-      - Barragens
-      - Condições de Trabalho
-      - Tecnologias de Segurança
-  Políticas Energéticas:
-    Matriz Energética:
-      - Diversificação
-      - Energias Renováveis
-      - Segurança Energética
-    Eficiência Energética:
-      - Programas de Conservação
-      - Tecnologias Eficientes
-      - Edificações Sustentáveis
-    Regulação do Setor:
-      - ANEEL
-      - Tarifas
-      - Concessões
+  05.02 - Mudanças Climáticas:
+    - 05.02.01 - Catástrofes Climáticas
+    - 05.02.02 - Justiça Climática
+    - 05.02.03 - Educação Ambiental
+    - 05.02.04 - Desenvolvimento Sustentável
 
-Comunicações e Mídia:
-  Telecomunicações:
-    Expansão da Banda Larga:
-      - Internet Rural
-      - Fibra Óptica
-      - Inclusão Digital
-    Telefonia Móvel:
-      - Cobertura 4G e 5G
-      - Planos e Tarifas
-      - Qualidade de Serviço
-    Infraestrutura de Rede:
-      - Satélites
-      - Cabeamento
-      - Segurança de Rede
-  Regulamentação da Mídia:
-    Lei de Mídia:
-      - Propriedade Cruzada
-      - Conteúdo Nacional
-      - Publicidade
-    Concessões de Rádio e TV:
-      - Licitações
-      - Renovação de Concessões
-      - Fiscalização
-    Combate à Desinformação:
-      - Fake News
-      - Educação Midiática
-      - Legislação Específica
-  Inclusão Digital:
-    Acesso à Internet:
-      - Programas Governamentais
-      - Preços Acessíveis
-      - Comunidades Remotas
-    Centros de Tecnologia:
-      - Telecentros
-      - Bibliotecas Digitais
-      - Formação em TI
-    Educação Digital:
-      - Alfabetização Digital
-      - Cursos Online
-      - Plataformas Educacionais
+  05.03 - Energia Renovável e Limpa:
+    - 05.03.01 - Energia Renovável
+    - 05.03.02 - Energia Limpa
 
-Defesa e Forças Armadas:
-  Segurança Nacional:
-    Defesa das Fronteiras:
-      - Vigilância
-      - Tecnologia de Monitoramento
-      - Combate ao Tráfico
-    Cibersegurança:
-      - Defesa Cibernética
-      - Proteção de Infraestruturas
-      - Capacitação
-    Inteligência Militar:
-      - Coleta de Informações
-      - Análise Estratégica
-      - Contrainteligência
-  Missões Militares:
-    Operações de Paz:
-      - Missões da ONU
-      - Treinamento
-      - Direitos Humanos
-    Cooperação Internacional:
-      - Acordos de Defesa
-      - Exercícios Conjuntos
-      - Diplomacia Militar
-    Treinamento Militar:
-      - Academias Militares
-      - Novas Tecnologias
-      - Educação Continuada
-  Defesa Civil:
-    Gestão de Desastres:
-      - Prevenção
-      - Resposta Imediata
-      - Planos de Contingência
-    Assistência Humanitária:
-      - Apoio a Desabrigados
-      - Serviços Médicos
-      - Parcerias com ONGs
-    Prevenção de Desastres Naturais:
-      - Monitoramento Climático
-      - Alertas Precoces
-      - Educação Comunitária
+  05.04 - Gestão de Resíduos e Licenciamento:
+    - 05.04.01 - Gestão de Resíduos
+    - 05.04.02 - Licenciamento Ambiental
 
-Políticas Públicas e Governança:
-  Transparência e Prestação de Contas:
-    Portal da Transparência:
-      - Gastos Públicos
-      - Contratos e Licitações
-      - Dados Abertos
-    Lei de Acesso à Informação:
-      - Pedidos de Informação
-      - Processamento e Resposta
-      - Divulgação Proativa
-    Controle Interno:
-      - Auditorias
-      - Corregedorias
-      - Ética Pública
-  Planejamento Governamental:
-    Planos Plurianuais:
-      - Objetivos Estratégicos
-      - Metas Setoriais
-      - Avaliação de Resultados
-    Orçamento Público:
-      - Lei Orçamentária Anual
-      - Execução Orçamentária
-      - Emendas Parlamentares
-    Metas Governamentais:
-      - Indicadores de Desempenho
-      - Monitoramento e Avaliação
-      - Relatórios de Gestão
-  Gestão Pública:
-    Modernização Administrativa:
-      - Governo Digital
-      - Desburocratização
-      - Atendimento ao Cidadão
-    Capacitação de Servidores:
-      - Treinamentos
-      - Avaliação de Desempenho
-      - Bem-Estar no Trabalho
-    Inovação na Gestão:
-      - Tecnologias da Informação
-      - Melhores Práticas
-      - Gestão por Resultados
+06 - Ciência, Tecnologia e Inovação:
+  06.01 - Pesquisa Científica:
+    - 06.01.01 - Ciência Aberta
+    - 06.01.02 - Ciência e Democracia
+    - 06.01.03 - Inteligência em Dados
 
-Legislação e Regulamentação:
-  Novas Leis e Decretos:
-    Propostas Legislativas:
-      - Projetos de Lei
-      - Debates no Congresso
-      - Consultas Públicas
-    Sancionamento de Leis:
-      - Aprovação Presidencial
-      - Vetos
-      - Publicação Oficial
-    Medidas Provisórias:
-      - Edição e Validade
-      - Tramitação
-      - Impactos
-  Reformas Legislativas:
-    Reforma da Previdência:
-      - Idade Mínima
-      - Tempo de Contribuição
-      - Regras de Transição
-    Reforma Tributária:
-      - Simplificação Fiscal
-      - Impostos sobre Renda
-      - Competitividade
-    Reforma Política:
-      - Sistema Eleitoral
-      - Financiamento de Campanhas
-      - Representatividade
-  Consultas Públicas:
-    Participação Popular:
-      - Audiências Públicas
-      - Plataformas Online
-      - Referendos e Plebiscitos
-    Audiências Públicas:
-      - Temas em Debate
-      - Acesso e Transparência
-      - Impacto nas Decisões
-    Sugestões Legislativas:
-      - Iniciativas Populares
-      - Tramitação
-      - Engajamento Cívico
+  06.02 - Desenvolvimento Tecnológico:
+    - 06.02.01 - Inteligência Artificial
+    - 06.02.02 - Propriedade Intelectual
+    - 06.02.03 - Novas Tecnologias
+    - 06.02.04 - Transferência de Tecnologia
 
-Eventos Oficiais e Cerimônias:
-  Discursos Oficiais:
-    Pronunciamentos Presidenciais:
-      - Mensagens à Nação
-      - Anúncios de Políticas
-      - Comemorações
-    Discursos em Eventos:
-      - Abertura de Congressos
-      - Cerimônias Oficiais
-      - Eventos Internacionais
-    Mensagens ao Congresso:
-      - Abertura dos Trabalhos
-      - Propostas de Governo
-      - Relação Executivo-Legislativo
-  Inaugurações:
-    Obras Públicas:
-      - Infraestrutura
-      - Saúde e Educação
-      - Habitação
-    Programas Governamentais:
-      - Lançamentos
-      - Expansões
-      - Resultados Alcançados
-    Eventos Culturais:
-      - Abertura de Festivais
-      - Inauguração de Museus
-      - Homenagens
-  Visitas Oficiais:
-    Visitas de Chefes de Estado:
-      - Acordos Bilaterais
-      - Cooperação Internacional
-      - Protocolos
-    Diplomacia Internacional:
-      - Cúpulas e Encontros
-      - Negociações
-      - Alinhamentos Políticos
-    Comemorações Nacionais:
-      - Independência
-      - Proclamação da República
-      - Datas Históricas
+  06.03 - Inovação:
+    - 06.03.01 - Inovação e Startups
+    - 06.03.02 - Inovação Aberta
+    - 06.03.03 - Inovação em Rede
+    - 06.03.04 - Política de Inovação
 
-Estatísticas e Dados Públicos:
-  Censos e Pesquisas:
-    IBGE:
-      - Censo Demográfico
-      - PNAD Contínua
-      - Pesquisa Industrial
-    Pesquisas Demográficas:
-      - População
-      - Migrações
-      - Urbanização
-    Estudos Socioeconômicos:
-      - Desigualdade
-      - Educação
-      - Saúde
-  Indicadores Econômicos e Sociais:
-    PIB:
-      - Setores da Economia
-      - Crescimento Econômico
-      - Projeções
-    Índice de Desemprego:
-      - População Economicamente Ativa
-      - Desemprego por Região
-      - Tendências
-    Índice de Gini:
-      - Desigualdade de Renda
-      - Comparações Internacionais
-      - Políticas de Redução
-  Dados Governamentais Abertos:
-    Transparência de Dados:
-      - Acesso Público
-      - Dados Orçamentários
-      - Programas Governamentais
-    Plataformas de Dados Abertos:
-      - Portais Oficiais
-      - Datasets
-      - Ferramentas de Visualização
-    Aplicações de Dados:
-      - Pesquisa Científica
-      - Desenvolvimento de Apps
-      - Controle Social
+  06.04 - Sustentabilidade e Descarbonização:
+    - 06.04.01 - Inovação e Sustentabilidade
+    - 06.04.02 - Inovação e Descarbonização
+    - 06.04.03 - Tecnologias Verdes
 
-Minorias e Grupos Especiais:
-  Políticas para Mulheres:
-    Combate à Violência Doméstica:
-      - Centros de Atendimento
-      - Delegacias Especializadas
-      - Medidas Protetivas
-    Empoderamento Feminino:
-      - Liderança e Gestão
-      - Igualdade Salarial
-      - Empreendedorismo
-    Saúde da Mulher:
-      - Saúde Reprodutiva
-      - Câncer de Mama
-      - Programas de Prevenção
-  Populações Indígenas:
-    Demarcação de Terras:
-      - Processos Legais
-      - Proteção de Terras
-      - Sustentabilidade
-    Direitos Culturais:
-      - Preservação de Tradições
-      - Educação Bilíngue
-      - Patrimônio Imaterial
-    Saúde Indígena:
-      - Atenção Básica
-      - Combate a Doenças
-      - Alimentação
-  Comunidade LGBTQIA+:
-    Direitos Civis:
-      - União Estável
-      - Adoção
-      - Legislação Antidiscriminatória
-    Combate à Discriminação:
-      - Campanhas Educativas
-      - Proteção Legal
-      - Denúncias e Apoio
-    Políticas de Inclusão:
-      - Saúde Integral
-      - Educação Inclusiva
-      - Mercado de Trabalho
+  06.05 - Política e Regulação:
+    - 06.05.01 - Políticas de Ciência e Tecnologia
+    - 06.05.02 - Regulação Tecnológica
+    - 06.05.03 - Ética em Tecnologia e Inovação
 
-Habitação e Urbanismo:
-  Programas Habitacionais:
-    Minha Casa Minha Vida:
-      - Faixas de Renda
-      - Critérios de Seleção
-      - Resultados
-    Regularização Fundiária:
-      - Titulação de Terras
-      - Segurança Jurídica
-      - Impacto Social
-    Habitação de Interesse Social:
-      - Subsídios
-      - Projetos Comunitários
-      - Sustentabilidade
-  Planejamento Urbano:
-    Zoneamento:
-      - Uso do Solo
-      - Legislação
-      - Áreas Verdes
-    Desenvolvimento Sustentável:
-      - Mobilidade Urbana
-      - Eficiência Energética
-      - Participação Comunitária
-    Mobilidade Urbana:
-      - Transporte Público
-      - Ciclovias
-      - Acessibilidade
-  Saneamento Básico:
-    Abastecimento de Água:
-      - Universalização
-      - Gestão de Recursos Hídricos
-      - Parcerias Público-Privadas
-    Tratamento de Esgoto:
-      - Cobertura
-      - Tecnologias de Tratamento
-      - Saúde Pública
-    Coleta de Lixo:
-      - Gestão de Resíduos
-      - Reciclagem
-      - Educação Ambiental
+07 - Infraestrutura e Transportes:
+  07.01 - Obras Públicas:
+    - 07.01.01 - Construção de Estradas
+    - 07.01.02 - Construção de Pontes e Viadutos
+    - 07.01.03 - Infraestrutura de Qualidade
+    - 07.01.04 - Saneamento e Drenagem
+    - 07.01.05 - Urbanização de Áreas
+
+  07.02 - Mobilidade Urbana:
+    - 07.02.01 - Transporte Público
+    - 07.02.02 - Inovação e Mobilidade Verde
+    - 07.02.03 - Ciclovias e Pedestres
+    - 07.02.04 - Infraestrutura para Bicicletas
+    - 07.02.05 - Acessibilidade Urbana
+
+  07.03 - Logística e Transporte:
+    - 07.03.01 - Transporte Rodoviário
+    - 07.03.02 - Transporte Ferroviário
+    - 07.03.03 - Transporte Aquaviário
+    - 07.03.04 - Transporte de Cargas
+    - 07.03.05 - Logística Integrada
+
+  07.04 - Aviação Civil:
+    - 07.04.01 - Infraestrutura Aeroportuária
+    - 07.04.02 - Conectividade e Infraestrutura
+    - 07.04.03 - Segurança e Regulamentação
+    - 07.04.04 - Serviços Aeroportuários
+    - 07.04.05 - Expansão da Malha Aérea
+
+  07.05 - Malha Ferroviária:
+    - 07.05.01 - Expansão da Malha Ferroviária
+    - 07.05.02 - Modernização de Infraestrutura Ferroviária
+    - 07.05.03 - Segurança no Transporte Ferroviário
+    - 07.05.04 - Concessões Ferroviárias
+    - 07.05.05 - Transporte de Passageiros e Cargas
+
+08 - Cultura, Artes e Patrimônio:
+  08.01 - Eventos Culturais:
+    - 08.01.01 - Festivais e Feiras
+    - 08.01.02 - Mostras e Exposições
+    - 08.01.03 - Apresentações Artísticas
+    - 08.01.04 - Eventos Tradicionais
+    - 08.01.05 - Encontros Comunitários
+
+  08.02 - Preservação do Patrimônio:
+    - 08.02.01 - Patrimônio Histórico
+    - 08.02.02 - Patrimônio Imaterial
+    - 08.02.03 - Patrimônio Natural
+    - 08.02.04 - Educação Patrimonial
+    - 08.02.05 - Restauração e Conservação
+
+  08.03 - Incentivo às Artes:
+    - 08.03.01 - Apoio a Artistas
+    - 08.03.02 - Financiamento e Editais
+    - 08.03.03 - Formação e Capacitação Artística
+    - 08.03.04 - Produção Audiovisual
+    - 08.03.05 - Artes Plásticas
+
+  08.04 - Cultura e Identidade Nacional:
+    - 08.04.01 - Artesanato Brasileiro
+    - 08.04.02 - Língua e Cultura
+    - 08.04.03 - Tradições e Costumes
+    - 08.04.04 - Cultura Popular
+    - 08.04.05 - Diversidade Cultural
+    - 08.04.06 - Mestres e Mestras da Cultura
+
+  08.05 - Cultura e Inovação:
+    - 08.05.01 - Cultura Digital
+    - 08.05.02 - Economia Criativa
+    - 08.05.03 - Integração Cultural
+    - 08.05.04 - Intercâmbio Cultural
+    - 08.05.05 - Pontos de Cultura
+    - 08.05.06 - Agentes Culturais Comunitários
+
+09 - Esportes e Lazer:
+  09.01 - Competições Esportivas:
+    - 09.01.01 - Jogos Olímpicos
+    - 09.01.02 - Jogos Paralímpicos
+    - 09.01.03 - Jogos de Inverno
+    - 09.01.04 - Competições Nacionais
+    - 09.01.05 - Competições Internacionais
+  09.02 - Políticas de Lazer:
+    - 09.02.01 - Lazer Comunitário
+    - 09.02.02 - Infraestrutura de Lazer
+    - 09.02.03 - Festivais e Eventos Recreativos
+    - 09.02.04 - Parques e Espaços Públicos
+    - 09.02.05 - Campanhas de Lazer Saudável
+  09.03 - Incentivo ao Esporte:
+    - 09.03.01 - Financiamento Esportivo
+    - 09.03.02 - Desenvolvimento Esportivo
+    - 09.03.03 - Apoio a Atletas
+    - 09.03.04 - Educação e Formação no Esporte
+    - 09.03.05 - Parcerias e Patrocínios
+  09.04 - Esporte e Inclusão:
+    - 09.04.01 - Inclusão Social no Esporte
+    - 09.04.02 - Esporte para Pessoas com Deficiência
+    - 09.04.03 - Esporte para Idosos
+    - 09.04.04 - Diversidade no Esporte
+    - 09.04.05 - Acessibilidade em Infraestruturas Esportivas
+  09.05 - Integridade Esportiva:
+    - 09.05.01 - Combate à Manipulação de Resultados
+    - 09.05.02 - Antidoping e Controle de Substâncias
+    - 09.05.03 - Ética e Conduta Esportiva
+    - 09.05.04 - Transparência em Organizações Esportivas
+    - 09.05.05 - Proteção de Jovens Atletas
+
+10 - Agricultura, Pecuária e Abastecimento:
+  10.01 - Agronegócio:
+    - 10.01.01 - Produção de Alimentos
+    - 10.01.02 - Desenvolvimento Rural
+    - 10.01.03 - Agricultura e Pecuária
+
+  10.02 - Segurança Alimentar:
+    - 10.02.01 - Abastecimento e Distribuição de Alimentos
+    - 10.02.02 - Combate à Fome
+    - 10.02.03 - Nutrição e Sustentabilidade
+
+  10.03 - Política Agrícola:
+    - 10.03.01 - Incentivos e Subsídios
+    - 10.03.02 - Crédito Agrícola
+    - 10.03.03 - Seguros Rurais
+
+  10.04 - Agricultura Familiar:
+    - 10.04.01 - Assistência Técnica e Extensão Rural
+    - 10.04.02 - Cooperativismo e Associativismo
+    - 10.04.03 - Apoio a Pequenos Produtores
+
+  10.05 - Sanidade:
+    - 10.05.01 - Sanidade Animal
+    - 10.05.02 - Sanidade Vegetal
+    - 10.05.03 - Controle de Pragas e Doenças
+11 - Indústria e Comércio:
+  11.01 - Desenvolvimento Industrial:
+    - 11.01.01 - Inovação Tecnológica
+    - 11.01.02 - Políticas de Incentivo
+    - 11.01.03 - Capacitação Profissional
+    - 11.01.04 - Sustentabilidade Industrial
+    - 11.01.05 - Indústria 4.0
+  11.02 - Comércio Interno e Exterior:
+    - 11.02.01 - Exportação e Importação
+    - 11.02.02 - Acordos Comerciais
+    - 11.02.03 - Competitividade
+    - 11.02.04 - Tarifas e Barreiras Comerciais
+    - 11.02.05 - Feiras e Eventos Comerciais
+  11.03 - Pequenas e Médias Empresas:
+    - 11.03.01 - Crédito e Financiamento
+    - 11.03.02 - Formalização e Regularização
+    - 11.03.03 - Empreendedorismo e Startups
+    - 11.03.04 - Capacitação para Pequenos Negócios
+    - 11.03.05 - Redes de Apoio e Parcerias
+  11.04 - Cadeia Produtiva:
+    - 11.04.01 - Logística e Distribuição
+    - 11.04.02 - Fornecedores e Subcontratados
+    - 11.04.03 - Gestão de Qualidade
+    - 11.04.04 - Sustentabilidade na Cadeia Produtiva
+    - 11.04.05 - Processos de Produção
+  11.05 - Integridade Empresarial:
+    - 11.05.01 - Compliance e Ética
+    - 11.05.02 - Transparência Corporativa
+    - 11.05.03 - Anticorrupção
+    - 11.05.04 - Gestão de Riscos
+    - 11.05.05 - Responsabilidade Social Empresarial
+
+12 - Relações Internacionais e Diplomacia:
+  12.01 - Acordos Internacionais:
+    - 12.01.01 - Acordos Comerciais
+    - 12.01.02 - Acordos de Cooperação Técnica
+    - 12.01.03 - Acordos Ambientais
+    - 12.01.04 - Acordos Culturais
+    - 12.01.05 - Acordos de Defesa e Segurança
+
+  12.02 - Cooperação Internacional:
+    - 12.02.01 - Assistência Humanitária
+    - 12.02.02 - Cooperação Técnica para o Desenvolvimento
+    - 12.02.03 - Parcerias de Pesquisa e Educação
+    - 12.02.04 - Capacitação e Treinamento
+    - 12.02.05 - Cooperação em Saúde Pública
+
+  12.03 - Política Externa:
+    - 12.03.01 - Estratégia Geopolítica
+    - 12.03.02 - Relações Bilaterais
+    - 12.03.03 - Relações Multilaterais
+    - 12.03.04 - Representações Diplomáticas
+    - 12.03.05 - Política Externa Econômica
+
+  12.04 - Integração Regional:
+    - 12.04.01 - Mercosul
+    - 12.04.02 - Aliança para o Pacífico
+    - 12.04.03 - Integração Energética
+    - 12.04.04 - Infraestrutura e Logística Regional
+    - 12.04.05 - Integração Cultural e Educacional
+
+  12.05 - Eventos e Conferências Internacionais:
+    - 12.05.01 - Reuniões de Alto Nível
+    - 12.05.02 - Eventos de Promoção Comercial
+
+13 - Justiça e Direitos Humanos:
+  13.01 - Sistema Judiciário:
+    - 13.01.01 - Advocacia Pública
+    - 13.01.02 - Direitos do Consumidor
+    - 13.01.03 - Justiça e Lei
+    - 13.01.04 - Prevenção e Combate à Corrupção
+
+  13.02 - Direitos Humanos:
+    - 13.02.01 - Direitos das Crianças
+    - 13.02.02 - Justiça Social
+    - 13.02.03 - Liberdade Religiosa
+    - 13.02.04 - Políticas Antidiscriminatórias
+    - 13.02.05 - Justiça Climática
+
+  13.03 - Direitos Fundamentais:
+    - 13.03.01 - Direitos das Crianças
+    - 13.03.02 - Liberdade Religiosa
+
+14 - Trabalho e Emprego:
+  14.01 - Mercado de Trabalho:
+    - 14.01.01 - Emprego e Renda
+    - 14.01.02 - Inserção no Mercado
+    - 14.01.03 - Intermediação de Mão de Obra
+    - 14.01.04 - Carreira Profissional
+    - 14.01.05 - Conferência Internacional do Trabalho
+
+  14.02 - Legislação Trabalhista:
+    - 14.02.01 - Direitos Trabalhistas
+    - 14.02.02 - Contratos de Trabalho
+    - 14.02.03 - Carteira de Trabalho Digital
+    - 14.02.04 - Acordos e Convenções Coletivas
+    - 14.02.05 - Rescisão Contratual
+
+  14.03 - Programas de Emprego:
+    - 14.03.01 - Qualificação Profissional
+    - 14.03.02 - Incentivos ao Emprego
+    - 14.03.03 - Políticas Ativas de Emprego
+    - 14.03.04 - Inclusão no Trabalho
+    - 14.03.05 - Apoio ao Primeiro Emprego
+
+  14.04 - Auditoria e Inspeção do Trabalho:
+    - 14.04.01 - Auditoria Fiscal do Trabalho
+    - 14.04.02 - Inspeção do Trabalho
+    - 14.04.03 - Combate ao Trabalho Infantil
+    - 14.04.04 - Combate ao Trabalho Escravo
+    - 14.04.05 - Monitoramento de Condições de Trabalho
+
+  14.05 - Segurança e Saúde no Trabalho:
+    - 14.05.01 - Normas Regulamentadoras (NRs)
+    - 14.05.02 - Prevenção de Acidentes de Trabalho
+    - 14.05.03 - Condições Ambientais de Trabalho
+    - 14.05.04 - Ergonomia no Trabalho
+    - 14.05.05 - Saúde Ocupacional
+
+15 - Desenvolvimento Social:
+  15.01 - Programas Sociais:
+    - 15.01.01 - Bolsa Família
+    - 15.01.02 - Iniciativa Social
+    - 15.01.03 - Juventude no Campo
+    - 15.01.04 - Programas para a Juventude
+    - 15.01.05 - Juventude Rural
+    - 15.01.06 - Atenção ao Idoso
+  15.02 - Combate à Pobreza:
+    - 15.02.01 - Combate à Desigualdade
+    - 15.02.02 - Combate à Fome
+    - 15.02.03 - Apoio Emergencial
+    - 15.02.04 - Igualdade Social
+  15.03 - Previdência Social:
+    - 15.03.01 - Benefícios Previdenciários
+    - 15.03.02 - Assistência à Aposentadoria
+
+16 - Turismo:
+  16.01 - Promoção Turística:
+    16.01.01 - Campanhas de Divulgação
+    16.01.02 - Parcerias e Cooperação Internacional
+    16.01.03 - Promoção de Destinos Nacionais
+    16.01.04 - Promoção de Destinos Regionais
+
+  16.02 - Infraestrutura Turística:
+    16.02.01 - Investimentos em Hospedagem
+    16.02.02 - Transporte e Acessibilidade
+    16.02.03 - Centros de Informação Turística
+    16.02.04 - Infraestrutura em Parques Naturais e Áreas de Lazer
+
+  16.03 - Eventos Turísticos:
+    16.03.01 - Feiras e Exposições
+    16.03.02 - Festivais e Celebrações Locais
+    16.03.03 - Eventos Esportivos de Turismo
+    16.03.04 - Congressos e Conferências
+
+  16.04 - Sustentabilidade no Turismo:
+    16.04.01 - Turismo Ecológico e de Natureza
+    16.04.02 - Práticas Sustentáveis em Destinos Turísticos
+    16.04.03 - Proteção de Patrimônio Cultural e Natural
+
+  16.05 - Capacitação e Qualificação:
+    16.05.01 - Formação Profissional em Turismo
+    16.05.02 - Qualificação de Guias Turísticos
+    16.05.03 - Cursos de Atendimento ao Cliente
+    16.05.04 - Treinamentos para Hotéis e Restaurantes
+    16.05.05 - Idiomas para Profissionais do Turismo
+
+17 - Energia e Recursos Minerais:
+  17.01 - Petróleo e Gás:
+    - 17.01.01 - Exploração de Petróleo
+    - 17.01.02 - Produção e Refino de Petróleo
+    - 17.01.03 - Exploração de Gás Natural
+    - 17.01.04 - Logística e Distribuição
+    - 17.01.05 - Investimentos no Setor de Petróleo e Gás
+
+  17.02 - Mineração:
+    - 17.02.01 - Extração de Minerais
+    - 17.02.02 - Processamento Mineral
+    - 17.02.03 - Pesquisa e Desenvolvimento Mineral
+    - 17.02.04 - Levantamento Geológico
+    - 17.02.05 - Sustentabilidade e Impacto Ambiental
+
+  17.03 - Políticas Energéticas:
+    - 17.03.01 - Regulação e Legislação Energética
+    - 17.03.02 - Subsídios e Incentivos
+    - 17.03.03 - Planejamento Energético Nacional
+    - 17.03.04 - Parcerias e Acordos Internacionais
+    - 17.03.05 - Luz para Todos
+
+  17.04 - Energias Renováveis:
+    - 17.04.01 - Energia Solar
+    - 17.04.02 - Energia Eólica
+    - 17.04.03 - Energia Hidrelétrica
+    - 17.04.04 - Biomassa e Biocombustíveis
+    - 17.04.05 - Pesquisa e Inovação em Energias Renováveis
+
+  17.05 - Infraestrutura e Investimentos:
+    - 17.05.01 - Investimentos em Transmissão e Distribuição
+    - 17.05.02 - Modernização da Infraestrutura Energética
+    - 17.05.03 - Redes de Energia Inteligente
+    - 17.05.04 - Manutenção e Expansão da Infraestrutura
+    - 17.05.05 - Parcerias Público-Privadas no Setor Energético
+
+18 - Comunicações e Mídia:
+  18.01 - Telecomunicações:
+    - 18.01.01 - Serviços Digitais
+    - 18.01.02 - Ligações Indesejadas
+    - 18.01.03 - Inclusão Digital
+    - 18.01.04 - Segurança da Informação
+    - 18.01.05 - Proteção de Dados
+
+  18.02 - Regulamentação da Mídia:
+    - 18.02.01 - Liberdade de Imprensa
+    - 18.02.02 - Linha Editorial
+    - 18.02.03 - Integridade da Informação
+    - 18.02.04 - Combate à Desinformação
+    - 18.02.05 - Linguagem Simples
+
+  18.03 - Comunicação Digital:
+    - 18.03.01 - Interação Digital
+    - 18.03.02 - Cidadania Digital
+    - 18.03.03 - Comunicação Antirracista
+    - 18.03.04 - Comunicação Pública
+    - 18.03.05 - Comunicação Digital
+
+19 - Defesa e Forças Armadas:
+  19.01 - Segurança Nacional:
+    - 19.01.01 - Inteligência e Contrainteligência
+    - 19.01.02 - Proteção de Infraestruturas Críticas
+    - 19.01.03 - Combate ao Terrorismo
+    - 19.01.04 - Segurança de Fronteiras
+    - 19.01.05 - Controle do Espaço Aéreo e Marítimo
+
+  19.02 - Missões Militares:
+    - 19.02.01 - Operações de Paz
+    - 19.02.02 - Operações no Exterior
+    - 19.02.03 - Cooperação Internacional em Defesa
+    - 19.02.04 - Treinamentos e Exercícios Militares
+    - 19.02.05 - Operações Antidrogas
+
+  19.03 - Defesa Civil:
+    - 19.03.01 - Preparação para Desastres
+    - 19.03.02 - Planejamento de Evacuação
+    - 19.03.03 - Resposta a Desastres
+    - 19.03.04 - Monitoramento de Riscos Naturais
+    - 19.03.05 - Gestão de Abrigos
+
+  19.04 - Situações de Emergência:
+    - 19.04.01 - Resgate e Salvamento
+    - 19.04.02 - Logística de Emergência
+    - 19.04.03 - Ações Humanitárias
+    - 19.04.04 - Reconstrução Pós-Desastre
+    - 19.04.05 - Assistência a Deslocados Internos
+
+  19.05 - Políticas e Estratégias de Defesa:
+    - 19.05.01 - Planejamento de Defesa Nacional
+    - 19.05.02 - Modernização das Forças Armadas
+    - 19.05.03 - Estratégia de Defesa Cibernética
+    - 19.05.04 - Desenvolvimento Militar
+    - 19.05.05 - Relações com a Indústria de Defesa
+
+20 - Políticas Públicas e Governança:
+  20.01 - Transparência e Prestação de Contas:
+    - 20.01.01 - Controle Interno
+    - 20.01.02 - Controle Social
+    - 20.01.03 - Integridade Pública
+
+  20.02 - Planejamento Governamental:
+    - 20.02.01 - Fortalecimento Institucional
+    - 20.02.02 - Reforma Administrativa
+    - 20.02.03 - Melhorias na Gestão
+
+  20.03 - Gestão Pública:
+    - 20.03.01 - Recursos Humanos
+    - 20.03.02 - Capacitação de Servidores
+    - 20.03.03 - Licitações e Contratos
+
+  20.04 - Administração Pública:
+    - 20.04.01 - Concursos Públicos
+    - 20.04.02 - Serviços Públicos
+    - 20.04.03 - Atendimento à População
+
+  20.05 - Participação e Colaboração Social:
+    - 20.05.01 - Sociedade Civil
+    - 20.05.02 - Transparência e Diálogo
+
+21 - Legislação e Regulamentação:
+  21.01 - Novas Leis e Decretos:
+    - 21.01.01 - Publicação de Leis e Decretos
+    - 21.01.02 - Aplicação e Vigência
+    - 21.01.03 - Alterações e Ajustes Normativos
+    - 21.01.04 - Regulamentações Complementares
+
+  21.02 - Reformas Legislativas:
+    - 21.02.01 - Propostas de Reforma
+    - 21.02.02 - Análise de Impacto das Reformas
+    - 21.02.03 - Aprovação de Reformas
+    - 21.02.04 - Implementação das Reformas
+
+  21.03 - Consultas Públicas:
+    - 21.03.01 - Abertura de Consultas
+    - 21.03.02 - Recebimento de Contribuições
+    - 21.03.03 - Análise de Contribuições
+    - 21.03.04 - Resultados de Consultas
+
+  21.04 - Avaliação Regulatória:
+    - 21.04.01 - Revisão de Normas e Regulamentos
+    - 21.04.02 - Análise de Impacto Regulatório
+    - 21.04.03 - Monitoramento da Implementação
+    - 21.04.04 - Relatórios de Desempenho Regulatórios
+
+  21.05 - Boas Práticas e Inovação Regulatória:
+    - 21.05.01 - Boas Práticas Regulatórias
+    - 21.05.02 - Inovação Jurídica e Regulatória
+    - 21.05.03 - Política Regulatória
+    - 21.05.04 - Cooperação Internacional em Regulação
+
+22 - Eventos Oficiais e Cerimônias:
+  22.01 - Discursos Oficiais:
+    - 22.01.01 - Pronunciamento em Rede Nacional
+    - 22.01.02 - Discursos em Cerimônias Públicas
+    - 22.01.03 - Entrevistas e Coletivas de Imprensa
+    - 22.01.04 - Discursos em Eventos Internacionais
+    - 22.01.05 - Mensagens de Fim de Ano e Comemorações
+
+  22.02 - Inaugurações:
+    - 22.02.01 - Inauguração de Obras Públicas
+    - 22.02.02 - Lançamento de Programas e Projetos
+    - 22.02.03 - Inauguração de Equipamentos Públicos
+    - 22.02.04 - Eventos de Entrega de Infraestrutura
+    - 22.02.05 - Cerimônias de Descerramento de Placas
+
+  22.03 - Visitas Oficiais:
+    - 22.03.01 - Visitas Internacionais de Chefes de Estado
+    - 22.03.02 - Visitas a Estados e Municípios
+    - 22.03.03 - Recepção de Dignitários Estrangeiros
+    - 22.03.04 - Encontros Bilaterais e Multilaterais
+    - 22.03.05 - Inspeções e Visitas Técnicas
+
+  22.04 - Luto Oficial:
+    - 22.04.01 - Declarações de Luto Nacional
+    - 22.04.02 - Homenagens Oficiais
+    - 22.04.03 - Cerimônias de Condolências
+
+  22.05 - Comemorações e Datas Festivas:
+    - 22.05.01 - Comemoração de Datas Cívicas
+    - 22.05.02 - Celebrações de Efemérides
+    - 22.05.03 - Eventos Comemorativos de Instituições Públicas
+    - 22.05.04 - Cerimônias de Posse e Aniversários de Instituições
+    - 22.05.05 - Homenagens e Reconhecimentos Públicos
+
+23 - Estatísticas e Dados Públicos:
+  23.01 - Censos e Pesquisas:
+    - 23.01.01 - Censo Demográfico
+    - 23.01.02 - Censo Agropecuário
+    - 23.01.03 - Pesquisa de Emprego e Renda
+    - 23.01.04 - Pesquisa de Saúde
+    - 23.01.05 - Pesquisa de Educação
+
+  23.02 - Indicadores Econômicos e Sociais:
+    - 23.02.01 - Índice de Preços
+    - 23.02.02 - Indicadores de Pobreza
+    - 23.02.03 - Índice de Desenvolvimento Humano (IDH)
+    - 23.02.04 - Taxa de Desemprego
+    - 23.02.05 - Taxa de Escolaridade
+
+  23.03 - Interoperabilidade:
+    - 23.03.01 - Dados Abertos
+    - 23.03.02 - Infraestrutura de Dados Públicos (IDP)
+    - 23.03.03 - Integração de Bases de Dados
+
+  23.04 - Transparência e Acesso à Informação:
+    - 23.04.01 - Portal da Transparência
+    - 23.04.02 - Lei de Acesso à Informação (LAI)
+    - 23.04.03 - Relatórios de Prestação de Contas
+    - 23.04.04 - Auditorias e Fiscalizações Públicas
+    - 23.04.05 - Dados sobre Licitações e Contratos Públicos
+
+24 - Minorias e Grupos Especiais:
+  24.01 - Políticas para Mulheres:
+    - 24.01.01 - Igualdade de Gênero
+    - 24.01.02 - Liderança Feminina
+    - 24.01.03 - Violência contra Mulheres
+    - 24.01.04 - Saúde da Mulher
+    - 24.01.05 - Educação e Empoderamento Feminino
+
+  24.02 - Populações Indígenas:
+    - 24.02.01 - Direitos Territoriais
+    - 24.02.02 - Saúde e Bem-Estar Indígena
+    - 24.02.03 - Educação Indígena
+
+  24.03 - Comunidade LGBTQIA+:
+    - 24.03.01 - Direitos e Políticas LGBTQIA+
+    - 24.03.02 - Saúde LGBTQIA+
+    - 24.03.03 - Combate à Discriminação
+    - 24.03.04 - Visibilidade e Inclusão
+
+  24.04 - Comunidades Tradicionais:
+    - 24.04.01 - Quilombolas
+    - 24.04.02 - Povos Ribeirinhos
+    - 24.04.03 - Povos de Terreiro
+    - 24.04.04 - Preservação Cultural e Patrimônio
+    - 24.04.05 - Acesso a Recursos Naturais
+
+  24.05 - Direitos das Pessoas com Deficiência:
+    - 24.05.01 - Acessibilidade e Inclusão
+    - 24.05.02 - Saúde e Reabilitação
+    - 24.05.03 - Inclusão no Mercado de Trabalho
+    - 24.05.04 - Direitos e Políticas Públicas para Deficientes
+
+25 - Habitação e Urbanismo:
+  25.01 - Programas Habitacionais:
+    - 25.01.01 - Minha Casa Minha Vida
+    - 25.01.02 - Parcerias Público-Privadas em Habitação
+    - 25.01.03 - Financiamento Habitacional
+    - 25.01.04 - Regularização Fundiária
+    - 25.01.05 - Moradia de Interesse Social
+
+  25.02 - Planejamento Urbano:
+    - 25.02.01 - Zoneamento Urbano
+    - 25.02.02 - Uso e Ocupação do Solo
+    - 25.02.03 - Áreas de Preservação e Espaços Verdes
+    - 25.02.04 - Licenciamento Urbano
+
+  25.03 - Saneamento Básico:
+    - 25.03.01 - Abastecimento de Água
+    - 25.03.02 - Coleta e Tratamento de Esgoto
+    - 25.03.03 - Gestão de Resíduos Sólidos
+    - 25.03.04 - Drenagem Urbana
+    - 25.03.05 - Saneamento Rural
+
+  25.04 - Desenvolvimento Urbano:
+    - 25.04.01 - Revitalização de Áreas Urbanas
+    - 25.04.02 - Sustentabilidade Urbana
+    - 25.04.03 - Projetos de Reurbanização
+    - 25.04.04 - Parcerias para Desenvolvimento Local
+    - 25.04.05 - Governança Metropolitana
+
+  25.05 - Infraestrutura Urbana:
+    - 25.05.01 - Obras Públicas e Infraestrutura Viária
+    - 25.05.02 - Iluminação Pública
+    - 25.05.03 - Equipamentos Urbanos (praças, parques)
+    - 25.05.04 - Acessibilidade Urbana
+    - 25.05.05 - Conservação e Manutenção Urbana
