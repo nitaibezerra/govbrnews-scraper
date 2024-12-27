@@ -1,9 +1,11 @@
 import argparse
 import logging
-from scraper.scrape_manager import run_scraper
+
 from augment_news.news_analyzer import NewsAnalyzer
 from augment_news.news_processor import NewsProcessor
+from dataset_manager import DatasetManager
 from dotenv import load_dotenv
+from scraper.scrape_manager import ScrapeManager
 
 # -------------------------------------------------------------------------------------
 # Common Initialization
@@ -16,6 +18,17 @@ load_dotenv()
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+
+def run_scraper(args):
+    """
+    Executes the scraper logic using the arguments provided by the 'scrape' subcommand.
+    """
+    dataset_manager = DatasetManager()
+    scrape_manager = ScrapeManager(dataset_manager)
+    scrape_manager.run_scraper(
+        args.agency, args.min_date, args.max_date, args.sequential
+    )
 
 
 # -------------------------------------------------------------------------------------
@@ -99,7 +112,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == "scrape":
-        run_scraper(args.agency, args.min_date, args.max_date, args.sequential)
+        run_scraper(args)
     elif args.command == "augment":
         run_augment(args)
     else:
