@@ -1,9 +1,9 @@
 import logging
 import os
 import tempfile
-from datetime import date
-from typing import Dict, List, Optional, OrderedDict
+from typing import Optional, OrderedDict
 
+import pandas as pd
 import requests
 from datasets import Dataset, load_dataset
 from datasets.exceptions import DatasetNotFoundError
@@ -15,16 +15,11 @@ DATASET_PATH = "nitaibezerra/govbrnews"  # The name of the Hugging Face dataset
 
 class DatasetManager:
     """
-    A class responsible for interacting with the Hugging Face Hub for datasets.
+    A simplified class responsible for interacting with the Hugging Face Hub for datasets.
 
-    Responsibilities:
-    - Load an existing dataset from the Hugging Face Hub.
-    - Push new or updated datasets to the Hub.
-    - Save datasets as CSV files and upload them for easy download.
-    - Split and upload datasets by specific attributes (e.g., by 'agency' or 'year').
-
-    By separating these responsibilities from data processing, the data processing code can
-    remain focused solely on merging, cleaning, and transforming the data.
+    Major changes compared to previous versions:
+      - Use Hugging Face Dataset + pandas as main data structures.
+      - Eliminate repeated dict conversions by operating primarily in DataFrame form.
     """
 
     def __init__(self):
@@ -33,219 +28,203 @@ class DatasetManager:
         self.token = HfFolder.get_token()
         if not self.token:
             raise ValueError(
-                "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
+                "Hugging Face authentication token is missing. "
+                "Please login using `huggingface-cli login`."
             )
 
     def insert(self, new_data: OrderedDict):
         """
-        Add new data to the existing dataset and upload to Hugging Face.
-        It ignores duplicates based on unique_id keeping the current values.
+        Insert new rows into the dataset, ignoring duplicates based on 'unique_id',
+        then push the result to the Hugging Face Hub.
         """
-        updated_dataset = self._merge_new_data_into_existing(new_data)
-        self._create_and_push_dataset(updated_dataset)
+        dataset = self._load_existing_dataset()
+        if dataset is None:
+            logging.info("No existing dataset found. Creating from scratch...")
+            # If there is no existing dataset, just create a new one from new_data
+            dataset = Dataset.from_dict(new_data)
+        else:
+            # Merge new rows into the existing dataset
+            dataset = self._merge_new_into_dataset(dataset, new_data)
+
+        # Sort the dataset before pushing
+        dataset = self._sort_dataset(dataset)
+
+        # Push updated dataset (and CSVs) to the Hub
+        self._push_dataset_and_csvs(dataset)
 
     def update(self, updated_data: OrderedDict):
         """
-        Update existing rows in the dataset based on the matching unique_id,
-        overwriting fields in those rows with the new values provided.
-
-        Only rows with a matching unique_id are affected. Fields that appear in
-        updated_data replace their counterparts in the existing dataset.
+        Update existing rows in the dataset based on 'unique_id',
+        overwriting fields in matching rows with the new values.
+        Also supports adding entirely new columns if they don't exist yet.
         """
-        updated_dataset = self._apply_updates_to_existing(updated_data)
-        self._create_and_push_dataset(updated_dataset)
-
-    def _merge_new_data_into_existing(self, new_data: OrderedDict) -> OrderedDict:
-        """
-        Merge new rows into existing dataset, ignoring duplicates based on unique_id.
-        """
-        existing_data = self._load_existing_dataset()
-
-        if existing_data is None:
-            logging.info("No existing dataset found. Initializing with new data.")
-            return new_data
-
-        logging.info("Existing dataset loaded.")
-
-        existing_unique_ids = set(existing_data["unique_id"])
-        logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
-
-        # Identify new items not present in the existing dataset
-        unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
-        if not unique_ids_to_add:
-            logging.info("No new unique news items to add. Dataset is up to date.")
-            # Return the dataset in its original structure (columnar).
-            return {key: existing_data[key] for key in existing_data.features.keys()}
-
-        # Filter the new data to only include rows with unique_ids_to_add
-        filtered_new_data = {
-            key: [
-                value
-                for idx, value in enumerate(values)
-                if new_data["unique_id"][idx] in unique_ids_to_add
-            ]
-            for key, values in new_data.items()
-        }
-
-        logging.info(
-            f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
-        )
-
-        # Combine the existing data and the filtered new data
-        combined_data = {
-            key: existing_data[key] + filtered_new_data.get(key, [])
-            for key in existing_data.features.keys()
-        }
-
-        # Sort the data by 'agency' ascending and 'published_at' descending
-        sorted_data = self._sort_data(combined_data)
-
-        return sorted_data
-
-    def _apply_updates_to_existing(self, updated_data: OrderedDict) -> OrderedDict:
-        """
-        Update existing rows in the dataset with values from updated_data,
-        matched by unique_id. Only columns present in updated_data are overwritten.
-        """
-        existing_dataset = self._load_existing_dataset()
-        if existing_dataset is None:
+        dataset = self._load_existing_dataset()
+        if dataset is None:
             logging.info(
-                "No existing dataset found. Cannot update non-existent dataset."
+                "No existing dataset found. Cannot update a non-existent dataset."
             )
-            return None
+            return
 
-        # Convert existing dataset to a list-of-dicts for easier updates
-        existing_list = [
-            {key: existing_dataset[key][i] for key in existing_dataset.features.keys()}
-            for i in range(len(existing_dataset["unique_id"]))
-        ]
+        # Apply row-by-row updates
+        dataset = self._apply_updates(dataset, updated_data)
 
-        # Build a map from unique_id -> index
-        unique_id_to_index = {
-            record["unique_id"]: idx for idx, record in enumerate(existing_list)
-        }
+        # Sort again after updates
+        dataset = self._sort_dataset(dataset)
 
-        # Convert updated_data to a list-of-dicts as well
-        updated_list = [
-            {key: updated_data[key][i] for key in updated_data.keys()}
-            for i in range(len(updated_data["unique_id"]))
-        ]
-
-        # For each updated record, if the unique_id is found in existing_list,
-        # overwrite only the provided fields
-        update_count = 0
-        for record in updated_list:
-            uid = record["unique_id"]
-            if uid in unique_id_to_index:
-                existing_idx = unique_id_to_index[uid]
-                for field, value in record.items():
-                    # Overwrite existing fields
-                    if field in existing_list[existing_idx]:
-                        existing_list[existing_idx][field] = value
-                update_count += 1
-
-        logging.info(f"Updated {update_count} records based on unique_id.")
-
-        # Sort the updated list-of-dicts
-        sorted_data = self._sort_data_list_of_dicts(existing_list)
-
-        return self._convert_list_of_dicts_to_columnar(sorted_data)
-
-    def _sort_data(self, ordered_data: OrderedDict) -> List[Dict[str, str]]:
-        """
-        Sort the dataset by 'agency' (asc) and 'published_at' (desc).
-
-        :param ordered_data: The combined data in columnar format.
-        :return: A list of dictionaries representing the sorted data.
-        """
-        list_of_dicts = [
-            {key: ordered_data[key][i] for key in ordered_data.keys()}
-            for i in range(len(ordered_data["unique_id"]))
-        ]
-        return self._sort_data_list_of_dicts(list_of_dicts)
-
-    def _sort_data_list_of_dicts(
-        self, list_of_dicts: List[Dict[str, str]]
-    ) -> List[Dict[str, str]]:
-        """
-        Sort a list of dicts by 'agency' ascending and 'published_at' descending.
-        """
-        return sorted(
-            list_of_dicts,
-            key=lambda x: (
-                x.get("agency", ""),
-                -x.get("published_at").toordinal()
-                if isinstance(x.get("published_at"), date)
-                else float("-inf"),
-            ),
-        )
-
-    def _convert_list_of_dicts_to_columnar(
-        self, data_list: List[Dict[str, str]]
-    ) -> OrderedDict:
-        """
-        Convert from list-of-dicts format to columnar format.
-        """
-        if not data_list:
-            return None
-        columns = data_list[0].keys()
-        return {col: [row[col] for row in data_list] for col in columns}
+        # Push updated dataset (and CSVs) to the Hub
+        self._push_dataset_and_csvs(dataset)
 
     def _load_existing_dataset(self) -> Optional[Dataset]:
         """
-        Attempt to load an existing dataset from the Hugging Face Hub.
-        If the dataset does not exist, return None.
+        Load an existing dataset from the Hugging Face Hub, or return None if not found.
         """
         try:
             existing_dataset = load_dataset(self.dataset_path, split="train")
-            logging.info(f"Existing dataset loaded from {self.dataset_path}.")
+            logging.info(
+                f"Existing dataset loaded from {self.dataset_path}. "
+                f"\nRow count: {len(existing_dataset)}"
+            )
             return existing_dataset
         except DatasetNotFoundError:
             logging.info(f"No existing dataset found at {self.dataset_path}.")
             return None
 
-    def _create_and_push_dataset(self, dataset):
+    def _merge_new_into_dataset(
+        self, hf_dataset: Dataset, new_data: OrderedDict
+    ) -> Dataset:
         """
-        Create a Hugging Face Dataset from the columnar (or list-of-dicts) data
-        and push it to the Hub, along with CSV file versions for easy download.
+        Merge new rows into the existing HF Dataset, ignoring duplicates by 'unique_id'.
         """
-        # If the dataset is already a list-of-dicts, convert to columnar
-        if isinstance(dataset, list):
-            dataset = self._convert_to_columnar_format(dataset)
+        df_existing = hf_dataset.to_pandas()
+        df_new = pd.DataFrame(new_data)
 
-        # Create the Dataset
-        combined_dataset = Dataset.from_dict(dataset)
+        # Identify duplicates
+        unique_ids_existing = set(df_existing["unique_id"])
+        df_filtered = df_new[~df_new["unique_id"].isin(unique_ids_existing)]
 
-        # Push the dataset
-        self._push_dataset_to_hub(combined_dataset)
+        if df_filtered.empty:
+            logging.info("No new unique items to add; dataset is up to date.")
+            return hf_dataset
 
-        # Push the CSVs
-        self._push_global_csv(combined_dataset)
-        self._push_csvs_by_agency(combined_dataset)
-        self._push_csvs_by_year(combined_dataset)
+        logging.info(f"Adding {len(df_filtered)} new items.")
+        df_combined = pd.concat([df_existing, df_filtered], ignore_index=True)
 
-    def _convert_to_columnar_format(
-        self, sorted_data: List[Dict[str, str]]
-    ) -> OrderedDict:
+        return Dataset.from_pandas(df_combined)
+
+    def _apply_updates(self, hf_dataset: Dataset, updated_data: OrderedDict) -> Dataset:
         """
-        Convert sorted data from list-of-dictionaries format to columnar format.
-
-        :param sorted_data: The sorted data as a list of dictionaries.
-        :return: An OrderedDict representing the data in columnar format.
+        For each row in 'updated_data', update matching rows in the existing dataset by 'unique_id'.
+        If new columns are present, they will be added to the DataFrame with default None,
+        then filled for any matching row.
         """
-        return {
-            key: [item.get(key, None) for item in sorted_data]
-            for key in sorted_data[0].keys()
-        }
+        df = hf_dataset.to_pandas()
+        df_updates = pd.DataFrame(updated_data)
+
+        # 1. Identify & add new columns if needed
+        for col in df_updates.columns:
+            if col not in df.columns:
+                df[col] = None
+
+        # 2. Overwrite rows that match on 'unique_id'
+        df.set_index("unique_id", inplace=True)
+        df_updates.set_index("unique_id", inplace=True)
+
+        # Intersection of indexes to ensure we only update existing rows
+        intersection = df.index.intersection(df_updates.index)
+        if intersection.empty:
+            logging.info(
+                "No matching 'unique_id' found in existing dataset; no rows updated."
+            )
+        else:
+            # Overwrite the row data
+            df.loc[intersection, df_updates.columns] = df_updates.loc[intersection]
+
+        df.reset_index(inplace=True)
+        df_updates.reset_index(inplace=True)
+
+        # Recreate HF Dataset
+        return Dataset.from_pandas(df)
+
+    def _sort_dataset(self, hf_dataset: Dataset) -> Dataset:
+        """
+        Sort the dataset by 'agency' ascending and 'published_at' descending using pandas,
+        then convert back to a HF Dataset.
+        """
+        df = hf_dataset.to_pandas()
+
+        # If 'published_at' is a datetime or something else, you'll want to parse or coerce properly.
+        # For simplicity, we'll assume 'published_at' is comparable in descending order:
+        df.sort_values(
+            by=["agency", "published_at"], ascending=[True, False], inplace=True
+        )
+
+        return Dataset.from_pandas(df)
+
+    def _push_dataset_and_csvs(self, dataset: Dataset):
+        """
+        Push the HF Dataset to the Hub and generate CSV variants for easy download.
+        """
+        self._push_dataset_to_hub(dataset)
+        self._push_global_csv(dataset)
+        self._push_csvs_by_agency(dataset)
+        self._push_csvs_by_year(dataset)
 
     def _push_dataset_to_hub(self, dataset: Dataset):
         """
         Push the entire dataset to the Hugging Face Hub.
-
-        :param dataset: The dataset to push.
         """
         dataset.push_to_hub(self.dataset_path, private=False)
         logging.info(f"Dataset pushed to Hugging Face Hub at {self.dataset_path}.")
+
+    def _push_global_csv(self, dataset: Dataset):
+        """
+        Save the entire dataset as a single CSV file and upload it.
+        """
+        self._save_and_upload_csv(dataset, file_name="govbr_news_dataset.csv")
+
+    def _push_csvs_by_agency(self, dataset: Dataset):
+        """
+        Split the dataset by 'agency' and upload CSV files for each agency.
+        """
+        self._push_csvs_by_group(
+            dataset, group_by_column="agency", subfolder="agencies"
+        )
+
+    def _push_csvs_by_year(self, dataset: Dataset):
+        """
+        Split the dataset by year (derived from 'published_at') and upload CSV files for each year.
+        """
+        self._push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
+
+    def _push_csvs_by_group(
+        self, dataset: Dataset, group_by_column: str, subfolder: str = ""
+    ):
+        """
+        Split the dataset by a specified column (e.g., 'agency' or 'year') and upload CSV files
+        for each distinct group in that column.
+        """
+        df = dataset.to_pandas()
+
+        # If grouping by 'year', extract it from 'published_at'
+        if group_by_column == "year":
+            # Ensure 'published_at' is a datetime if you want to extract year
+            # df["published_at"] = pd.to_datetime(df["published_at"], errors='coerce')
+            df["year"] = df["published_at"].apply(
+                lambda x: x.year if hasattr(x, "year") else None
+            )
+            group_column = "year"
+        else:
+            group_column = group_by_column
+
+        groups = df.groupby(group_column)
+        for group_name, group_df in groups:
+            file_name = f"{group_name}_news_dataset.csv"
+            temp_dataset = Dataset.from_pandas(group_df.reset_index(drop=True))
+
+            self._save_and_upload_csv(temp_dataset, file_name, subfolder=subfolder)
+            logging.info(
+                f"CSV for '{group_name}' uploaded under '{subfolder}' directory."
+            )
 
     @retry(
         exceptions=requests.exceptions.RequestException,
@@ -255,6 +234,9 @@ class DatasetManager:
         jitter=(1, 3),
     )
     def _upload_file(self, path_or_fileobj, path_in_repo, repo_id):
+        """
+        Low-level file upload helper to the Hugging Face Hub with retry logic.
+        """
         self.api.upload_file(
             path_or_fileobj=path_or_fileobj,
             path_in_repo=path_in_repo,
@@ -290,58 +272,3 @@ class DatasetManager:
             logging.info(
                 f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
             )
-
-    def _push_global_csv(self, dataset: Dataset):
-        """
-        Save the entire dataset as a CSV file and upload it to the Hugging Face dataset repository.
-
-        :param dataset: The dataset to save and upload as a CSV file.
-        """
-        self._save_and_upload_csv(dataset, "govbr_news_dataset.csv")
-
-    def _push_csvs_by_group(
-        self, dataset: Dataset, group_by_column: str, subfolder: str = ""
-    ):
-        """
-        Split the dataset by a specified column and upload CSV files for each group.
-
-        :param dataset: The dataset to split and upload.
-        :param group_by_column: The column to group by (e.g., 'agency' or 'year').
-        :param subfolder: Optional subfolder in the repository to place the CSV files.
-        """
-        df = dataset.to_pandas()
-
-        # If grouping by 'year', extract the year from the 'published_at' column
-        if group_by_column == "year":
-            df["year"] = df["published_at"].apply(lambda x: x.year)
-            group_column = "year"
-        else:
-            group_column = group_by_column
-
-        groups = df.groupby(group_column)
-
-        for group_name, group_df in groups:
-            file_name = f"{group_name}_news_dataset.csv"
-            temp_dataset = Dataset.from_pandas(group_df.reset_index(drop=True))
-            self._save_and_upload_csv(temp_dataset, file_name, subfolder=subfolder)
-            logging.info(
-                f"CSV for '{group_name}' uploaded under '{subfolder}' directory."
-            )
-
-    def _push_csvs_by_agency(self, dataset: Dataset):
-        """
-        Split the dataset by 'agency' and upload CSV files for each agency.
-
-        :param dataset: The dataset to split and upload.
-        """
-        self._push_csvs_by_group(
-            dataset, group_by_column="agency", subfolder="agencies"
-        )
-
-    def _push_csvs_by_year(self, dataset: Dataset):
-        """
-        Split the dataset by 'published_at' year and upload CSV files for each year.
-
-        :param dataset: The dataset to split and upload.
-        """
-        self._push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
