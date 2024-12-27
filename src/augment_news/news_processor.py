@@ -3,7 +3,9 @@ import logging
 import os
 from typing import Dict, Optional
 
-from augment_news.news_analyzer import NewsAnalyzer
+from augment_news.classifier_summarizer import (
+    ClassifierSummarizer,
+)
 
 
 class NewsProcessor:
@@ -12,13 +14,13 @@ class NewsProcessor:
 
     The NewsProcessor is designed to handle the ingestion, processing, and augmentation
     of news data stored in JSON files. It filters news entries based on specified criteria,
-    classifies the content using a NewsAnalyzer instance, and generates summaries for
+    classifies the content using a ClassifierSummarizer instance, and generates summaries for
     enhanced analysis and reporting.
 
     Attributes:
         raw_extractions_dir (str): Directory containing raw news extractions.
         augmented_news_dir (str): Directory where augmented news will be saved.
-        analyzer (Optional[NewsAnalyzer]): An instance of NewsAnalyzer for analyzing and
+        inference_engine (Optional[ClassifierSummarizer]): An instance of ClassifierSummarizer for analyzing and
             classifying news entries.
 
     Methods:
@@ -47,18 +49,18 @@ class NewsProcessor:
         self,
         raw_extractions_dir: str = "raw_extractions",
         augmented_news_dir: str = "augmented_news",
-        analyzer: Optional[NewsAnalyzer] = None,
+        inference_engine: Optional[ClassifierSummarizer] = None,
     ):
         """
-        Initialize the NewsProcessor with directories and a NewsAnalyzer instance.
+        Initialize the NewsProcessor with directories and a ClassifierSummarizer instance.
 
         :param raw_extractions_dir: Directory containing raw news extractions.
         :param augmented_news_dir: Directory where augmented news will be saved.
-        :param analyzer: An instance of NewsAnalyzer for analyzing news entries.
+        :param inference_engine: An instance of ClassifierSummarizer for infer news entries.
         """
         self.raw_extractions_dir = raw_extractions_dir
         self.augmented_news_dir = augmented_news_dir
-        self.analyzer = analyzer
+        self.inference_engine = inference_engine
 
         # Ensure the augmented_news directory exists
         if not os.path.exists(self.augmented_news_dir):
@@ -149,18 +151,18 @@ class NewsProcessor:
         :return: The augmented news data with classification and summary.
         """
         for news_entry in news_data:
-            result, _ = self.analyzer.classify_and_generate_summary(news_entry)
-            if result:
-                # Convert Pydantic models to dictionaries for serialization
-                news_entry["classified_themes"] = [
-                    theme.dict() for theme in result.classified_themes
-                ]
-                news_entry["news_summary"] = result.news_summary
-                logging.info(
-                    f"\n\nNotícia processada:\nTítulo: {news_entry['title']}\n\nTemas classificados: {news_entry['classified_themes']}\nResumo: {news_entry['news_summary']}\n"
-                )
-            else:
-                logging.error(f"Failed to process news entry: {news_entry['title']}")
+            themes, summary = self.inference_engine.get_themes_and_summary(news_entry)
+            news_entry["classified_themes"] = themes
+            news_entry["news_summary"] = summary
+            logging.info(
+                f"""
+Notícia processada:
+Título: {news_entry['title']}
+
+Temas classificados: {news_entry['classified_themes']}
+Resumo: {news_entry['news_summary']}
+"""
+            )
         return news_data
 
     def save_augmented_file(self, augmented_file_path: str, augmented_data: Dict):

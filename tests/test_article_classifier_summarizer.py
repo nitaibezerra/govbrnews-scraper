@@ -2,7 +2,9 @@ import os
 import pytest
 import yaml
 
-from src.augment_news.news_analyzer import NewsAnalyzer
+from src.augment_news.classifier_summarizer import (
+    ClassifierSummarizer,
+)
 
 
 def _load_test_cases():
@@ -27,7 +29,7 @@ class TestNewsAnalyzer:
         expected_theme_macro_code = test_case["expected_theme_macro_code"]
 
         # Initialize the analyzer (mock out if needed)
-        analyzer = NewsAnalyzer()
+        analyzer = ClassifierSummarizer()
 
         # Get themes (which contain "theme_code" in each dict)
         themes, _ = analyzer.get_themes_and_summary(news_entry)

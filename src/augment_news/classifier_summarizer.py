@@ -31,10 +31,10 @@ class NewsClassificationResult(BaseModel):
     )
 
 
-class NewsAnalyzer:
+class ClassifierSummarizer:
     def __init__(self):
         """
-        Initialize the NewsAnalyzer with the OpenAI API key.
+        Initialize the ClassifierSummarizer with the OpenAI API key.
         """
         self.openai_api_key = os.getenv("OPENAI_API_KEY")
         if not self.openai_api_key:

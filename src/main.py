@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from augment_news.news_analyzer import NewsAnalyzer
+from augment_news.classifier_summarizer import ClassifierSummarizer
 from augment_news.news_processor import NewsProcessor
 from dataset_manager import DatasetManager
 from dotenv import load_dotenv
@@ -41,9 +41,9 @@ def run_augment(args):
     Executes the augmentation (news classification) logic using the arguments
     provided by the 'augment' subcommand.
     """
-    # Initialize the NewsAnalyzer and NewsProcessor
-    analyzer = NewsAnalyzer()
-    processor = NewsProcessor(analyzer=analyzer)
+    # Initialize the ClassifierSummarizer and NewsProcessor
+    inference_engine = ClassifierSummarizer()
+    processor = NewsProcessor(inference_engine=inference_engine)
 
     # Process the files (e.g., classify AI-related articles)
     processor.process_files(min_date=args.min_date, agency=args.agency)
