@@ -1,13 +1,15 @@
 import logging
 import os
 import tempfile
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional, OrderedDict
 
 import requests
 from datasets import Dataset, load_dataset
 from datasets.exceptions import DatasetNotFoundError
 from huggingface_hub import HfApi, HfFolder
 from retry import retry
+
+DATASET_PATH = "nitaibezerra/govbrnews"  # The name of the Hugging Face dataset
 
 
 class DatasetManager:
@@ -24,8 +26,8 @@ class DatasetManager:
     remain focused solely on merging, cleaning, and transforming the data.
     """
 
-    def __init__(self, dataset_path: str):
-        self.dataset_path = dataset_path
+    def __init__(self):
+        self.dataset_path = DATASET_PATH
         self.api = HfApi()
         self.token = HfFolder.get_token()
         if not self.token:
@@ -46,7 +48,7 @@ class DatasetManager:
             logging.info(f"No existing dataset found at {self.dataset_path}.")
             return None
 
-    def push_dataset_to_hub(self, dataset: Dataset):
+    def _push_dataset_to_hub(self, dataset: Dataset):
         """
         Push the entire dataset to the Hugging Face Hub.
 
@@ -99,7 +101,7 @@ class DatasetManager:
                 f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
             )
 
-    def push_global_csv(self, dataset: Dataset):
+    def _push_global_csv(self, dataset: Dataset):
         """
         Save the entire dataset as a CSV file and upload it to the Hugging Face dataset repository.
 
@@ -136,7 +138,7 @@ class DatasetManager:
                 f"CSV for '{group_name}' uploaded under '{subfolder}' directory."
             )
 
-    def push_csvs_by_agency(self, dataset: Dataset):
+    def _push_csvs_by_agency(self, dataset: Dataset):
         """
         Split the dataset by 'agency' and upload CSV files for each agency.
 
@@ -144,7 +146,7 @@ class DatasetManager:
         """
         self.push_csvs_by_group(dataset, group_by_column="agency", subfolder="agencies")
 
-    def push_csvs_by_year(self, dataset: Dataset):
+    def _push_csvs_by_year(self, dataset: Dataset):
         """
         Split the dataset by 'published_at' year and upload CSV files for each year.
 
@@ -152,20 +154,36 @@ class DatasetManager:
         """
         self.push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
 
-    def create_and_push_dataset(self, column_data: Dict[str, Any]):
+    def create_and_push_dataset(self, dataset: List[Dict[str, str]]):
         """
         Create a Hugging Face Dataset from the columnar data and push it to the Hub,
         along with CSV file versions for easy download.
 
         :param column_data: The data in columnar format.
         """
+        column_data = self._convert_to_columnar_format(dataset)
+
         # Create the Dataset
         combined_dataset = Dataset.from_dict(column_data)
 
         # Push the dataset
-        self.push_dataset_to_hub(combined_dataset)
+        self._push_dataset_to_hub(combined_dataset)
 
         # Push the CSVs
-        self.push_global_csv(combined_dataset)
-        self.push_csvs_by_agency(combined_dataset)
-        self.push_csvs_by_year(combined_dataset)
+        self._push_global_csv(combined_dataset)
+        self._push_csvs_by_agency(combined_dataset)
+        self._push_csvs_by_year(combined_dataset)
+
+    def _convert_to_columnar_format(
+        self, sorted_data: List[Dict[str, str]]
+    ) -> OrderedDict:
+        """
+        Convert sorted data from list-of-dictionaries format to columnar format.
+
+        :param sorted_data: The sorted data as a list of dictionaries.
+        :return: An OrderedDict representing the data in columnar format.
+        """
+        return {
+            key: [item.get(key, None) for item in sorted_data]
+            for key in sorted_data[0].keys()
+        }

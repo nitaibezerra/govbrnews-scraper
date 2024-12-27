@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-from typing import Dict, List
+from typing import List
 
 import yaml
 from augment_news.news_analyzer import NewsAnalyzer
@@ -22,8 +22,6 @@ load_dotenv()
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-DATASET_PATH = "nitaibezerra/govbrnews"  # The name of the Hugging Face dataset
 
 # -------------------------------------------------------------------------------------
 # Scraper-Related Functions
@@ -53,66 +51,42 @@ def load_urls_from_yaml(file_name: str, agency: str = None) -> List[str]:
     return list(agencies.values())
 
 
-def create_scrapers(urls: List[str], min_date: str, max_date: str = None):
-    """
-    Create a list of WebScraper instances for each URL.
-    """
-    return [WebScraper(min_date, url, max_date=max_date) for url in urls]
-
-
-def process_and_upload_data(
-    news_data,
-    data_processor,
-    dataset_manager,
-):
-    """
-    Process the news data and upload it to the Hugging Face dataset.
-    """
-    new_data = data_processor.preprocess_data(news_data)
-    existing_data = dataset_manager.load_existing_dataset()
-    combined_data = data_processor.load_existing_and_merge_with_new(
-        new_data, existing_data
-    )
-    sorted_data = data_processor.sort_combined_data(combined_data)
-    column_data = data_processor.convert_to_columnar_format(sorted_data)
-
-    dataset_manager.create_and_push_dataset(column_data)
-
-
 def run_scraper(args):
     """
     Executes the scraping logic using the arguments provided by the 'scraper' subcommand.
     """
     try:
         urls = load_urls_from_yaml("scraper/site_urls.yaml", args.agency)
-        scrapers = create_scrapers(urls, args.min_date, args.max_date)
+        scrapers = [
+            WebScraper(args.min_date, url, max_date=args.max_date) for url in urls
+        ]
 
-        # Initialize the DataProcessor and DatasetManager
-        data_processor = DataProcessor(DATASET_PATH)
-        dataset_manager = DatasetManager(DATASET_PATH)
+        # Initialize the DatasetManager and DataProcessor
+        dataset_manager = DatasetManager()
+        data_processor = DataProcessor(dataset_manager=dataset_manager)
 
         if args.sequential:
             # Process each agency's news sequentially
             for scraper in scrapers:
-                news_data = scraper.scrape_news()
-                if news_data:
+                scraped_data = scraper.scrape_news()
+                if scraped_data:
                     logging.info(f"Appending news for {scraper.agency} to HF dataset.")
-                    process_and_upload_data(news_data, data_processor, dataset_manager)
+                    data_processor.process_and_upload_data(scraped_data)
                 else:
                     logging.info(f"No news found for {scraper.agency}.")
         else:
             # Accumulate all news and process together
             all_news_data = []
             for scraper in scrapers:
-                news_data = scraper.scrape_news()
-                if news_data:
-                    all_news_data.extend(news_data)
+                scraped_data = scraper.scrape_news()
+                if scraped_data:
+                    all_news_data.extend(scraped_data)
                 else:
                     logging.info(f"No news found for {scraper.agency}.")
 
             if all_news_data:
                 logging.info("Appending all collected news to HF dataset.")
-                process_and_upload_data(all_news_data, data_processor, dataset_manager)
+                data_processor.process_and_upload_data(all_news_data)
             else:
                 logging.info("No news found for any agency.")
     except ValueError as e:
@@ -156,7 +130,7 @@ def main():
 
     # ------------------ SCRAPER SUBPARSER ------------------
     scraper_parser = subparsers.add_parser(
-        "scraper", help="Scrape news data and upload to a Hugging Face dataset."
+        "scrape", help="Scrape news data and upload to a Hugging Face dataset."
     )
     scraper_parser.add_argument(
         "--min-date",
@@ -203,7 +177,7 @@ def main():
     # Parse the command-line arguments and dispatch
     args = parser.parse_args()
 
-    if args.command == "scraper":
+    if args.command == "scrape":
         run_scraper(args)
     elif args.command == "augment":
         run_augment(args)

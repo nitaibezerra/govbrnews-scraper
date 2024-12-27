@@ -4,6 +4,7 @@ from collections import OrderedDict
 from datetime import date
 from typing import Dict, List, Optional
 
+from dataset_manager import DatasetManager
 from datasets import Dataset
 
 # Set up logging configuration
@@ -25,10 +26,20 @@ class DataProcessor:
     - Preparing the final processed data into columnar format suitable for integration with a dataset manager.
     """
 
-    def __init__(self, dataset_path: str):
-        self.dataset_path = dataset_path
+    def __init__(self, dataset_manager: DatasetManager):
+        self.dataset_manager = dataset_manager
 
-    def preprocess_data(self, data: List[Dict[str, str]]) -> OrderedDict:
+    def process_and_upload_data(self, new_data):
+        """
+        Process the news data and upload it to the Hugging Face dataset.
+        """
+        new_data = self._preprocess_data(new_data)
+        existing_data = self.dataset_manager.load_existing_dataset()
+        combined_data = self.merge_new_data_into_existing(new_data, existing_data)
+
+        self.dataset_manager.create_and_push_dataset(combined_data)
+
+    def _preprocess_data(self, data: List[Dict[str, str]]) -> OrderedDict:
         """
         Preprocess data by:
         - Adding the unique_id column.
@@ -39,7 +50,7 @@ class DataProcessor:
         """
         # Generate unique_id for each record
         for item in data:
-            item["unique_id"] = self.generate_unique_id(
+            item["unique_id"] = self._generate_unique_id(
                 item.get("agency", ""),
                 item.get("published_at", ""),
                 item.get("title", ""),
@@ -62,7 +73,7 @@ class DataProcessor:
 
         return ordered_column_data
 
-    def generate_unique_id(
+    def _generate_unique_id(
         self, agency: str, published_at_value: str, title: str
     ) -> str:
         """
@@ -81,7 +92,7 @@ class DataProcessor:
         hash_input = f"{agency}_{date_str}_{title}".encode("utf-8")
         return hashlib.md5(hash_input).hexdigest()
 
-    def load_existing_and_merge_with_new(
+    def merge_new_data_into_existing(
         self, new_data: OrderedDict, existing_data: Optional[Dataset]
     ) -> OrderedDict:
         """
@@ -118,19 +129,21 @@ class DataProcessor:
             for key in existing_data.features.keys()
         }
 
-        return combined_data
+        sorted_data = self._sort_data(combined_data)
 
-    def sort_combined_data(self, combined_data: OrderedDict) -> List[Dict[str, str]]:
+        return sorted_data
+
+    def _sort_data(self, ordered_data: OrderedDict) -> List[Dict[str, str]]:
         """
-        Sort the combined dataset by 'agency' (asc) and 'published_at' (desc).
+        Sort the dataset by 'agency' (asc) and 'published_at' (desc).
 
-        :param combined_data: The combined data in columnar format.
+        :param ordered_data: The combined data in columnar format.
         :return: A list of dictionaries representing the sorted data.
         """
         return sorted(
             [
-                {key: combined_data[key][i] for key in combined_data.keys()}
-                for i in range(len(combined_data["unique_id"]))
+                {key: ordered_data[key][i] for key in ordered_data.keys()}
+                for i in range(len(ordered_data["unique_id"]))
             ],
             key=lambda x: (
                 x.get("agency", ""),
@@ -139,17 +152,3 @@ class DataProcessor:
                 else float("-inf"),
             ),
         )
-
-    def convert_to_columnar_format(
-        self, sorted_data: List[Dict[str, str]]
-    ) -> OrderedDict:
-        """
-        Convert sorted data from list-of-dictionaries format to columnar format.
-
-        :param sorted_data: The sorted data as a list of dictionaries.
-        :return: An OrderedDict representing the data in columnar format.
-        """
-        return {
-            key: [item.get(key, None) for item in sorted_data]
-            for key in sorted_data[0].keys()
-        }
