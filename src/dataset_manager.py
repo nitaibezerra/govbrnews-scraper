@@ -36,7 +36,56 @@ class DatasetManager:
                 "Hugging Face authentication token is missing. Please login using `huggingface-cli login`."
             )
 
-    def load_existing_dataset(self) -> Optional[Dataset]:
+    def add_new_data(self, new_data: OrderedDict):
+        """
+        Add new data to the existing dataset and upload to Hugging Face.
+        """
+        updated_dataset = self._merge_new_data_into_existing(new_data)
+        self.create_and_push_dataset(updated_dataset)
+
+    def _merge_new_data_into_existing(self, new_data: OrderedDict) -> OrderedDict:
+        """
+        existing_data is now passed in from outside. If it is None, it means no existing dataset.
+        """
+        existing_data = self._load_existing_dataset()
+
+        if existing_data is None:
+            logging.info("No existing dataset found. Initializing with new data.")
+            return new_data
+
+        logging.info("Existing dataset loaded from outside.")
+
+        existing_unique_ids = set(existing_data["unique_id"])
+        logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
+
+        unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
+        if not unique_ids_to_add:
+            logging.info("No new unique news items to add. Dataset is up to date.")
+            return {key: existing_data[key] for key in existing_data.features.keys()}
+
+        filtered_new_data = {
+            key: [
+                value
+                for idx, value in enumerate(values)
+                if new_data["unique_id"][idx] in unique_ids_to_add
+            ]
+            for key, values in new_data.items()
+        }
+
+        logging.info(
+            f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
+        )
+
+        combined_data = {
+            key: existing_data[key] + filtered_new_data.get(key, [])
+            for key in existing_data.features.keys()
+        }
+
+        sorted_data = self._sort_data(combined_data)
+
+        return sorted_data
+
+    def _load_existing_dataset(self) -> Optional[Dataset]:
         """
         Attempt to load an existing dataset from the Hugging Face Hub.
         If the dataset does not exist, return None.
@@ -48,6 +97,60 @@ class DatasetManager:
         except DatasetNotFoundError:
             logging.info(f"No existing dataset found at {self.dataset_path}.")
             return None
+
+    def _sort_data(self, ordered_data: OrderedDict) -> List[Dict[str, str]]:
+        """
+        Sort the dataset by 'agency' (asc) and 'published_at' (desc).
+
+        :param ordered_data: The combined data in columnar format.
+        :return: A list of dictionaries representing the sorted data.
+        """
+        return sorted(
+            [
+                {key: ordered_data[key][i] for key in ordered_data.keys()}
+                for i in range(len(ordered_data["unique_id"]))
+            ],
+            key=lambda x: (
+                x.get("agency", ""),
+                -x.get("published_at").toordinal()
+                if isinstance(x.get("published_at"), date)
+                else float("-inf"),
+            ),
+        )
+
+    def create_and_push_dataset(self, dataset: List[Dict[str, str]]):
+        """
+        Create a Hugging Face Dataset from the columnar data and push it to the Hub,
+        along with CSV file versions for easy download.
+
+        :param column_data: The data in columnar format.
+        """
+        column_data = self._convert_to_columnar_format(dataset)
+
+        # Create the Dataset
+        combined_dataset = Dataset.from_dict(column_data)
+
+        # Push the dataset
+        self._push_dataset_to_hub(combined_dataset)
+
+        # Push the CSVs
+        self._push_global_csv(combined_dataset)
+        self._push_csvs_by_agency(combined_dataset)
+        self._push_csvs_by_year(combined_dataset)
+
+    def _convert_to_columnar_format(
+        self, sorted_data: List[Dict[str, str]]
+    ) -> OrderedDict:
+        """
+        Convert sorted data from list-of-dictionaries format to columnar format.
+
+        :param sorted_data: The sorted data as a list of dictionaries.
+        :return: An OrderedDict representing the data in columnar format.
+        """
+        return {
+            key: [item.get(key, None) for item in sorted_data]
+            for key in sorted_data[0].keys()
+        }
 
     def _push_dataset_to_hub(self, dataset: Dataset):
         """
@@ -154,106 +257,3 @@ class DatasetManager:
         :param dataset: The dataset to split and upload.
         """
         self.push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
-
-    def create_and_push_dataset(self, dataset: List[Dict[str, str]]):
-        """
-        Create a Hugging Face Dataset from the columnar data and push it to the Hub,
-        along with CSV file versions for easy download.
-
-        :param column_data: The data in columnar format.
-        """
-        column_data = self._convert_to_columnar_format(dataset)
-
-        # Create the Dataset
-        combined_dataset = Dataset.from_dict(column_data)
-
-        # Push the dataset
-        self._push_dataset_to_hub(combined_dataset)
-
-        # Push the CSVs
-        self._push_global_csv(combined_dataset)
-        self._push_csvs_by_agency(combined_dataset)
-        self._push_csvs_by_year(combined_dataset)
-
-    def _convert_to_columnar_format(
-        self, sorted_data: List[Dict[str, str]]
-    ) -> OrderedDict:
-        """
-        Convert sorted data from list-of-dictionaries format to columnar format.
-
-        :param sorted_data: The sorted data as a list of dictionaries.
-        :return: An OrderedDict representing the data in columnar format.
-        """
-        return {
-            key: [item.get(key, None) for item in sorted_data]
-            for key in sorted_data[0].keys()
-        }
-
-    def add_new_data(self, new_data: OrderedDict):
-        """
-        Add new data to the existing dataset and upload to Hugging Face.
-        """
-        updated_dataset = self._merge_new_data_into_existing(new_data)
-        self.create_and_push_dataset(updated_dataset)
-
-    def _merge_new_data_into_existing(self, new_data: OrderedDict) -> OrderedDict:
-        """
-        existing_data is now passed in from outside. If it is None, it means no existing dataset.
-        """
-        existing_data = self.load_existing_dataset()
-
-        if existing_data is None:
-            logging.info("No existing dataset found. Initializing with new data.")
-            return new_data
-
-        logging.info("Existing dataset loaded from outside.")
-
-        existing_unique_ids = set(existing_data["unique_id"])
-        logging.info(f"Existing dataset has {len(existing_unique_ids)} entries.")
-
-        unique_ids_to_add = set(new_data["unique_id"]) - existing_unique_ids
-        if not unique_ids_to_add:
-            logging.info("No new unique news items to add. Dataset is up to date.")
-            return {key: existing_data[key] for key in existing_data.features.keys()}
-
-        filtered_new_data = {
-            key: [
-                value
-                for idx, value in enumerate(values)
-                if new_data["unique_id"][idx] in unique_ids_to_add
-            ]
-            for key, values in new_data.items()
-        }
-
-        logging.info(
-            f"Adding {len(filtered_new_data['unique_id'])} new unique news items to the dataset."
-        )
-
-        combined_data = {
-            key: existing_data[key] + filtered_new_data.get(key, [])
-            for key in existing_data.features.keys()
-        }
-
-        sorted_data = self._sort_data(combined_data)
-
-        return sorted_data
-
-    def _sort_data(self, ordered_data: OrderedDict) -> List[Dict[str, str]]:
-        """
-        Sort the dataset by 'agency' (asc) and 'published_at' (desc).
-
-        :param ordered_data: The combined data in columnar format.
-        :return: A list of dictionaries representing the sorted data.
-        """
-        return sorted(
-            [
-                {key: ordered_data[key][i] for key in ordered_data.keys()}
-                for i in range(len(ordered_data["unique_id"]))
-            ],
-            key=lambda x: (
-                x.get("agency", ""),
-                -x.get("published_at").toordinal()
-                if isinstance(x.get("published_at"), date)
-                else float("-inf"),
-            ),
-        )
