@@ -74,13 +74,19 @@ class DatasetManager:
         # Push updated dataset (and CSVs) to the Hub
         self._push_dataset_and_csvs(dataset)
 
-    def get(self, min_date: str, max_date: str) -> pd.DataFrame:
+    def get(
+        self, min_date: str, max_date: str, agency: Optional[str] = None
+    ) -> pd.DataFrame:
         """
         Return rows where 'published_at' is between min_date and max_date (inclusive).
+        Optionally filter by a specific 'agency' if provided.
 
         :param min_date: The minimum date in YYYY-MM-DD format (e.g. '2023-01-01').
         :param max_date: The maximum date in YYYY-MM-DD format (e.g. '2023-12-31').
-        :return: A pandas DataFrame with rows that match the date range.
+        :param agency:   An optional string representing the agency name/key to filter by.
+                        If None, no filtering by agency is done.
+        :return:         A pandas DataFrame with rows that match the given date range
+                        (and agency if provided).
         """
         dataset = self._load_existing_dataset()
         if dataset is None:
@@ -95,6 +101,13 @@ class DatasetManager:
             (df["published_at"] >= pd.to_datetime(min_date))
             & (df["published_at"] <= pd.to_datetime(max_date))
         ]
+
+        # If an agency is provided, filter further
+        if agency is not None:
+            df = df[df["agency"] == agency]
+
+        # Print the count of articles found
+        logging.info(f"Found {len(df)} articles matching the specified criteria.")
 
         return df
 

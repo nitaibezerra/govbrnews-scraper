@@ -6,10 +6,6 @@ from dataset_manager import DatasetManager
 from dotenv import load_dotenv
 from scraper.scrape_manager import ScrapeManager
 
-# -------------------------------------------------------------------------------------
-# Common Initialization
-# -------------------------------------------------------------------------------------
-
 # Load environment variables from .env
 load_dotenv()
 
@@ -40,16 +36,15 @@ def run_augment(args):
     Executes the augmentation (news classification) logic using the arguments
     provided by the 'augment' subcommand.
     """
-    # If no max_date is provided, default to something like "2999-12-31"
+    # If no max_date is provided, default to something like "2100-12-31"
     if not args.max_date:
         args.max_date = "2100-12-31"
 
-    # Initialize AugmentationManager
     augmentation_manager = AugmentationManager()
 
-    # Call the classify and update method
+    # Pass agency (if provided), along with the date range
     augmentation_manager.classify_and_update_dataset(
-        min_date=args.min_date, max_date=args.max_date
+        min_date=args.min_date, max_date=args.max_date, agency=args.agency
     )
 
 
