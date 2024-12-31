@@ -2,9 +2,7 @@ import os
 import pytest
 import yaml
 
-from src.augmentation.classifier_summarizer import (
-    ClassifierSummarizer,
-)
+from src.augmentation.classifier_summarizer import ClassifierSummarizer
 
 
 def _load_test_cases():
@@ -32,10 +30,16 @@ class TestNewsAnalyzer:
         analyzer = ClassifierSummarizer()
 
         # Get themes (which contain "theme_code" in each dict)
-        themes, _ = analyzer.get_themes_and_summary(news_entry)
+        themes, summary = analyzer.get_themes_and_summary(news_entry)
 
         # Extract the theme_code from each returned theme
         returned_theme_codes = [theme_dict["theme_code"] for theme_dict in themes]
+
+        # Extract the theme from each returned theme
+        returned_themes = [theme_dict["theme"] for theme_dict in themes]
+
+        # Check if the summary is not empty
+        assert summary, "The summary is empty"
 
         # Check if any theme_code starts with the expected macro code
         assert any(
@@ -44,3 +48,6 @@ class TestNewsAnalyzer:
             f"None of the returned theme codes ({returned_theme_codes}) starts with "
             f"{expected_theme_macro_code}"
         )
+
+        # Check if all themes are set
+        assert all(returned_themes), "Not all themes are set"
