@@ -109,7 +109,8 @@ class DatasetManager:
         logging.info(f"Adding {len(df_filtered)} new items.")
         df_combined = pd.concat([df_existing, df_filtered], ignore_index=True)
 
-        return Dataset.from_pandas(df_combined)
+        # Use preserve_index=False to avoid adding __index_level_0__ column
+        return Dataset.from_pandas(df_combined, preserve_index=False)
 
     def _apply_updates(self, hf_dataset: Dataset, updated_data: OrderedDict) -> Dataset:
         """
@@ -139,11 +140,10 @@ class DatasetManager:
             # Overwrite the row data
             df.loc[intersection, df_updates.columns] = df_updates.loc[intersection]
 
-        df.reset_index(inplace=True)
-        df_updates.reset_index(inplace=True)
+        df.reset_index(drop=False, inplace=True)
+        df_updates.reset_index(drop=False, inplace=True)
 
-        # Recreate HF Dataset
-        return Dataset.from_pandas(df)
+        return Dataset.from_pandas(df, preserve_index=False)
 
     def _sort_dataset(self, hf_dataset: Dataset) -> Dataset:
         """
@@ -157,8 +157,7 @@ class DatasetManager:
         df.sort_values(
             by=["agency", "published_at"], ascending=[True, False], inplace=True
         )
-
-        return Dataset.from_pandas(df)
+        return Dataset.from_pandas(df, preserve_index=False)
 
     def _push_dataset_and_csvs(self, dataset: Dataset):
         """
