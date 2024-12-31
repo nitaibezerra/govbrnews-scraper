@@ -63,7 +63,7 @@ class ClassifierSummarizer:
 
     def get_themes_and_summary(
         self, news_entry: Dict[str, str]
-    ) -> Tuple[List[str], str]:
+    ) -> Tuple[List[Dict[str, str]], str]:
         """
         Classify the news entry and generate a summary.
 
@@ -104,7 +104,7 @@ Você é um assistente especializado em classificar notícias com base em uma á
 Aqui estão os detalhes da notícia:
 
 Título: {title}
-Data: {date}
+Data de Publicação: {published_at}
 Categoria: {category}
 Tags: {tags}
 Conteúdo: {content}
@@ -116,7 +116,7 @@ Conteúdo: {content}
             input_variables=[
                 "themes_tree",
                 "title",
-                "date",
+                "published_at",
                 "category",
                 "tags",
                 "content",
@@ -128,7 +128,7 @@ Conteúdo: {content}
         input_variables = {
             "themes_tree": self.themes_tree_content,
             "title": news_entry["title"],
-            "date": news_entry["date"],
+            "published_at": news_entry["published_at"],
             "category": news_entry["category"],
             "tags": ", ".join(news_entry.get("tags", [])),
             "content": news_entry["content"],
