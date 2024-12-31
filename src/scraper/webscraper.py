@@ -112,7 +112,7 @@ class WebScraper:
                 news_items = []
 
         items_per_page = len(news_items)
-        logging.info(f"Found {items_per_page} news items on the page")
+        logging.info(f"Found {items_per_page} news articles on the page")
 
         if items_per_page == 0:
             return False, 0  # No items to process
