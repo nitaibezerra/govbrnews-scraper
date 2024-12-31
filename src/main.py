@@ -1,8 +1,7 @@
 import argparse
 import logging
 
-from augmentation.classifier_summarizer import ClassifierSummarizer
-from augmentation.news_processor import NewsProcessor
+from augmentation.augmentation_manager import AugmentationManager
 from dataset_manager import DatasetManager
 from dotenv import load_dotenv
 from scraper.scrape_manager import ScrapeManager
@@ -41,12 +40,17 @@ def run_augment(args):
     Executes the augmentation (news classification) logic using the arguments
     provided by the 'augment' subcommand.
     """
-    # Initialize the ClassifierSummarizer and NewsProcessor
-    inference_engine = ClassifierSummarizer()
-    processor = NewsProcessor(inference_engine=inference_engine)
+    # If no max_date is provided, default to something like "2999-12-31"
+    if not args.max_date:
+        args.max_date = "2100-12-31"
 
-    # Process the files (e.g., classify AI-related articles)
-    processor.process_files(min_date=args.min_date, agency=args.agency)
+    # Initialize AugmentationManager
+    augmentation_manager = AugmentationManager()
+
+    # Call the classify and update method
+    augmentation_manager.classify_and_update_dataset(
+        min_date=args.min_date, max_date=args.max_date
+    )
 
 
 # -------------------------------------------------------------------------------------
@@ -59,7 +63,7 @@ def main():
         description="Main entry point to run either the scraper or the news augmentation."
     )
 
-    # Create subparsers for 'scraper' and 'augment'
+    # Create subparsers for 'scrape' and 'augment'
     subparsers = parser.add_subparsers(dest="command", help="Sub-command to run.")
 
     # ------------------ SCRAPER SUBPARSER ------------------
@@ -87,7 +91,7 @@ def main():
 
     # ------------------ AUGMENT SUBPARSER ------------------
     augment_parser = subparsers.add_parser(
-        "augment", help="Process news files and classify AI-related articles."
+        "augment", help="Process news files and classify articles."
     )
     augment_parser.add_argument(
         "--openai_api_key",
@@ -100,6 +104,12 @@ def main():
         type=str,
         default=None,
         help="Minimum date to process files from (format: 'YYYY-MM-DD').",
+    )
+    augment_parser.add_argument(
+        "--max-date",
+        type=str,
+        default=None,
+        help="Maximum date to process files up to (format: 'YYYY-MM-DD').",
     )
     augment_parser.add_argument(
         "--agency",
