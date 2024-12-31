@@ -3,16 +3,11 @@ import os
 from typing import Dict, List, Tuple
 
 from dotenv import load_dotenv
-from langchain.chains import LLMChain
 from langchain.output_parsers import PydanticOutputParser
-from langchain.prompts import PromptTemplate
+from langchain.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
-
-# from langchain_community.chat_models import ChatOpenAI
 from pydantic import BaseModel, Field
 
-
-# Load environment variables from .env
 load_dotenv()
 
 
@@ -110,43 +105,34 @@ Tags: {tags}
 Conteúdo: {content}
 """
 
-        # Create the prompt template with partial variables
-        prompt = PromptTemplate(
-            template=prompt_template_str,
-            input_variables=[
-                "themes_tree",
-                "title",
-                "published_at",
-                "category",
-                "tags",
-                "content",
-            ],
-            partial_variables={"format_instructions": format_instructions},
-        )
+        # Convert the above string template into a ChatPromptTemplate
+        chat_prompt = ChatPromptTemplate.from_template(prompt_template_str)
 
         # Prepare the input variables
-        input_variables = {
+        input_data = {
             "themes_tree": self.themes_tree_content,
             "title": news_entry["title"],
             "published_at": news_entry["published_at"],
             "category": news_entry["category"],
             "tags": ", ".join(news_entry.get("tags", [])),
             "content": news_entry["content"],
+            "format_instructions": format_instructions,
         }
 
-        # Create the LLM instance using ChatOpenAI
+        # Create the LLM
         llm = ChatOpenAI(
             openai_api_key=self.openai_api_key,
             temperature=0.7,
             model_name="gpt-4o",
         )
 
-        # Create the LLMChain with the output parser
-        chain = LLMChain(llm=llm, prompt=prompt, output_parser=self.output_parser)
+        # Build a RunnableSequence / pipe that goes: prompt -> llm -> parser
+        chain = chat_prompt | llm | self.output_parser
 
-        # Call the chain
-        parsed_response = chain.predict_and_parse(**input_variables)
+        # Invoke the chain with the input data
+        parsed_response: NewsClassificationResult = chain.invoke(input_data)
 
+        # Extract from the parsed response
         themes = [theme.model_dump() for theme in parsed_response.classified_themes]
         summary = parsed_response.news_summary
 
