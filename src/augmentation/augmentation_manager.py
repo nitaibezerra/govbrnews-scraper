@@ -3,6 +3,9 @@ import logging
 from augmentation.classifier_summarizer import ClassifierSummarizer
 from dataset_manager import DatasetManager
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format="%(message)s")
+
 
 class AugmentationManager:
     def __init__(self):
