@@ -52,10 +52,10 @@ class DatasetManager:
         # Push updated dataset (and CSVs) to the Hub
         self._push_dataset_and_csvs(dataset)
 
-    def update(self, updated_data: OrderedDict):
+    def update(self, updated_df: pd.DataFrame):
         """
         Update existing rows in the dataset based on 'unique_id',
-        overwriting fields in matching rows with the new values.
+        overwriting fields in matching rows with the new values from the provided DataFrame.
         Also supports adding entirely new columns if they don't exist yet.
         """
         dataset = self._load_existing_dataset()
@@ -66,13 +66,37 @@ class DatasetManager:
             return
 
         # Apply row-by-row updates
-        dataset = self._apply_updates(dataset, updated_data)
+        dataset = self._apply_updates(dataset, updated_df)
 
         # Sort again after updates
         dataset = self._sort_dataset(dataset)
 
         # Push updated dataset (and CSVs) to the Hub
         self._push_dataset_and_csvs(dataset)
+
+    def get(self, min_date: str, max_date: str) -> pd.DataFrame:
+        """
+        Return rows where 'published_at' is between min_date and max_date (inclusive).
+
+        :param min_date: The minimum date in YYYY-MM-DD format (e.g. '2023-01-01').
+        :param max_date: The maximum date in YYYY-MM-DD format (e.g. '2023-12-31').
+        :return: A pandas DataFrame with rows that match the date range.
+        """
+        dataset = self._load_existing_dataset()
+        if dataset is None:
+            logging.info("No existing dataset found. Returning empty DataFrame.")
+            return pd.DataFrame()
+
+        df = dataset.to_pandas()
+        df["published_at"] = pd.to_datetime(df["published_at"], errors="coerce")
+
+        # Filter by date range
+        df = df[
+            (df["published_at"] >= pd.to_datetime(min_date))
+            & (df["published_at"] <= pd.to_datetime(max_date))
+        ]
+
+        return df
 
     def _load_existing_dataset(self) -> Optional[Dataset]:
         """
@@ -112,36 +136,35 @@ class DatasetManager:
         # Use preserve_index=False to avoid adding __index_level_0__ column
         return Dataset.from_pandas(df_combined, preserve_index=False)
 
-    def _apply_updates(self, hf_dataset: Dataset, updated_data: OrderedDict) -> Dataset:
+    def _apply_updates(self, hf_dataset: Dataset, updated_df: pd.DataFrame) -> Dataset:
         """
-        For each row in 'updated_data', update matching rows in the existing dataset by 'unique_id'.
+        For each row in 'updated_df', update matching rows in the existing dataset by 'unique_id'.
         If new columns are present, they will be added to the DataFrame with default None,
         then filled for any matching row.
         """
         df = hf_dataset.to_pandas()
-        df_updates = pd.DataFrame(updated_data)
 
         # 1. Identify & add new columns if needed
-        for col in df_updates.columns:
+        for col in updated_df.columns:
             if col not in df.columns:
                 df[col] = None
 
         # 2. Overwrite rows that match on 'unique_id'
         df.set_index("unique_id", inplace=True)
-        df_updates.set_index("unique_id", inplace=True)
+        updated_df.set_index("unique_id", inplace=True)
 
         # Intersection of indexes to ensure we only update existing rows
-        intersection = df.index.intersection(df_updates.index)
+        intersection = df.index.intersection(updated_df.index)
         if intersection.empty:
             logging.info(
                 "No matching 'unique_id' found in existing dataset; no rows updated."
             )
         else:
             # Overwrite the row data
-            df.loc[intersection, df_updates.columns] = df_updates.loc[intersection]
+            df.loc[intersection, updated_df.columns] = updated_df.loc[intersection]
 
         df.reset_index(drop=False, inplace=True)
-        df_updates.reset_index(drop=False, inplace=True)
+        updated_df.reset_index(drop=False, inplace=True)
 
         return Dataset.from_pandas(df, preserve_index=False)
 
