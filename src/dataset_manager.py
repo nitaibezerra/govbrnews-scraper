@@ -10,7 +10,10 @@ from datasets.exceptions import DatasetNotFoundError
 from huggingface_hub import HfApi, HfFolder
 from retry import retry
 
-DATASET_PATH = "nitaibezerra/govbrnews"  # The name of the Hugging Face dataset
+DATASET_PATH = "nitaibezerra/govbrnews"  # The main dataset
+REDUCED_DATASET_PATH = (
+    "nitaibezerra/govbrnews-reduced"  # Reduced dataset for faster downloads
+)
 
 
 class DatasetManager:
@@ -198,8 +201,11 @@ class DatasetManager:
     def _push_dataset_and_csvs(self, dataset: Dataset):
         """
         Push the HF Dataset to the Hub and generate CSV variants for easy download.
+        Additionally, push a reduced version of the dataset (govbrnews-small) containing only
+        'published_at', 'agency', 'title', and 'url' columns.
         """
         self._push_dataset_to_hub(dataset)
+        self._push_reduced_dataset(dataset)
         self._push_global_csv(dataset)
         self._push_csvs_by_agency(dataset)
         self._push_csvs_by_year(dataset)
@@ -307,3 +313,21 @@ class DatasetManager:
             logging.info(
                 f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
             )
+
+    def _push_reduced_dataset(self, dataset: Dataset):
+        """
+        Create a reduced version of the dataset containing only specific columns,
+        and push it to the Hugging Face Hub.
+
+        :param dataset: The full Hugging Face Dataset.
+        """
+        # Reduce the dataset to only the specified columns
+        df = dataset.to_pandas()
+        reduced_df = df[["published_at", "agency", "title", "url"]]
+        reduced_dataset = Dataset.from_pandas(reduced_df, preserve_index=False)
+
+        # Push the reduced dataset to the Hugging Face Hub
+        reduced_dataset.push_to_hub(REDUCED_DATASET_PATH, private=False)
+        logging.info(
+            f"Reduced dataset pushed to Hugging Face Hub at {REDUCED_DATASET_PATH}."
+        )
