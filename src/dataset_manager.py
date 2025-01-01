@@ -204,11 +204,14 @@ class DatasetManager:
         Additionally, push a reduced version of the dataset (govbrnews-small) containing only
         'published_at', 'agency', 'title', and 'url' columns.
         """
+        # Convert the dataset to a Pandas DataFrame once
+        df = dataset.to_pandas()
+
         self._push_dataset_to_hub(dataset)
-        self._push_reduced_dataset(dataset)
+        self._push_reduced_dataset(df)
         self._push_global_csv(dataset)
-        self._push_csvs_by_agency(dataset)
-        self._push_csvs_by_year(dataset)
+        self._push_csvs_by_agency(df)
+        self._push_csvs_by_year(df)
 
     def _push_dataset_to_hub(self, dataset: Dataset):
         """
@@ -223,41 +226,40 @@ class DatasetManager:
         """
         self._save_and_upload_csv(dataset, file_name="govbr_news_dataset.csv")
 
-    def _push_csvs_by_agency(self, dataset: Dataset):
+    def _push_csvs_by_agency(self, df: pd.DataFrame):
         """
         Split the dataset by 'agency' and upload CSV files for each agency.
-        """
-        self._push_csvs_by_group(
-            dataset, group_by_column="agency", subfolder="agencies"
-        )
 
-    def _push_csvs_by_year(self, dataset: Dataset):
+        :param df: The Pandas DataFrame representation of the full dataset.
+        """
+        self._push_csvs_by_group(df, group_by_column="agency", subfolder="agencies")
+
+    def _push_csvs_by_year(self, df: pd.DataFrame):
         """
         Split the dataset by year (derived from 'published_at') and upload CSV files for each year.
+
+        :param df: The Pandas DataFrame representation of the full dataset.
         """
-        self._push_csvs_by_group(dataset, group_by_column="year", subfolder="years")
+        self._push_csvs_by_group(df, group_by_column="year", subfolder="years")
 
     def _push_csvs_by_group(
-        self, dataset: Dataset, group_by_column: str, subfolder: str = ""
+        self, df: pd.DataFrame, group_by_column: str, subfolder: str = ""
     ):
         """
         Split the dataset by a specified column (e.g., 'agency' or 'year') and upload CSV files
         for each distinct group in that column.
-        """
-        df = dataset.to_pandas()
 
-        # If grouping by 'year', extract it from 'published_at'
+        :param df: The Pandas DataFrame representation of the full dataset.
+        :param group_by_column: Column name to group by (e.g., 'agency' or 'year').
+        :param subfolder: Optional subfolder in the repository to place the CSV file.
+        """
+        # If grouping by 'year', ensure the column is extracted from 'published_at'
         if group_by_column == "year":
-            # Ensure 'published_at' is a datetime if you want to extract year
-            # df["published_at"] = pd.to_datetime(df["published_at"], errors='coerce')
             df["year"] = df["published_at"].apply(
                 lambda x: x.year if hasattr(x, "year") else None
             )
-            group_column = "year"
-        else:
-            group_column = group_by_column
 
-        groups = df.groupby(group_column)
+        groups = df.groupby(group_by_column)
         for group_name, group_df in groups:
             file_name = f"{group_name}_news_dataset.csv"
             temp_dataset = Dataset.from_pandas(group_df.reset_index(drop=True))
@@ -314,15 +316,13 @@ class DatasetManager:
                 f"CSV file '{file_name}' uploaded to the Hugging Face repository at '{path_in_repo}'."
             )
 
-    def _push_reduced_dataset(self, dataset: Dataset):
+    def _push_reduced_dataset(self, df: pd.DataFrame):
         """
         Create a reduced version of the dataset containing only specific columns,
         and push it to the Hugging Face Hub.
 
-        :param dataset: The full Hugging Face Dataset.
+        :param df: The Pandas DataFrame representation of the full dataset.
         """
-        # Reduce the dataset to only the specified columns
-        df = dataset.to_pandas()
         reduced_df = df[["published_at", "agency", "title", "url"]]
         reduced_dataset = Dataset.from_pandas(reduced_df, preserve_index=False)
 
