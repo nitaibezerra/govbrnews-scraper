@@ -154,8 +154,9 @@ class AugmentationManager:
         logging.info(f"Agency:       {news_entry.get('agency', 'N/A')}")
         logging.info(f"Published at: {news_entry.get('published_at', 'N/A')}")
 
-        if summary is not None:
-            logging.info(f"Summary:      {summary}")
+        if summary is None:
+            summary = news_entry["summary"]
+        logging.info(f"Summary:      {summary}")
 
         if themes is not None:
             if themes:
