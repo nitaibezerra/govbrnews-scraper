@@ -31,7 +31,7 @@ jobs:
       # Step 4: Install dependencies using Poetry
       - name: Install dependencies
         run: |
-          poetry install
+          poetry install --no-root
 
       # Step 5: Get the date for the previous day
       - name: Set date variable for yesterday
