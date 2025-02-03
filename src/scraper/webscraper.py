@@ -45,6 +45,7 @@ class WebScraper:
     def scrape_news(self) -> List[Dict[str, str]]:
         """
         Scrape news from the website until the min_date is reached.
+        If the agency's URL consistently fails, skip it.
 
         :return: A list of dictionaries containing news data.
         """
@@ -52,19 +53,35 @@ class WebScraper:
 
         while True:
             current_page_url = f"{self.base_url}?b_start:int={current_offset}"
-            should_continue, items_per_page = self.scrape_page(current_page_url)
 
-            # If no items were found, break the loop to avoid infinite requests
-            if items_per_page == 0:
-                logging.info("No more news items found. Stopping.")
+            try:
+                should_continue, items_per_page = self.scrape_page(current_page_url)
+
+                # If no items were found, break the loop to avoid infinite requests
+                if items_per_page == 0:
+                    logging.info(
+                        f"No more news items found for {self.agency}. Stopping."
+                    )
+                    break
+
+                if not should_continue:
+                    break
+
+                # Increment the offset only if items were found
+                current_offset += items_per_page
+                logging.info(f"Moving to next page with offset {current_offset}")
+
+            except requests.exceptions.HTTPError as e:
+                logging.error(
+                    f"Skipping agency {self.agency} due to persistent HTTP error: {str(e)}"
+                )
                 break
 
-            if not should_continue:
+            except requests.exceptions.RequestException as e:
+                logging.error(
+                    f"Skipping agency {self.agency} due to network error: {str(e)}"
+                )
                 break
-
-            # Increment the offset only if items were found
-            current_offset += items_per_page
-            logging.info(f"Moving to next page with offset {current_offset}")
 
         return self.news_data
 
@@ -75,30 +92,41 @@ class WebScraper:
         backoff=3,
         jitter=(1, 3),
     )
-    def fetch_page(self, url: str) -> requests.Response:
+    def fetch_page(self, url: str) -> Optional[requests.Response]:
         """
         Fetch the page content from the given URL with retry logic.
+        If the request fails permanently, return None.
 
         :param url: The URL to fetch.
-        :return: The Response object.
+        :return: The Response object or None if the request fails.
         """
-        response = requests.get(url, timeout=20)
-        response.raise_for_status()
-        return response
+        try:
+            response = requests.get(url, timeout=20)
+            response.raise_for_status()
+            return response
+
+        except requests.exceptions.HTTPError as e:
+            logging.error(f"HTTP error when accessing {url}: {e}")
+            return None
+
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Request failed for {url}: {e}")
+            return None
 
     def scrape_page(self, page_url: str) -> Tuple[bool, int]:
         """
         Scrape a single page of news with logic to skip pages where news is newer than max_date.
+        If the request fails, return (False, 0).
 
         :param page_url: The URL of the page to scrape.
         :return: A tuple (continue_scraping, items_per_page).
         """
         logging.info(f"Fetching site news list: {page_url}")
-        try:
-            response = self.fetch_page(page_url)
-        except requests.exceptions.ConnectionError as e:
-            logging.error(f"Failed to fetch {page_url} after retries: {str(e)}")
-            raise e
+
+        response = self.fetch_page(page_url)
+        if not response:
+            logging.error(f"Skipping page due to repeated failures: {page_url}")
+            return False, 0
 
         soup = BeautifulSoup(response.content, "html.parser")
         news_items = soup.find_all("article", class_="tileItem")
