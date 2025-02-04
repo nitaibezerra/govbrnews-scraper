@@ -9,7 +9,7 @@ COPY pyproject.toml poetry.lock ./
 
 # Install Poetry and dependencies
 RUN pip install --no-cache-dir poetry \
- && poetry install --no-root --no-interaction --no-ansi
+ && poetry install --no-root
 
 # Now copy the rest of your code
 COPY . /app
