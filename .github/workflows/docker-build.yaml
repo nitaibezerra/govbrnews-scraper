@@ -1,0 +1,32 @@
+name: Build and Publish Docker Image
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the repository to get Dockerfile and code
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Step 2: Log in to GitHub Container Registry
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 3: Build and push the Docker image
+      - name: Build and push the image
+        run: |
+          # 1) Build the Docker image (tag with "latest" + a short SHA)
+          docker build -t ghcr.io/${{ github.repository }}/govbrnews:latest \
+                       -t ghcr.io/${{ github.repository }}/govbrnews:${{ github.sha }} .
+
+          # 2) Push both tags
+          docker push ghcr.io/${{ github.repository }}/govbrnews:latest
+          docker push ghcr.io/${{ github.repository }}/govbrnews:${{ github.sha }}
