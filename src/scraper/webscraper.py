@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Tuple
 
 import requests
 from bs4 import BeautifulSoup
+from markdownify import markdownify as md
 from retry import retry
 
 # Set up logging configuration
@@ -176,7 +177,7 @@ class WebScraper:
         Extract the news information from an HTML element.
 
         :param item: A BeautifulSoup tag representing a single news item.
-        :return: A dictionary containing the news data or None if the news is outside date bounds.
+        :return: A boolean indicating whether to continue processing further news items.
         """
         title, url = self.extract_title_and_url(item)
         category = self.extract_category(item)
@@ -195,9 +196,11 @@ class WebScraper:
                 return True  # Skip this item
 
         tags = self.extract_tags(item)
-        content = self.get_article_content(url)
+        content, image_url = self.get_article_content(
+            url
+        )  # Now returns (content, image)
 
-        logging.info(f"Retrieved news: {news_date} - {url}")
+        logging.info(f"Retrieved news: {news_date} - {url} - Image: {image_url}")
 
         self.news_data.append(
             {
@@ -207,6 +210,7 @@ class WebScraper:
                 "category": category,
                 "tags": tags,
                 "content": content,
+                "image": image_url,
                 "agency": self.agency,
                 "extracted_at": datetime.now(),
             }
@@ -332,20 +336,35 @@ class WebScraper:
 
         return []
 
-    def get_article_content(self, url: str) -> str:
+    def get_article_content(self, url: str) -> Tuple[str, Optional[str]]:
         """
-        Get the content of a news article from its URL.
+        Get the content of a news article from its URL, converting the HTML to Markdown
+        to preserve formatting, links, and media references. Extracts the first image
+        and returns its URL.
 
         :param url: The URL of the article.
-        :return: The content of the article as a string.
+        :return: A tuple containing the article content in Markdown format and the first image URL (or None).
         """
         try:
             response = self.fetch_page(url)
+            if not response:
+                return "Error retrieving content", None
+
             soup = BeautifulSoup(response.content, "html.parser")
-            article_body = soup.find("div", id="content-core")
-            return (
-                article_body.get_text().strip() if article_body else "No content found"
-            )
+            article_body = soup.find("div", id="content")
+
+            if not article_body:
+                return "No content found", None
+
+            # Convert the HTML content to Markdown
+            content = md(str(article_body))
+
+            # Extract the first image
+            first_img = article_body.find("img")
+            image_url = first_img["src"] if first_img else None
+
+            return content, image_url
+
         except Exception as e:
             logging.error(f"Error retrieving content from {url}: {str(e)}")
-            return "Error retrieving content"
+            return "Error retrieving content", None
