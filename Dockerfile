@@ -1,10 +1,10 @@
-# Use a Python base image
+# Use a slim Python image
 FROM python:3.13-slim
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Install system dependencies required for Poetry & Python dependencies
+# Install system dependencies required for Poetry and Python packages
 RUN apt-get update && apt-get install -y \
     build-essential \
     gcc \
@@ -20,16 +20,19 @@ RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy Poetry configuration first for dependency caching
+# Copy only Poetry files first to leverage caching
 COPY pyproject.toml poetry.lock ./
 
-# Install Poetry
+# Install Poetry globally
 RUN pip install --no-cache-dir poetry
 
-# Install dependencies using Poetry
+# Make sure Poetry installs dependencies inside the system (not in a virtual environment)
+RUN poetry config virtualenvs.create false
+
+# Install dependencies system-wide
 RUN poetry install --no-root --no-interaction --no-ansi
 
-# Copy the rest of the application files
+# Now copy the rest of the app
 COPY . /app
 
 # Default working directory should be /app
