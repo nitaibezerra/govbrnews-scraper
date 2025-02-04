@@ -30,8 +30,11 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          cd /app  # Ensure we are in the correct directory
-          poetry run python src/main.py scrape \
+          # Ensure working directory is correct
+          cd /app
+
+          # Run scraper without re-installing dependencies
+          python src/main.py scrape \
             --min-date 2024-01-01 \
             --sequential \
             --allow-update \
