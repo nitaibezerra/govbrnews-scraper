@@ -15,36 +15,23 @@ jobs:
   run-scraper:
     runs-on: ubuntu-latest
 
+    # 1) Use the published Docker image as the job container
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      # Step 2: Set up Python 3.13
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.13.0'
-
-      # Step 3: Install Poetry
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          poetry-version: '1.8.4'
-
-      # Step 4: Install dependencies using Poetry
-      - name: Install dependencies
-        run: |
-          poetry install --no-root
-
-      # Step 5: Get the date for the previous day
+      # Step 1: Set date variable for yesterday (still done in the runner's environment)
       - name: Set date variable for yesterday
         run: |
           echo "YESTERDAY=$(date -d 'yesterday' +'%Y-%m-%d')" >> $GITHUB_ENV
 
-      # Step 6: Run the scraper for the previous day
-      - name: Run the scraper for yesterday
+      # Step 2: Run the scraper (inside the Docker container)
+      - name: Run the scraper
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          poetry run python src/main.py scrape --min-date 2024-01-01 --sequential --allow-update ${{ inputs.agency && '--agency ' }}${{ inputs.agency }}
+          poetry run python src/main.py scrape \
+            --min-date 2024-01-01 \
+            --sequential \
+            --allow-update \
+            ${{ inputs.agency && '--agency ' }}${{ inputs.agency }}
