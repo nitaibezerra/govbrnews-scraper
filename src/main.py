@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-# from augmentation.augmentation_manager import AugmentationManager
+from augmentation.augmentation_manager import AugmentationManager
 from dataset_manager import DatasetManager
 from dotenv import load_dotenv
 from scraper.scrape_manager import ScrapeManager
