@@ -22,7 +22,7 @@ def run_scraper(args):
     dataset_manager = DatasetManager()
     scrape_manager = ScrapeManager(dataset_manager)
     scrape_manager.run_scraper(
-        args.agency, args.min_date, args.max_date, args.sequential
+        args.agency, args.min_date, args.max_date, args.sequential, args.allow_update
     )
 
 
@@ -82,6 +82,11 @@ def main():
         "--sequential",
         action="store_true",
         help="Process and upload each agency's news sequentially.",
+    )
+    scraper_parser.add_argument(
+        "--allow-update",
+        action="store_true",
+        help="If set, overwrite existing entries in the dataset instead of skipping them.",
     )
 
     # ------------------ AUGMENT SUBPARSER ------------------

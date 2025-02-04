@@ -35,10 +35,15 @@ class DatasetManager:
                 "Please login using `huggingface-cli login`."
             )
 
-    def insert(self, new_data: OrderedDict):
+    def insert(self, new_data: OrderedDict, allow_update: bool = False):
         """
-        Insert new rows into the dataset, ignoring duplicates based on 'unique_id',
-        then push the result to the Hugging Face Hub.
+        Insert new rows into the dataset, ignoring duplicates by default based on 'unique_id'.
+        If 'allow_update' is True, then any rows with existing 'unique_id' are overwritten
+        with values from 'new_data'. Afterwards, push the result to the Hugging Face Hub.
+
+        :param new_data: An OrderedDict of data to insert.
+        :param allow_update: If True, overwrite rows that already exist (same 'unique_id').
+                            If False (default), skip those duplicates.
         """
         dataset = self._load_existing_dataset()
         if dataset is None:
@@ -46,8 +51,10 @@ class DatasetManager:
             # If there is no existing dataset, just create a new one from new_data
             dataset = Dataset.from_dict(new_data)
         else:
-            # Merge new rows into the existing dataset
-            dataset = self._merge_new_into_dataset(dataset, new_data)
+            # Merge or update new rows into the existing dataset
+            dataset = self._merge_new_into_dataset(
+                dataset, new_data, allow_update=allow_update
+            )
 
         # Sort the dataset before pushing
         dataset = self._sort_dataset(dataset)
@@ -130,27 +137,62 @@ class DatasetManager:
             return None
 
     def _merge_new_into_dataset(
-        self, hf_dataset: Dataset, new_data: OrderedDict
+        self, hf_dataset: Dataset, new_data: OrderedDict, allow_update: bool = False
     ) -> Dataset:
         """
-        Merge new rows into the existing HF Dataset, ignoring duplicates by 'unique_id'.
+        Merge new rows into the existing HF Dataset. If 'allow_update' is False,
+        we skip duplicates (based on 'unique_id'). If 'allow_update' is True,
+        we overwrite matching duplicates with data from 'new_data'.
         """
         df_existing = hf_dataset.to_pandas()
         df_new = pd.DataFrame(new_data)
 
-        # Identify duplicates
-        unique_ids_existing = set(df_existing["unique_id"])
-        df_filtered = df_new[~df_new["unique_id"].isin(unique_ids_existing)]
+        # 1. Ensure both DataFrames have the same columns (to avoid errors when updating)
+        all_cols = set(df_existing.columns).union(df_new.columns)
+        for col in all_cols:
+            if col not in df_existing.columns:
+                df_existing[col] = None
+            if col not in df_new.columns:
+                df_new[col] = None
 
-        if df_filtered.empty:
-            logging.info("No new unique items to add; dataset is up to date.")
-            return hf_dataset
+        # 2. Set 'unique_id' as the index for easy comparison
+        df_existing.set_index("unique_id", inplace=True)
+        df_new.set_index("unique_id", inplace=True)
 
-        logging.info(f"Adding {len(df_filtered)} new items.")
-        df_combined = pd.concat([df_existing, df_filtered], ignore_index=True)
+        if allow_update:
+            # Overwrite existing rows with new data where 'unique_id' matches
+            df_existing.update(df_new)
 
-        # Use preserve_index=False to avoid adding __index_level_0__ column
-        return Dataset.from_pandas(df_combined, preserve_index=False)
+            # Find rows in df_new that are truly new (not in df_existing) and append them
+            missing_ids = df_new.index.difference(df_existing.index)
+            if not missing_ids.empty:
+                logging.info(f"Inserting {len(missing_ids)} brand new rows.")
+                df_existing = pd.concat([df_existing, df_new.loc[missing_ids]], axis=0)
+            else:
+                logging.info(
+                    "All 'unique_id's in 'new_data' already existed and were updated."
+                )
+        else:
+            # If not updating, skip duplicates
+            duplicates = df_new.index.intersection(df_existing.index)
+            if not duplicates.empty:
+                logging.info(
+                    f"Skipping {len(duplicates)} duplicates (already in dataset)."
+                )
+
+            # Filter to only new rows (unique_id not present in the existing dataset)
+            df_filtered = df_new.loc[df_new.index.difference(df_existing.index)]
+            if df_filtered.empty:
+                logging.info("No new unique items to add; dataset is up to date.")
+            else:
+                logging.info(f"Adding {len(df_filtered)} new items.")
+                df_existing = pd.concat([df_existing, df_filtered], axis=0)
+
+        # 3. Reset index back to normal
+        df_existing.reset_index(inplace=True)
+
+        # Convert back to a HF Dataset
+        return Dataset.from_pandas(df_existing, preserve_index=False)
 
     def _apply_updates(self, hf_dataset: Dataset, updated_df: pd.DataFrame) -> Dataset:
         """

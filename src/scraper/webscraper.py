@@ -1,5 +1,6 @@
 import logging
 import random
+import re
 import time
 from datetime import date, datetime
 from typing import Dict, List, Optional, Tuple
@@ -340,7 +341,7 @@ class WebScraper:
         """
         Get the content of a news article from its URL, converting the HTML to Markdown
         to preserve formatting, links, and media references. Extracts the first image
-        and returns its URL.
+        and removes introductory clutter before the main article title.
 
         :param url: The URL of the article.
         :return: A tuple containing the article content in Markdown format and the first image URL (or None).
@@ -363,8 +364,29 @@ class WebScraper:
             first_img = article_body.find("img")
             image_url = first_img["src"] if first_img else None
 
-            return content, image_url
+            # Clean the content: remove lines before the first title (defined by "=====" or "#")
+            cleaned_content = self._remove_intro_lines(content)
+
+            return cleaned_content, image_url
 
         except Exception as e:
             logging.error(f"Error retrieving content from {url}: {str(e)}")
             return "Error retrieving content", None
+
+    def _remove_intro_lines(self, content: str) -> str:
+        """
+        Remove unnecessary introductory lines before the first title.
+
+        :param content: The raw Markdown content extracted.
+        :return: Cleaned Markdown content with the title at the beginning.
+        """
+        lines = content.split("\n")
+
+        # Find the first title occurrence, marked by "=====" or "# Title"
+        for i, line in enumerate(lines):
+            if re.match(r"^=+$", line.strip()) or line.startswith("# "):
+                return "\n".join(
+                    lines[i - 1 :]
+                )  # Keep the title and everything after it
+
+        return content  # If no title is found, return as-is

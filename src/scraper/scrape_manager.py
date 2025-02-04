@@ -56,28 +56,39 @@ class ScrapeManager:
 
         return list(agencies.values())
 
-    def run_scraper(self, agency: str, min_date: str, max_date: str, sequential: bool):
+    def run_scraper(
+        self,
+        agency: str,
+        min_date: str,
+        max_date: str,
+        sequential: bool,
+        allow_update: bool = False,
+    ):
         """
         Executes the web scraping process for the given agency (or agencies), date range,
         and whether the scraping should happen sequentially or in bulk.
+
+        :param agency: The agency to scrape news from.
+        :param min_date: The minimum date for filtering news.
+        :param max_date: The maximum date for filtering news.
+        :param sequential: Whether to scrape sequentially (True) or in bulk (False).
+        :param allow_update: If True, overwrite existing entries in the dataset.
         """
         try:
             urls = self._load_urls_from_yaml("site_urls.yaml", agency)
             webscrapers = [WebScraper(min_date, url, max_date=max_date) for url in urls]
 
             if sequential:
-                # Process each agency's news sequentially
                 for scraper in webscrapers:
                     scraped_data = scraper.scrape_news()
                     if scraped_data:
                         logging.info(
                             f"Appending news for {scraper.agency} to HF dataset."
                         )
-                        self._process_and_upload_data(scraped_data)
+                        self._process_and_upload_data(scraped_data, allow_update)
                     else:
                         logging.info(f"No news found for {scraper.agency}.")
             else:
-                # Accumulate all news and process together
                 all_news_data = []
                 for scraper in webscrapers:
                     scraped_data = scraper.scrape_news()
@@ -88,18 +99,21 @@ class ScrapeManager:
 
                 if all_news_data:
                     logging.info("Appending all collected news to HF dataset.")
-                    self._process_and_upload_data(all_news_data)
+                    self._process_and_upload_data(all_news_data, allow_update)
                 else:
                     logging.info("No news found for any agency.")
         except ValueError as e:
             logging.error(e)
 
-    def _process_and_upload_data(self, new_data):
+    def _process_and_upload_data(self, new_data, allow_update: bool):
         """
-        Process the news data and upload it to the Hugging Face dataset.
+        Process the news data and upload it to the dataset, with the option to update existing entries.
+
+        :param new_data: The list of news items to process.
+        :param allow_update: If True, overwrite existing entries in the dataset.
         """
         new_data = self._preprocess_data(new_data)
-        self.dataset_manager.insert(new_data)
+        self.dataset_manager.insert(new_data, allow_update=allow_update)
 
     def _preprocess_data(self, data: List[Dict[str, str]]) -> OrderedDict:
         """
