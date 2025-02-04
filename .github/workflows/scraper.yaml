@@ -10,6 +10,14 @@ on:
         description: 'Comma-separated list of agencies to scrape (leave empty to scrape all)'
         required: false
         default: ''
+      min-date:
+        description: 'Start date for scraping (format: YYYY-MM-DD, defaults to yesterday if not provided)'
+        required: false
+        default: ''
+      max-date:
+        description: 'End date for scraping (format: YYYY-MM-DD, leave empty to scrape up to today)'
+        required: false
+        default: ''
 
 jobs:
   run-scraper:
@@ -19,11 +27,26 @@ jobs:
     container:
       image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app  # This ensures the container starts in the correct directory
+
     steps:
-      # Step 1: Set date variable for yesterday (still done in the runner's environment)
-      - name: Set date variable for yesterday
+      # Step 1: Set date variable for yesterday (default min-date if not provided)
+      - name: Set date variables
         run: |
           echo "YESTERDAY=$(date -d 'yesterday' +'%Y-%m-%d')" >> $GITHUB_ENV
+
+          # If min-date is not set, use yesterday's date
+          if [ -z "${{ inputs.min-date }}" ]; then
+            echo "MIN_DATE=$YESTERDAY" >> $GITHUB_ENV
+          else
+            echo "MIN_DATE=${{ inputs.min-date }}" >> $GITHUB_ENV
+          fi
+
+          # If max-date is set, use it, otherwise default to an empty string
+          if [ ! -z "${{ inputs.max-date }}" ]; then
+            echo "MAX_DATE_ARG=--max-date ${{ inputs.max-date }}" >> $GITHUB_ENV
+          else
+            echo "MAX_DATE_ARG=" >> $GITHUB_ENV
+          fi
 
       # Step 2: Run the scraper (inside the Docker container)
       - name: Run the scraper
@@ -39,9 +62,10 @@ jobs:
             AGENCIES_ARG="--agencies ${{ inputs.agencies }}"
           fi
 
-          # Run scraper without re-installing dependencies
+          # Run scraper
           python src/main.py scrape \
-            --min-date $YESTERDAY \
+            --min-date $MIN_DATE \
             --sequential \
             --allow-update \
+            $MAX_DATE_ARG \
             $AGENCIES_ARG
