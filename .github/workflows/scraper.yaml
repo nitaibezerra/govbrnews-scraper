@@ -1,9 +1,9 @@
 name: Run Scraper
 
 on:
-  schedule:
-    # Runs every day at 4AM UTC (midnight in Brasília)
-    - cron: '0 4 * * *'
+  # schedule:
+  #   # Runs every day at 4AM UTC (midnight in Brasília)
+  #   - cron: '0 4 * * *'
   workflow_dispatch:
     # Allows manual triggering of the workflow from GitHub Actions UI
 
@@ -43,4 +43,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          poetry run python src/main.py scrape --min-date $YESTERDAY
+          poetry run python src/main.py scrape --min-date 2024-01-01 --sequential --allow-update
