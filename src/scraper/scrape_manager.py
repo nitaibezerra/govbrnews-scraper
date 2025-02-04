@@ -58,25 +58,39 @@ class ScrapeManager:
 
     def run_scraper(
         self,
-        agency: str,
+        agencies: List[str],
         min_date: str,
         max_date: str,
         sequential: bool,
         allow_update: bool = False,
     ):
         """
-        Executes the web scraping process for the given agency (or agencies), date range,
+        Executes the web scraping process for the given agencies, date range,
         and whether the scraping should happen sequentially or in bulk.
 
-        :param agency: The agency to scrape news from.
+        :param agencies: A list of agency names to scrape news from. If None, all agencies are scraped.
         :param min_date: The minimum date for filtering news.
         :param max_date: The maximum date for filtering news.
         :param sequential: Whether to scrape sequentially (True) or in bulk (False).
         :param allow_update: If True, overwrite existing entries in the dataset.
         """
         try:
-            urls = self._load_urls_from_yaml("site_urls.yaml", agency)
-            webscrapers = [WebScraper(min_date, url, max_date=max_date) for url in urls]
+            all_urls = []
+            # Load URLs for each agency in the list
+            if agencies:
+                for agency in agencies:
+                    try:
+                        urls = self._load_urls_from_yaml("site_urls.yaml", agency)
+                        all_urls.extend(urls)
+                    except ValueError as e:
+                        logging.warning(f"Skipping agency '{agency}': {e}")
+            else:
+                # Load all agency URLs if agencies list is None or empty
+                all_urls = self._load_urls_from_yaml("site_urls.yaml")
+
+            webscrapers = [
+                WebScraper(min_date, url, max_date=max_date) for url in all_urls
+            ]
 
             if sequential:
                 for scraper in webscrapers:

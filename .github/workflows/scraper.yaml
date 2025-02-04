@@ -6,8 +6,8 @@ on:
   #   - cron: '0 4 * * *'
   workflow_dispatch:
     inputs:
-      agency:
-        description: 'Agency to scrape (leave empty to scrape all)'
+      agencies:
+        description: 'Comma-separated list of agencies to scrape (leave empty to scrape all)'
         required: false
         default: ''
 
@@ -33,9 +33,15 @@ jobs:
           # Ensure working directory is correct
           cd /app
 
+          # Construct agencies argument if provided
+          AGENCIES_ARG=""
+          if [ ! -z "${{ inputs.agencies }}" ]; then
+            AGENCIES_ARG="--agencies ${{ inputs.agencies }}"
+          fi
+
           # Run scraper without re-installing dependencies
           python src/main.py scrape \
-            --min-date 2024-01-01 \
+            --min-date $YESTERDAY \
             --sequential \
             --allow-update \
-            ${{ inputs.agency && '--agency ' }}${{ inputs.agency }}
+            $AGENCIES_ARG

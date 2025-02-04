@@ -21,8 +21,12 @@ def run_scraper(args):
     """
     dataset_manager = DatasetManager()
     scrape_manager = ScrapeManager(dataset_manager)
+
+    # Convert agency input into a list (comma-separated values)
+    agencies = args.agencies.split(",") if args.agencies else None
+
     scrape_manager.run_scraper(
-        args.agency, args.min_date, args.max_date, args.sequential, args.allow_update
+        agencies, args.min_date, args.max_date, args.sequential, args.allow_update
     )
 
 
@@ -42,9 +46,9 @@ def run_augment(args):
 
     augmentation_manager = AugmentationManager()
 
-    # Pass agency (if provided), along with the date range
+    # Pass agencies (if provided), along with the date range
     augmentation_manager.classify_and_update_dataset(
-        min_date=args.min_date, max_date=args.max_date, agency=args.agency
+        min_date=args.min_date, max_date=args.max_date, agency=args.agencies
     )
 
 
@@ -75,8 +79,8 @@ def main():
         help="The maximum date for scraping news (format: YYYY-MM-DD).",
     )
     scraper_parser.add_argument(
-        "--agency",
-        help="Scrape news for a specific agency (key in the YAML).",
+        "--agencies",
+        help="Scrape news for specific agencies (comma-separated, e.g., 'gestao,saude'). Leave empty to scrape all.",
     )
     scraper_parser.add_argument(
         "--sequential",
@@ -112,10 +116,10 @@ def main():
         help="Maximum date to process files up to (format: 'YYYY-MM-DD').",
     )
     augment_parser.add_argument(
-        "--agency",
+        "--agencies",
         type=str,
         default=None,
-        help="Agency to filter the files by.",
+        help="Agencies to filter the files by (comma-separated list).",
     )
 
     # Parse the command-line arguments and dispatch
