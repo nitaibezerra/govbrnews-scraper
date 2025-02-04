@@ -1,18 +1,36 @@
-# Use any Python base image you prefer
+# Use a Python base image
 FROM python:3.13-slim
 
-# Create app directory
+# Set the working directory
 WORKDIR /app
 
-# Copy only pyproject and poetry.lock first for dependency installation caching
+# Install system dependencies required for building NumPy and other Python packages
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    libbz2-dev \
+    liblzma-dev \
+    libsqlite3-dev \
+    libreadline-dev \
+    zlib1g-dev \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only pyproject.toml and poetry.lock first for dependency caching
 COPY pyproject.toml poetry.lock ./
 
-# Install Poetry and dependencies
-RUN pip install --no-cache-dir poetry \
- && poetry install --no-root
+# Install Poetry
+RUN pip install --no-cache-dir poetry
 
-# Now copy the rest of your code
+# Install dependencies using Poetry
+RUN poetry install --no-root --no-interaction --no-ansi
+
+# Copy the rest of the application files
 COPY . /app
 
-# Default command (this can be overridden in your workflow)
+# Default command
 CMD [ "poetry", "run", "python", "src/main.py", "--help" ]
