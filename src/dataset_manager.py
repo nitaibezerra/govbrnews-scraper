@@ -147,7 +147,7 @@ class DatasetManager:
         df_existing = hf_dataset.to_pandas()
         df_new = pd.DataFrame(new_data)
 
-        # 1. Ensure both DataFrames have the same columns (to avoid errors when updating)
+        # Ensure both DataFrames have same columns
         all_cols = set(df_existing.columns).union(df_new.columns)
         for col in all_cols:
             if col not in df_existing.columns:
@@ -155,15 +155,19 @@ class DatasetManager:
             if col not in df_new.columns:
                 df_new[col] = None
 
-        # 2. Set 'unique_id' as the index for easy comparison
+        # Drop duplicates in existing / new data by 'unique_id' column
+        df_existing.drop_duplicates(subset="unique_id", keep="first", inplace=True)
+        df_new.drop_duplicates(subset="unique_id", keep="first", inplace=True)
+
+        # Set 'unique_id' as the index
         df_existing.set_index("unique_id", inplace=True)
         df_new.set_index("unique_id", inplace=True)
 
         if allow_update:
-            # Overwrite existing rows with new data where 'unique_id' matches
+            # Overwrite existing rows with new data if there's a matching unique_id
             df_existing.update(df_new)
 
-            # Find rows in df_new that are truly new (not in df_existing) and append them
+            # Find truly new items (unique_ids not in df_existing)
             missing_ids = df_new.index.difference(df_existing.index)
             if not missing_ids.empty:
                 logging.info(f"Inserting {len(missing_ids)} brand new rows.")
@@ -188,7 +192,6 @@ class DatasetManager:
                 logging.info(f"Adding {len(df_filtered)} new items.")
                 df_existing = pd.concat([df_existing, df_filtered], axis=0)
 
-        # 3. Reset index back to normal
         df_existing.reset_index(inplace=True)
 
         # Convert back to a HF Dataset
