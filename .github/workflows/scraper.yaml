@@ -18,18 +18,21 @@ on:
         description: 'End date for scraping (format: YYYY-MM-DD, leave empty to scrape up to today)'
         required: false
         default: ''
+      sequential:
+        description: 'Process each agency sequentially? (true or false)'
+        required: false
+        default: 'false'
 
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
 
-    # 1) Use the published Docker image as the job container
     container:
       image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
-      options: --workdir /app  # This ensures the container starts in the correct directory
+      options: --workdir /app
 
     steps:
-      # Step 1: Set date variable for one week ago (default min-date if not provided)
+      # Step 1: Set date variables (one week ago as default min-date)
       - name: Set date variables
         run: |
           echo "ONE_WEEK_AGO=$(date -d '7 days ago' +'%Y-%m-%d')" >> $GITHUB_ENV
@@ -41,7 +44,7 @@ jobs:
             echo "MIN_DATE=${{ inputs.min-date }}" >> $GITHUB_ENV
           fi
 
-          # If max-date is set, use it, otherwise default to an empty string
+          # If max-date is set, use it, otherwise default to empty
           if [ ! -z "${{ inputs.max-date }}" ]; then
             echo "MAX_DATE_ARG=--max-date ${{ inputs.max-date }}" >> $GITHUB_ENV
           else
@@ -54,6 +57,7 @@ jobs:
           echo "📅 Min Date: $MIN_DATE"
           echo "📅 Max Date: ${{ inputs.max-date }}"
           echo "🏛 Agencies: ${{ inputs.agencies }}"
+          echo "🔁 Sequential? ${{ inputs.sequential }}"
 
       # Step 3: Run the scraper
       - name: Run the scraper
@@ -62,16 +66,21 @@ jobs:
         run: |
           cd /app
 
-          # Construct agencies argument if provided
+          # If agencies input is provided, convert it to an argument
           AGENCIES_ARG=""
           if [ ! -z "${{ inputs.agencies }}" ]; then
             AGENCIES_ARG="--agencies ${{ inputs.agencies }}"
           fi
 
-          # Run scraper
+          # If sequential == "true", add --sequential
+          SEQUENTIAL_ARG=""
+          if [ "${{ inputs.sequential }}" = "true" ]; then
+            SEQUENTIAL_ARG="--sequential"
+          fi
+
           python src/main.py scrape \
             --min-date $MIN_DATE \
-            --sequential \
             --allow-update \
+            $SEQUENTIAL_ARG \
             $MAX_DATE_ARG \
             $AGENCIES_ARG
