@@ -11,7 +11,7 @@ on:
         required: false
         default: ''
       min-date:
-        description: 'Start date for scraping (format: YYYY-MM-DD, defaults to yesterday if not provided)'
+        description: 'Start date for scraping (format: YYYY-MM-DD, defaults to one week ago if not provided)'
         required: false
         default: ''
       max-date:
@@ -29,14 +29,14 @@ jobs:
       options: --workdir /app  # This ensures the container starts in the correct directory
 
     steps:
-      # Step 1: Set date variable for yesterday (default min-date if not provided)
+      # Step 1: Set date variable for one week ago (default min-date if not provided)
       - name: Set date variables
         run: |
-          echo "YESTERDAY=$(date -d 'yesterday' +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "ONE_WEEK_AGO=$(date -d '7 days ago' +'%Y-%m-%d')" >> $GITHUB_ENV
 
-          # If min-date is not set, use yesterday's date
+          # If min-date is not set, use one week ago
           if [ -z "${{ inputs.min-date }}" ]; then
-            echo "MIN_DATE=$YESTERDAY" >> $GITHUB_ENV
+            echo "MIN_DATE=$ONE_WEEK_AGO" >> $GITHUB_ENV
           else
             echo "MIN_DATE=${{ inputs.min-date }}" >> $GITHUB_ENV
           fi
@@ -48,12 +48,18 @@ jobs:
             echo "MAX_DATE_ARG=" >> $GITHUB_ENV
           fi
 
-      # Step 2: Run the scraper (inside the Docker container)
+      # Step 2: Print input values before running the scraper
+      - name: Print input values
+        run: |
+          echo "📅 Min Date: $MIN_DATE"
+          echo "📅 Max Date: ${{ inputs.max-date }}"
+          echo "🏛 Agencies: ${{ inputs.agencies }}"
+
+      # Step 3: Run the scraper
       - name: Run the scraper
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Ensure working directory is correct
           cd /app
 
           # Construct agencies argument if provided
