@@ -1,7 +1,7 @@
 name: Run Scraper
 
 on:
-  # schedule:
+  schedule:
     # Runs every day at 4AM UTC (midnight in Brasília)
     - cron: '0 4 * * *'
   workflow_dispatch:
