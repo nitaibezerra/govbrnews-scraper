@@ -19,7 +19,11 @@ on:
         required: false
         default: ''
       sequential:
-        description: 'Process each agency sequentially? (true or false)'
+        description: 'Upload agency by agency to HF? (true or false)'
+        required: false
+        default: 'false'
+      allow-update:
+        description: 'Allow updating existing records? (true or false)'
         required: false
         default: 'false'
 
@@ -58,6 +62,7 @@ jobs:
           echo "📅 Max Date: ${{ inputs.max-date }}"
           echo "🏛 Agencies: ${{ inputs.agencies }}"
           echo "🔁 Sequential? ${{ inputs.sequential }}"
+          echo "🔄 Allow Update? ${{ inputs.allow-update }}"
 
       # Step 3: Run the scraper
       - name: Run the scraper
@@ -78,9 +83,15 @@ jobs:
             SEQUENTIAL_ARG="--sequential"
           fi
 
+          # If allow-update == "true", add --allow-update
+          ALLOW_UPDATE_ARG=""
+          if [ "${{ inputs.allow-update }}" = "true" ]; then
+            ALLOW_UPDATE_ARG="--allow-update"
+          fi
+
           python src/main.py scrape \
             --min-date $MIN_DATE \
-            --allow-update \
+            $ALLOW_UPDATE_ARG \
             $SEQUENTIAL_ARG \
             $MAX_DATE_ARG \
             $AGENCIES_ARG
