@@ -42,10 +42,10 @@ jobs:
           echo "ONE_WEEK_AGO=$(date -d '7 days ago' +'%Y-%m-%d')" >> $GITHUB_ENV
 
           # If min-date is not set, use one week ago
-          if [ -z "${{ inputs.min-date }}" ]; then
-            echo "MIN_DATE=$ONE_WEEK_AGO" >> $GITHUB_ENV
+          if [[ -n "${{ github.event.inputs.min-date }}" ]]; then
+            echo "MIN_DATE=${{ github.event.inputs.min-date }}" >> $GITHUB_ENV
           else
-            echo "MIN_DATE=${{ inputs.min-date }}" >> $GITHUB_ENV
+            echo "MIN_DATE=$ONE_WEEK_AGO" >> $GITHUB_ENV
           fi
 
           # If max-date is set, use it, otherwise default to empty
