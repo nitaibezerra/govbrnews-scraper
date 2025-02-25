@@ -41,18 +41,25 @@ jobs:
         run: |
           echo "ONE_WEEK_AGO=$(date -d '7 days ago' +'%Y-%m-%d')" >> $GITHUB_ENV
 
-          # If min-date is not set, use one week ago
-          if [[ -n "${{ github.event.inputs.min-date }}" ]]; then
-            echo "MIN_DATE=${{ github.event.inputs.min-date }}" >> $GITHUB_ENV
-          else
+          # For schedule triggers, we set MIN_DATE explicitly to one week ago.
+          # For workflow_dispatch, we respect the user input (or default to one week ago if empty).
+          if [ "${{ github.event_name }}" = "schedule" ]; then
             echo "MIN_DATE=$ONE_WEEK_AGO" >> $GITHUB_ENV
-          fi
-
-          # If max-date is set, use it, otherwise default to empty
-          if [ ! -z "${{ inputs.max-date }}" ]; then
-            echo "MAX_DATE_ARG=--max-date ${{ inputs.max-date }}" >> $GITHUB_ENV
-          else
             echo "MAX_DATE_ARG=" >> $GITHUB_ENV
+          else
+            # If min-date is empty, fall back to one week ago
+            if [ -z "${{ inputs.min-date }}" ]; then
+              echo "MIN_DATE=$ONE_WEEK_AGO" >> $GITHUB_ENV
+            else
+              echo "MIN_DATE=${{ inputs.min-date }}" >> $GITHUB_ENV
+            fi
+
+            # If max-date is set, use it, otherwise default to empty
+            if [ -n "${{ inputs.max-date }}" ]; then
+              echo "MAX_DATE_ARG=--max-date ${{ inputs.max-date }}" >> $GITHUB_ENV
+            else
+              echo "MAX_DATE_ARG=" >> $GITHUB_ENV
+            fi
           fi
 
       # Step 2: Print input values before running the scraper
