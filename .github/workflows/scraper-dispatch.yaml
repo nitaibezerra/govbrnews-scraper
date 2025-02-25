@@ -1,0 +1,75 @@
+name: Manual Scraper Dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      min-date:
+        description: 'Start date for scraping (format: YYYY-MM-DD)'
+        required: true
+      max-date:
+        description: 'End date for scraping (format: YYYY-MM-DD, leave empty to scrape up to today)'
+        required: false
+        default: ''
+      agencies:
+        description: 'Comma-separated list of agencies to scrape (leave empty to scrape all)'
+        required: false
+        default: ''
+      sequential:
+        description: 'Upload agency by agency to HF? (true or false)'
+        required: false
+        default: 'false'
+      allow-update:
+        description: 'Allow updating existing records? (true or false)'
+        required: false
+        default: 'false'
+
+jobs:
+  run-manual-scraper:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+
+    steps:
+      - name: Print input values
+        run: |
+          echo "Manual dispatch run"
+          echo "📅 Min Date: ${{ github.event.inputs.min-date }}"
+          echo "📅 Max Date: ${{ github.event.inputs.max-date }}"
+          echo "🏛 Agencies: ${{ github.event.inputs.agencies }}"
+          echo "🔁 Sequential? ${{ github.event.inputs.sequential }}"
+          echo "🔄 Allow Update? ${{ github.event.inputs.allow-update }}"
+
+      - name: Run the scraper
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd /app
+
+          # Build CLI arguments
+          AGENCIES_ARG=""
+          if [ ! -z "${{ github.event.inputs.agencies }}" ]; then
+            AGENCIES_ARG="--agencies ${{ github.event.inputs.agencies }}"
+          fi
+
+          SEQUENTIAL_ARG=""
+          if [ "${{ github.event.inputs.sequential }}" = "true" ]; then
+            SEQUENTIAL_ARG="--sequential"
+          fi
+
+          ALLOW_UPDATE_ARG=""
+          if [ "${{ github.event.inputs.allow-update }}" = "true" ]; then
+            ALLOW_UPDATE_ARG="--allow-update"
+          fi
+
+          MAX_DATE_ARG=""
+          if [ -n "${{ github.event.inputs.max-date }}" ]; then
+            MAX_DATE_ARG="--max-date ${{ github.event.inputs.max-date }}"
+          fi
+
+          python src/main.py scrape \
+            --min-date ${{ github.event.inputs.min-date }} \
+            $ALLOW_UPDATE_ARG \
+            $SEQUENTIAL_ARG \
+            $MAX_DATE_ARG \
+            $AGENCIES_ARG

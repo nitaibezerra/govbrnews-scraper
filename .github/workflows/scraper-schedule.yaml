@@ -1,0 +1,31 @@
+name: Scheduled Scraper
+
+on:
+  schedule:
+    # Runs every day at 4AM UTC (midnight Brasília)
+    - cron: '0 4 * * *'
+
+jobs:
+  run-scheduled-scraper:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+
+    steps:
+      - name: Set ONE_WEEK_AGO environment variable
+        run: |
+          echo "ONE_WEEK_AGO=$(date -d '7 days ago' +'%Y-%m-%d')" >> $GITHUB_ENV
+
+      - name: Print date information
+        run: |
+          echo "Scheduled run. Using min-date=$ONE_WEEK_AGO"
+
+      - name: Run scraper (scheduled)
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd /app
+
+          python src/main.py scrape \
+            --min-date $ONE_WEEK_AGO
