@@ -38,9 +38,10 @@ Para carregar o dataset diretamente no Python utilizando a biblioteca `datasets`
    - `published_at`: Data de publicação da notícia.
    - `title`: Título da notícia.
    - `url`: URL da notícia original.
+   - `image`: Link para a imagem principal da Notícia.
    - `category`: Categoria da notícia (se disponível).
    - `tags`: Lista de tags associadas à notícia (se disponíveis).
-   - `content`: Conteúdo completo da notícia.
+   - `content`: Conteúdo completo da notícia em formato Markdown.
    - `extracted_at`: Data e hora em que a notícia foi extraída.
 
 ---
