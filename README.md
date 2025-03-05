@@ -8,7 +8,7 @@ O **GovBR News Scraper** é uma ferramenta experimental desenvolvida pelo Minist
 
 ## Dados Disponíveis
 
-Os dados extraídos estão disponíveis de forma centralizada no [Hugging Face Hub](https://huggingface.co/datasets/nitaibezerra/govbrnews), em dois formatos: **dataset estruturado** (compatível com a biblioteca `datasets`) e **arquivos CSV**.
+Os dados extraídos são publicados diariamente no [Hugging Face Hub](https://huggingface.co/datasets/nitaibezerra/govbrnews), em dois formatos: **dataset estruturado** (compatível com a biblioteca `datasets`) e **arquivos CSV**.
 
 ### Dataset Estruturado no Hugging Face
 
