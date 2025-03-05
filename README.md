@@ -62,6 +62,14 @@ Além do dataset estruturado, os dados estão disponíveis em arquivos CSV para 
 
 ---
 
+## Dashboard Interativo
+
+Para facilitar a exploração dos dados, disponibilizamos um **dashboard interativo** que permite a visualização e análise básica das notícias coletadas. Este recurso é útil para obter insights rápidos e compreender tendências nas publicações governamentais. Você pode acessar o dashboard através do seguinte link: [Dashboard Interativo](https://huggingface.co/spaces/nitaibezerra/govbrnews)
+
+![image](https://github.com/user-attachments/assets/723870ec-2c73-4515-9309-b0ed997664ad)
+
+---
+
 ## Agendamento de Raspagem Automatizada
 
 O repositório está configurado com uma **GitHub Action** que automaticamente raspa as notícias do dia anterior. O scraper é executado diariamente, garantindo que o dataset publicado no Hugging Face esteja sempre atualizado com as últimas notícias.
