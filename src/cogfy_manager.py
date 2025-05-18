@@ -1,5 +1,5 @@
 import requests
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Set, Tuple
 from dataclasses import dataclass
 from urllib.parse import urljoin
 
@@ -114,6 +114,40 @@ class CogfyClient:
         data = response.json()
         return [Field(**field) for field in data["data"]]
 
+    def create_field(self, collection_id: str, name: str, field_type: str) -> Field:
+        """Create a new field in a collection.
+
+        Args:
+            collection_id (str): The ID of the collection to add the field to
+            name (str): The name of the new field
+            field_type (str): The type of the new field (e.g., "text", "number", "boolean")
+
+        Returns:
+            Field: The created field
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails
+        """
+        url = urljoin(f"{self.base_url}/", f"collections/{collection_id}/fields")
+        payload = {
+            "name": name,
+            "type": field_type
+        }
+
+        response = requests.post(url, headers=self.headers, json=payload)
+        response.raise_for_status()
+
+        # The POST API only returns the field ID
+        field_id = response.json()
+
+        # Fetch the complete field details
+        fields = self.list_fields(collection_id)
+        for field in fields:
+            if field.id == field_id:
+                return field
+
+        raise ValueError(f"Created field {field_id} not found in collection {collection_id}")
+
 class CollectionManager:
     def __init__(self, client: CogfyClient, collection_identifier: str):
         """Initialize the CollectionManager with a collection name or ID.
@@ -168,3 +202,24 @@ class CollectionManager:
             List[Field]: List of fields in the collection
         """
         return self.client.list_fields(self.collection_id)
+
+    def ensure_fields(self, fields: Dict[str, str]) -> List[Field]:
+        """Ensure that all specified fields exist in the collection, creating any that don't.
+
+        Args:
+            fields (Dict[str, str]): Dictionary mapping field names to their types
+
+        Returns:
+            List[Field]: List of all fields in the collection after ensuring the specified ones exist
+        """
+        # Get current fields
+        current_fields = self.list_columns()
+        current_field_names = {field.name for field in current_fields}
+
+        # Create any missing fields
+        for name, field_type in fields.items():
+            if name not in current_field_names:
+                self.client.create_field(self.collection_id, name, field_type)
+
+        # Return updated list of fields
+        return self.list_columns()

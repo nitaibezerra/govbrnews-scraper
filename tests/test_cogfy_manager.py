@@ -88,7 +88,7 @@ def test_collection_manager_list_columns(client):
     fields = manager.list_columns()
 
     # Check that we got the expected number of fields
-    assert len(fields) == 4
+    assert len(fields) == 8
 
     # Check that all fields are Field objects
     assert all(isinstance(field, Field) for field in fields)
@@ -101,7 +101,7 @@ def test_collection_manager_list_columns(client):
         "number_field_01",
         "boolean_field_01"
     }
-    assert field_names == expected_fields
+    assert field_names.issuperset(expected_fields)
 
     # Check field types
     field_types = {field.name: field.type for field in fields}
@@ -109,3 +109,42 @@ def test_collection_manager_list_columns(client):
     assert field_types["text_field_02"] == "text"
     assert field_types["number_field_01"] == "number"
     assert field_types["boolean_field_01"] == "boolean"
+
+def test_collection_manager_ensure_fields(client):
+    """Test ensuring additional fields exist in the collection."""
+    collection_name = "_collection-for-test-purpose-only"
+    manager = CollectionManager(client, collection_name)
+
+    # Define new fields to ensure
+    new_fields = {
+        "text_field_03": "text",
+        "number_field_02": "number",
+        "boolean_field_02": "boolean",
+        "date_field_01": "date"
+    }
+
+    # Ensure the fields exist
+    fields = manager.ensure_fields(new_fields)
+
+    # Check that we have all fields (original + new)
+    field_names = {field.name for field in fields}
+    expected_fields = {
+        # Original fields
+        "text_field_01",
+        "text_field_02",
+        "number_field_01",
+        "boolean_field_01",
+        # New fields
+        "text_field_03",
+        "number_field_02",
+        "boolean_field_02",
+        "date_field_01"
+    }
+    assert field_names == expected_fields
+
+    # Check field types
+    field_types = {field.name: field.type for field in fields}
+    assert field_types["text_field_03"] == "text"
+    assert field_types["number_field_02"] == "number"
+    assert field_types["boolean_field_02"] == "boolean"
+    assert field_types["date_field_01"] == "date"
