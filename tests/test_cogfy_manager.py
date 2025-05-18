@@ -2,7 +2,7 @@ import os
 import pytest
 from pathlib import Path
 from dotenv import load_dotenv
-from src.cogfy_manager import CogfyClient, CollectionManager
+from src.cogfy_manager import CogfyClient, CollectionManager, Field
 
 @pytest.fixture
 def api_key():
@@ -79,3 +79,33 @@ def test_cogfy_client_find_invalid_collection(client):
     """Test finding a non-existent collection."""
     collection = client.find_collection("00000000-0000-0000-0000-000000000000")
     assert collection is None
+
+def test_collection_manager_list_columns(client):
+    """Test listing columns (fields) of a collection."""
+    collection_name = "_collection-for-test-purpose-only"
+    manager = CollectionManager(client, collection_name)
+
+    fields = manager.list_columns()
+
+    # Check that we got the expected number of fields
+    assert len(fields) == 4
+
+    # Check that all fields are Field objects
+    assert all(isinstance(field, Field) for field in fields)
+
+    # Check that we have all the expected fields
+    field_names = {field.name for field in fields}
+    expected_fields = {
+        "text_field_01",
+        "text_field_02",
+        "number_field_01",
+        "boolean_field_01"
+    }
+    assert field_names == expected_fields
+
+    # Check field types
+    field_types = {field.name: field.type for field in fields}
+    assert field_types["text_field_01"] == "text"
+    assert field_types["text_field_02"] == "text"
+    assert field_types["number_field_01"] == "number"
+    assert field_types["boolean_field_01"] == "boolean"

@@ -1,5 +1,5 @@
 import requests
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from dataclasses import dataclass
 from urllib.parse import urljoin
 
@@ -7,6 +7,13 @@ from urllib.parse import urljoin
 class Collection:
     id: str
     name: str
+
+@dataclass
+class Field:
+    id: str
+    name: str
+    type: str
+    operation: Optional[str]
 
 class CogfyClient:
     def __init__(self, api_key: str, base_url: str):
@@ -90,6 +97,23 @@ class CogfyClient:
 
         return None
 
+    def list_fields(self, collection_id: str) -> List[Field]:
+        """List all fields in a collection.
+
+        Args:
+            collection_id (str): The ID of the collection to list fields from
+
+        Returns:
+            List[Field]: List of fields in the collection
+        """
+        url = urljoin(f"{self.base_url}/", f"collections/{collection_id}/fields")
+
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+
+        data = response.json()
+        return [Field(**field) for field in data["data"]]
+
 class CollectionManager:
     def __init__(self, client: CogfyClient, collection_identifier: str):
         """Initialize the CollectionManager with a collection name or ID.
@@ -136,3 +160,11 @@ class CollectionManager:
             str: The collection name
         """
         return self.collection_name
+
+    def list_columns(self) -> List[Field]:
+        """List all fields (columns) in the collection.
+
+        Returns:
+            List[Field]: List of fields in the collection
+        """
+        return self.client.list_fields(self.collection_id)
