@@ -1,6 +1,5 @@
-import os
 import requests
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from dataclasses import dataclass
 from urllib.parse import urljoin
 
