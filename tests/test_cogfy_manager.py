@@ -184,8 +184,8 @@ def test_create_record_all_fields(client):
     fields = manager.list_columns()
     field_map = {field.name: field for field in fields}
 
-    # Get current datetime in ISO
-    current_datetime = datetime.now().isoformat()
+    # Get current datetime in format YYYY-MM-DDTHH:MM:SSZ
+    current_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Create a record with all fields
     properties = {
@@ -219,7 +219,7 @@ def test_create_record_all_fields(client):
         },
         field_map["date_field_01"].id: {
             "type": "date",
-            "datetime": {"value": current_datetime}
+            'date': {'value': current_datetime}
         }
     }
 
