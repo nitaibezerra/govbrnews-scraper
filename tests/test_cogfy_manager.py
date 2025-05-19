@@ -2,6 +2,7 @@ import os
 import pytest
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import datetime, timezone
 from src.cogfy_manager import CogfyClient, CollectionManager, Field
 
 @pytest.fixture
@@ -148,3 +149,84 @@ def test_collection_manager_ensure_fields(client):
     assert field_types["number_field_02"] == "number"
     assert field_types["boolean_field_02"] == "boolean"
     assert field_types["date_field_01"] == "date"
+
+def test_create_record_single_field(client):
+    """Test creating a record with a single text field."""
+    collection_name = "_collection-for-test-purpose-only"
+    manager = CollectionManager(client, collection_name)
+
+    # Get the text field
+    fields = manager.list_columns()
+    text_field = next(field for field in fields if field.name == "text_field_01")
+
+    # Create a record with a single text field
+    properties = {
+        text_field.id: {
+            "type": "text",
+            "text": {"value": "Test text 1"}
+        }
+    }
+
+    # Create the record
+    record_id = manager.create_record(properties)
+
+    # Verify the record was created successfully
+    assert record_id is not None
+    assert isinstance(record_id, str)
+    assert len(record_id) > 0
+
+def test_create_record_all_fields(client):
+    """Test creating a record with all field types."""
+    collection_name = "_collection-for-test-purpose-only"
+    manager = CollectionManager(client, collection_name)
+
+    # Get all fields
+    fields = manager.list_columns()
+    field_map = {field.name: field for field in fields}
+
+    # Get current datetime in ISO
+    current_datetime = datetime.now().isoformat()
+
+    # Create a record with all fields
+    properties = {
+        field_map["text_field_01"].id: {
+            "type": "text",
+            "text": {"value": "Test text 1"}
+        },
+        field_map["text_field_02"].id: {
+            "type": "text",
+            "text": {"value": "Test text 2"}
+        },
+        field_map["text_field_03"].id: {
+            "type": "text",
+            "text": {"value": "Test text 3"}
+        },
+        field_map["number_field_01"].id: {
+            "type": "number",
+            "number": {"value": 42}
+        },
+        field_map["number_field_02"].id: {
+            "type": "number",
+            "number": {"value": 3.14}
+        },
+        field_map["boolean_field_01"].id: {
+            "type": "boolean",
+            "boolean": {"value": True}
+        },
+        field_map["boolean_field_02"].id: {
+            "type": "boolean",
+            "boolean": {"value": False}
+        },
+        field_map["date_field_01"].id: {
+            "type": "date",
+            "datetime": {"value": current_datetime}
+        }
+    }
+
+    # Create the record
+    record_id = manager.create_record(properties)
+
+    # Verify the record was created successfully
+    assert record_id is not None
+    assert isinstance(record_id, str)
+    assert len(record_id) > 0

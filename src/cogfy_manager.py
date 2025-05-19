@@ -120,7 +120,7 @@ class CogfyClient:
         Args:
             collection_id (str): The ID of the collection to add the field to
             name (str): The name of the new field
-            field_type (str): The type of the new field (e.g., "text", "number", "boolean")
+            field_type (str): The type of the new field (e.g., "text", "number", "boolean", "datetime")
 
         Returns:
             Field: The created field
@@ -147,6 +147,41 @@ class CogfyClient:
                 return field
 
         raise ValueError(f"Created field {field_id} not found in collection {collection_id}")
+
+    def create_record(self, collection_id: str, properties: Dict[str, Dict]) -> Dict[str, str]:
+        """Create a record in a collection.
+
+        Args:
+            collection_id (str): The ID of the collection to create the record in
+            properties (Dict[str, Dict]): Dictionary mapping field IDs to their values and types
+                Example: {
+                    "field_id": {
+                        "type": "text",
+                        "text": {"value": "Text value"}
+                    }
+                }
+                For datetime fields, use:
+                {
+                    "field_id": {
+                        "type": "datetime",
+                        "datetime": {"value": "2024-03-20T15:30:00Z"}
+                    }
+                }
+
+        Returns:
+            Dict[str, str]: Dictionary containing the created record's ID
+                Example: {"id": "c2fb90f0-3d48-4d71-af78-1c09b39923a4"}
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails
+        """
+        url = urljoin(f"{self.base_url}/", f"collections/{collection_id}/records")
+        payload = {"properties": properties}
+
+        response = requests.post(url, headers=self.headers, json=payload)
+        response.raise_for_status()
+
+        return response.json()
 
 class CollectionManager:
     def __init__(self, client: CogfyClient, collection_identifier: str):
@@ -207,7 +242,8 @@ class CollectionManager:
         """Ensure that all specified fields exist in the collection, creating any that don't.
 
         Args:
-            fields (Dict[str, str]): Dictionary mapping field names to their types
+            fields (Dict[str, str]): Dictionary mapping field names to their types.
+                Supported types: "text", "number", "boolean", "datetime"
 
         Returns:
             List[Field]: List of all fields in the collection after ensuring the specified ones exist
@@ -223,3 +259,31 @@ class CollectionManager:
 
         # Return updated list of fields
         return self.list_columns()
+
+    def create_record(self, properties: Dict[str, Dict]) -> str:
+        """Create a record in the managed collection.
+
+        Args:
+            properties (Dict[str, Dict]): Dictionary mapping field IDs to their values and types
+                Example: {
+                    "field_id": {
+                        "type": "text",
+                        "text": {"value": "Text value"}
+                    }
+                }
+                For datetime fields, use:
+                {
+                    "field_id": {
+                        "type": "datetime",
+                        "datetime": {"value": "2024-03-20T15:30:00Z"}
+                    }
+                }
+
+        Returns:
+            str: The ID of the created record
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails
+        """
+        response = self.client.create_record(self.collection_id, properties)
+        return response["id"]
