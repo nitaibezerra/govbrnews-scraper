@@ -2,7 +2,7 @@ import os
 import pytest
 from pathlib import Path
 from dotenv import load_dotenv
-from datetime import datetime, timezone
+from datetime import datetime
 from src.cogfy_manager import CogfyClient, CollectionManager, Field
 
 @pytest.fixture
