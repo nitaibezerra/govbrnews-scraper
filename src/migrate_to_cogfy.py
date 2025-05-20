@@ -110,7 +110,8 @@ def create_record_properties(row: pd.Series, field_id_map: dict, field_mapping: 
     for field_name, field_id in field_id_map.items():
         value = row.get(field_name)
 
-        if (isinstance(value, numpy.ndarray) and value.size == 0) or pd.isna(value):
+        print(f"Field name: {field_name}, value: {value} type: {type(value)}")
+        if isinstance(value, numpy.ndarray) and value.size == 0:
             continue
 
         if field_mapping[field_name] == "text":
@@ -159,7 +160,6 @@ def migrate_dataset_to_cogfy():
                     f"{row['agency']} | Published at: {row['published_at']}")
 
         sleep(0.3)
-        return
     logging.info("Migration completed!")
 
 if __name__ == "__main__":
