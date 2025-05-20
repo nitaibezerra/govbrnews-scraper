@@ -138,7 +138,7 @@ class CogfyClient:
         response.raise_for_status()
 
         # The POST API only returns the field ID
-        field_id = response.json()
+        field_id = response.json()["id"]
 
         # Fetch the complete field details
         fields = self.list_fields(collection_id)
