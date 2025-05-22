@@ -1,9 +1,9 @@
-from collections.abc import Sequence
 from datetime import datetime, time, date
 import logging
 import os
 from time import sleep
 import numpy
+import random
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -110,8 +110,7 @@ def create_record_properties(row: pd.Series, field_id_map: dict, field_mapping: 
     for field_name, field_id in field_id_map.items():
         value = row.get(field_name)
 
-        print(f"Field name: {field_name}, value: {value} type: {type(value)}")
-        if isinstance(value, numpy.ndarray) and value.size == 0:
+        if value is None or (isinstance(value, str) and value == "") or (isinstance(value, numpy.ndarray) and value.size == 0):
             continue
 
         if field_mapping[field_name] == "text":
@@ -130,6 +129,38 @@ def create_record_properties(row: pd.Series, field_id_map: dict, field_mapping: 
             }
 
     return properties
+
+def create_record_with_retry(collection_manager: CollectionManager, properties: dict, max_retries: int = 20) -> bool:
+    """
+    Attempts to create a record with exponential backoff retry, capped at 10 minutes.
+
+    Args:
+        collection_manager: The Cogfy collection manager
+        properties: The record properties
+        max_retries: Maximum number of retry attempts
+
+    Returns:
+        bool: True if successful, False if all retries failed
+    """
+    base_delay = 0.15  # initial delay in seconds
+    max_delay = 600    # cap delay at 10 minutes (600 seconds)
+
+    for attempt in range(max_retries):
+        try:
+            collection_manager.create_record(properties)
+            return True
+        except Exception as e:
+            if attempt == max_retries - 1:
+                logging.error(f"Failed to create record after {max_retries} attempts: {str(e)}")
+                return False
+
+            # Calculate exponential delay and cap it at max_delay
+            delay = min(base_delay * (2 ** attempt), max_delay)
+            # Add jitter to avoid thundering herd problem
+            delay += random.uniform(0, 0.1)
+
+            sleep(delay)
+    return False
 
 def migrate_dataset_to_cogfy():
     """
@@ -154,12 +185,13 @@ def migrate_dataset_to_cogfy():
 
     for index, row in df.iterrows():
         properties = create_record_properties(row, field_id_map, field_mapping)
-        collection_manager.create_record(properties)
+        if create_record_with_retry(collection_manager, properties):
+            logging.info(f"Created record {index + 1}/{total_rows}. Agency: "
+                        f"{row['agency']} | Published at: {row['published_at']}")
+        else:
+            logging.error(f"Failed to create record {index + 1}/{total_rows}")
 
-        logging.info(f"Created record {index + 1}/{total_rows}. Agency: "
-                    f"{row['agency']} | Published at: {row['published_at']}")
-
-        sleep(0.3)
+        sleep(0.15)
     logging.info("Migration completed!")
 
 if __name__ == "__main__":
