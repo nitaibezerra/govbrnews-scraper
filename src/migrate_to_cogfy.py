@@ -33,6 +33,7 @@ class UploadToCogfyManager:
         self.client = None
         self.collection_manager = None
         self._initialize_cogfy_interface()
+        self._unique_id_field_id = None
 
     def _initialize_cogfy_interface(self) -> None:
         """Initialize the Cogfy client and collection manager."""
@@ -167,6 +168,56 @@ class UploadToCogfyManager:
                 sleep(delay)
         return False
 
+    def _get_unique_id_field_id(self, field_id_map: dict) -> str:
+        """
+        Get the field ID for the unique_id field.
+
+        Args:
+            field_id_map: Mapping of field names to their IDs
+
+        Returns:
+            str: The field ID for unique_id
+        """
+        for field_name, field_id in field_id_map.items():
+            if field_name == 'unique_id':
+                return field_id
+        raise ValueError("unique_id field not found in collection")
+
+    def _record_exists(self, unique_id: str) -> bool:
+        """
+        Check if a record with the given unique_id already exists.
+
+        Args:
+            unique_id: The unique identifier to check
+
+        Returns:
+            bool: True if record exists, False otherwise
+        """
+        filter_criteria = {
+            "type": "and",
+            "and": {
+                "filters": [
+                    {
+                        "type": "equals",
+                        "equals": {
+                            "fieldId": self._unique_id_field_id,
+                            "value": unique_id
+                        }
+                    }
+                ]
+            }
+        }
+
+        try:
+            result = self.collection_manager.query_records(
+                filter=filter_criteria,
+                page_size=1
+            )
+            return result["totalSize"] > 0
+        except Exception as e:
+            logging.error(f"Error checking for existing record: {str(e)}")
+            raise e
+
     def upload(self,
               agency: Optional[str] = None,
               start_date: Optional[Union[str, datetime]] = None,
@@ -208,6 +259,8 @@ class UploadToCogfyManager:
 
         # Setup collection fields
         field_id_map = self._setup_collection_fields(features)
+        self._unique_id_field_id = self._get_unique_id_field_id(field_id_map)
+
         field_mapping = {
             field_name: self._map_hf_type_to_cogfy_type(field_type.dtype)
             for field_name, field_type in features.items()
@@ -217,17 +270,25 @@ class UploadToCogfyManager:
         total_rows = len(df)
         logging.info(f"Starting migration of {total_rows} records...")
 
+        skipped = 0
         for index, row in df.iterrows():
+            # Check if record already exists
+            if self._record_exists(row['unique_id']):
+                logging.info(f"Skipping existing record. Unique ID: {row['unique_id']}")
+                skipped += 1
+                continue
+
             properties = self._create_record_properties(row, field_id_map, field_mapping)
             if self._create_record_with_retry(properties):
-                logging.info(f"Created record {index + 1}/{total_rows}. Agency: "
-                           f"{row['agency']} | Published at: {row['published_at']}")
+                logging.info(f"Created record. Agency: {row['agency']} | "
+                             f"Published at: {row['published_at']}")
             else:
-                logging.error(f"Failed to create record {index + 1}/{total_rows}")
+                logging.error(f"Failed to create record. Unique ID: {row['unique_id']}")
 
             sleep(0.15)
 
-        logging.info("Migration completed!")
+        logging.info(f"Migration completed! Created {total_rows - skipped} "
+                     f"records, skipped {skipped} existing records.")
 
 def main():
     """Main entry point for the script."""
