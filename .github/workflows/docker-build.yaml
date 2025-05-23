@@ -3,6 +3,11 @@ name: Build and Publish Docker Image
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'requirements.txt'
+      - '.github/workflows/docker-build.yaml'
 
 jobs:
   build-and-push:
