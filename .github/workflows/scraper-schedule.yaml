@@ -21,11 +21,18 @@ jobs:
         run: |
           echo "Scheduled run. Using min-date=$ONE_WEEK_AGO"
 
-      - name: Run scraper (scheduled)
+      - name: Run scraper
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           cd /app
-
           python src/main.py scrape \
             --min-date $ONE_WEEK_AGO
+
+      - name: Upload to Cogfy
+        env:
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          cd /app
+          python src/upload_to_cogfy_manager.py \
+            --start-date $ONE_WEEK_AGO
