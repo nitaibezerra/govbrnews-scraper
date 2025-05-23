@@ -2,7 +2,7 @@ import os
 import pytest
 from pathlib import Path
 from dotenv import load_dotenv
-from datetime import datetime, timezone
+from datetime import datetime, date, time
 from src.cogfy_manager import CogfyClient, CollectionManager, Field
 
 @pytest.fixture
@@ -184,8 +184,8 @@ def test_create_record_all_fields(client):
     fields = manager.list_columns()
     field_map = {field.name: field for field in fields}
 
-    # Get current datetime in ISO
-    current_datetime = datetime.now().isoformat()
+    # Get current datetime in format YYYY-MM-DDTHH:MM:SSZ
+    current_datetime = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
 
     # Create a record with all fields
     properties = {
@@ -219,7 +219,7 @@ def test_create_record_all_fields(client):
         },
         field_map["date_field_01"].id: {
             "type": "date",
-            "datetime": {"value": current_datetime}
+            'date': {'value': current_datetime}
         }
     }
 
@@ -230,3 +230,28 @@ def test_create_record_all_fields(client):
     assert record_id is not None
     assert isinstance(record_id, str)
     assert len(record_id) > 0
+
+    # Test querying the created record
+    filter_criteria = {
+        "type": "and",
+        "and": {
+            "filters": [
+                {
+                    "type": "equals",
+                    "equals": {
+                        "fieldId": field_map["text_field_01"].id,
+                        "value": "Test text 1"
+                    }
+                }
+            ]
+        }
+    }
+
+    result = manager.query_records(filter=filter_criteria)
+    assert result["totalSize"] > 0
+    assert len(result["data"]) > 0
+
+    # Verify the date field format
+    record = result["data"][0]
+    date_field_value = record["properties"][field_map["date_field_01"].id]["date"]["value"]
+    assert date_field_value == current_datetime
