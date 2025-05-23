@@ -4,6 +4,7 @@ import os
 from time import sleep
 import numpy
 import random
+from typing import Optional, Union
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -20,179 +21,237 @@ logging.basicConfig(
 # Load environment variables
 load_dotenv()
 
-def map_hf_type_to_cogfy_type(hf_type: str) -> str:
-    """
-    Maps HuggingFace dataset field types to Cogfy field types.
+class UploadToCogfyManager:
+    def __init__(self, collection_name: str = "noticiasgovbr-all-news"):
+        """
+        Initialize the UploadToCogfyManager.
 
-    Args:
-        hf_type: The HuggingFace field type
+        Args:
+            collection_name: Name of the Cogfy collection to upload to
+        """
+        self.collection_name = collection_name
+        self.client = None
+        self.collection_manager = None
+        self._initialize_cogfy_interface()
 
-    Returns:
-        The corresponding Cogfy field type
-    """
-    type_mapping = {
-        "string": "text",
-        "date32": "date",
-        "timestamp[us]": "date",
-        "timestamp[ns]": "date",
-        "list": "text"  # For tags, we'll store as comma-separated text
-    }
-    return type_mapping.get(hf_type, "text")  # Default to text if type not found
+    def _initialize_cogfy_interface(self) -> None:
+        """Initialize the Cogfy client and collection manager."""
+        api_key = os.getenv("COGFY_API_KEY")
+        if not api_key:
+            raise ValueError("COGFY_API_KEY environment variable is not set")
 
-def load_and_prepare_dataset() -> tuple[pd.DataFrame, dict]:
-    """
-    Loads the dataset from HuggingFace and prepares it for migration.
+        self.client = CogfyClient(api_key, base_url="https://public-api.serpro.cogfy.com/")
+        self.collection_manager = CollectionManager(self.client, self.collection_name)
 
-    Returns:
-        tuple: (pd.DataFrame, dict) The prepared dataset and its features
-    """
-    dataset_manager = DatasetManager()
-    dataset = dataset_manager._load_existing_dataset()
+    def _load_and_prepare_dataset(self) -> tuple[pd.DataFrame, dict]:
+        """
+        Loads the dataset from HuggingFace and prepares it for migration.
 
-    if dataset is None:
-        logging.error("Failed to load dataset from HuggingFace")
-        return None, None
+        Returns:
+            tuple: (pd.DataFrame, dict) The prepared dataset and its features
+        """
+        dataset_manager = DatasetManager()
+        dataset = dataset_manager._load_existing_dataset()
 
-    df = dataset.to_pandas()
-    return df.sort_values(by="published_at", ascending=True), dataset.features
+        if dataset is None:
+            raise ValueError("Failed to load dataset from HuggingFace")
 
-def initialize_cogfy_interface() -> CollectionManager:
-    """
-    Initializes the Cogfy client and collection manager.
+        df = dataset.to_pandas()
+        return df.sort_values(by="published_at", ascending=True), dataset.features
 
-    Returns:
-        CollectionManager: The Cogfy collection manager
-    """
-    api_key = os.getenv("COGFY_API_KEY")
-    if not api_key:
-        raise ValueError("COGFY_API_KEY environment variable is not set")
+    def _setup_collection_fields(self, features: dict) -> dict:
+        """
+        Sets up the collection fields and returns the field ID mapping.
 
-    client = CogfyClient(api_key, base_url="https://public-api.serpro.cogfy.com/")
-    collection_manager = CollectionManager(client, "noticiasgovbr-all-news")
-    return collection_manager
+        Args:
+            features: The dataset features dictionary
 
-def setup_collection_fields(dataset_features: dict, collection_manager: CollectionManager) -> dict:
-    """
-    Sets up the collection fields and returns the field ID mapping.
+        Returns:
+            dict: Mapping of field names to their IDs
+        """
+        field_mapping = {
+            field_name: self._map_hf_type_to_cogfy_type(field_type.dtype)
+            for field_name, field_type in features.items()
+        }
 
-    Args:
-        dataset_features: The dataset features dictionary
-        collection_manager: The Cogfy collection manager
+        logging.info("Ensuring fields exist in Cogfy collection...")
+        self.collection_manager.ensure_fields(field_mapping)
 
-    Returns:
-        dict: Mapping of field names to their IDs
-    """
-    field_mapping = {
-        field_name: map_hf_type_to_cogfy_type(field_type.dtype)
-        for field_name, field_type in dataset_features.items()
-    }
+        fields = self.collection_manager.list_columns()
+        return {field.name: field.id for field in fields}
 
-    logging.info("Ensuring fields exist in Cogfy collection...")
-    collection_manager.ensure_fields(field_mapping)
+    def _map_hf_type_to_cogfy_type(self, hf_type: str) -> str:
+        """
+        Maps HuggingFace dataset field types to Cogfy field types.
 
-    fields = collection_manager.list_columns()
-    return {field.name: field.id for field in fields}
+        Args:
+            hf_type: The HuggingFace field type
 
-def create_record_properties(row: pd.Series, field_id_map: dict, field_mapping: dict) -> dict:
-    """
-    Creates the properties dictionary for a record.
+        Returns:
+            str: The corresponding Cogfy field type
+        """
+        type_mapping = {
+            "string": "text",
+            "date32": "date",
+            "timestamp[us]": "date",
+            "timestamp[ns]": "date",
+            "list": "text"  # For tags, we'll store as comma-separated text
+        }
+        return type_mapping.get(hf_type, "text")
 
-    Args:
-        row: The pandas Series containing the record data
-        field_id_map: Mapping of field names to their IDs
-        field_mapping: Mapping of field names to their types
+    def _create_record_properties(self, row: pd.Series, field_id_map: dict, field_mapping: dict) -> dict:
+        """
+        Creates the properties dictionary for a record.
 
-    Returns:
-        dict: The properties dictionary for the record
-    """
-    properties = {}
+        Args:
+            row: The pandas Series containing the record data
+            field_id_map: Mapping of field names to their IDs
+            field_mapping: Mapping of field names to their types
 
-    for field_name, field_id in field_id_map.items():
-        value = row.get(field_name)
+        Returns:
+            dict: The properties dictionary for the record
+        """
+        properties = {}
 
-        if value is None or (isinstance(value, str) and value == "") or (isinstance(value, numpy.ndarray) and value.size == 0):
-            continue
+        for field_name, field_id in field_id_map.items():
+            value = row.get(field_name)
 
-        if field_mapping[field_name] == "text":
-            properties[field_id] = {
-                "type": "text",
-                "text": {"value": str(value)}
-            }
-        elif field_mapping[field_name] == "date":
-            if isinstance(value, pd.Timestamp):
-                value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
-            elif isinstance(value, date):
-                value = datetime.combine(value, time(hour=12)).strftime("%Y-%m-%dT%H:%M:%SZ")
-            properties[field_id] = {
-                "type": "date",
-                "date": {"value": value}
-            }
+            if value is None or (isinstance(value, str) and value == "") or (isinstance(value, numpy.ndarray) and value.size == 0):
+                continue
 
-    return properties
+            if field_mapping[field_name] == "text":
+                properties[field_id] = {
+                    "type": "text",
+                    "text": {"value": str(value)}
+                }
+            elif field_mapping[field_name] == "date":
+                if isinstance(value, pd.Timestamp):
+                    value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
+                elif isinstance(value, date):
+                    value = datetime.combine(value, time(hour=12)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                properties[field_id] = {
+                    "type": "date",
+                    "date": {"value": value}
+                }
 
-def create_record_with_retry(collection_manager: CollectionManager, properties: dict, max_retries: int = 20) -> bool:
-    """
-    Attempts to create a record with exponential backoff retry, capped at 10 minutes.
+        return properties
 
-    Args:
-        collection_manager: The Cogfy collection manager
-        properties: The record properties
-        max_retries: Maximum number of retry attempts
+    def _create_record_with_retry(self, properties: dict, max_retries: int = 20) -> bool:
+        """
+        Attempts to create a record with exponential backoff retry, capped at 10 minutes.
 
-    Returns:
-        bool: True if successful, False if all retries failed
-    """
-    base_delay = 0.15  # initial delay in seconds
-    max_delay = 600    # cap delay at 10 minutes (600 seconds)
+        Args:
+            properties: The record properties
+            max_retries: Maximum number of retry attempts
 
-    for attempt in range(max_retries):
-        try:
-            collection_manager.create_record(properties)
-            return True
-        except Exception as e:
-            if attempt == max_retries - 1:
-                logging.error(f"Failed to create record after {max_retries} attempts: {str(e)}")
-                return False
+        Returns:
+            bool: True if successful, False if all retries failed
+        """
+        base_delay = 0.15  # initial delay in seconds
+        max_delay = 600    # cap delay at 10 minutes (600 seconds)
 
-            # Calculate exponential delay and cap it at max_delay
-            delay = min(base_delay * (2 ** attempt), max_delay)
-            # Add jitter to avoid thundering herd problem
-            delay += random.uniform(0, 0.1)
+        for attempt in range(max_retries):
+            try:
+                self.collection_manager.create_record(properties)
+                return True
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    logging.error(f"Failed to create record after {max_retries} attempts: {str(e)}")
+                    return False
 
-            sleep(delay)
-    return False
+                # Calculate exponential delay and cap it at max_delay
+                delay = min(base_delay * (2 ** attempt), max_delay)
+                # Add jitter to avoid thundering herd problem
+                delay += random.uniform(0, 0.1)
 
-def migrate_dataset_to_cogfy():
-    """
-    Migrates the GovBR News dataset from HuggingFace to Cogfy.
-    """
-    # Load and prepare dataset
-    df, features = load_and_prepare_dataset()
+                sleep(delay)
+        return False
 
-    # Initialize Cogfy client
-    collection_manager = initialize_cogfy_interface()
+    def upload(self,
+              agency: Optional[str] = None,
+              start_date: Optional[Union[str, datetime]] = None,
+              end_date: Optional[Union[str, datetime]] = None) -> None:
+        """
+        Upload records to Cogfy with optional filtering.
 
-    # Setup collection fields
-    field_id_map = setup_collection_fields(features, collection_manager)
-    field_mapping = {
-        field_name: map_hf_type_to_cogfy_type(field_type.dtype)
-        for field_name, field_type in features.items()
-    }
+        Args:
+            agency: Filter by agency name
+            start_date: Filter by start date (inclusive)
+            end_date: Filter by end date (inclusive)
+        """
+        # Load and prepare dataset
+        df, features = self._load_and_prepare_dataset()
 
-    # Process records
-    total_rows = len(df)
-    logging.info(f"Starting migration of {total_rows} records...")
+        # Apply filters
+        if agency:
+            df = df[df['agency'] == agency]
 
-    for index, row in df.iterrows():
-        properties = create_record_properties(row, field_id_map, field_mapping)
-        if create_record_with_retry(collection_manager, properties):
-            logging.info(f"Created record {index + 1}/{total_rows}. Agency: "
-                        f"{row['agency']} | Published at: {row['published_at']}")
-        else:
-            logging.error(f"Failed to create record {index + 1}/{total_rows}")
+        # Convert published_at to datetime if it's not already
+        df['published_at'] = pd.to_datetime(df['published_at'], errors='coerce')
 
-        sleep(0.15)
-    logging.info("Migration completed!")
+        # Drop rows where published_at conversion failed
+        df = df.dropna(subset=['published_at'])
+
+        if start_date:
+            if isinstance(start_date, str):
+                start_date = pd.to_datetime(start_date)
+            df = df[df['published_at'] >= start_date]
+
+        if end_date:
+            if isinstance(end_date, str):
+                end_date = pd.to_datetime(end_date)
+            df = df[df['published_at'] <= end_date]
+
+        if df.empty:
+            logging.warning("No records found matching the specified filters")
+            return
+
+        # Setup collection fields
+        field_id_map = self._setup_collection_fields(features)
+        field_mapping = {
+            field_name: self._map_hf_type_to_cogfy_type(field_type.dtype)
+            for field_name, field_type in features.items()
+        }
+
+        # Process records
+        total_rows = len(df)
+        logging.info(f"Starting migration of {total_rows} records...")
+
+        for index, row in df.iterrows():
+            properties = self._create_record_properties(row, field_id_map, field_mapping)
+            if self._create_record_with_retry(properties):
+                logging.info(f"Created record {index + 1}/{total_rows}. Agency: "
+                           f"{row['agency']} | Published at: {row['published_at']}")
+            else:
+                logging.error(f"Failed to create record {index + 1}/{total_rows}")
+
+            sleep(0.15)
+
+        logging.info("Migration completed!")
+
+def main():
+    """Main entry point for the script."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Upload GovBR News dataset to Cogfy')
+    parser.add_argument('--agency', help='Filter by agency name')
+    parser.add_argument('--start-date', help='Filter by start date (YYYY-MM-DD)')
+    parser.add_argument('--end-date', help='Filter by end date (YYYY-MM-DD)')
+    parser.add_argument('--collection', default="noticiasgovbr-all-news",
+                       help='Cogfy collection name (default: noticiasgovbr-all-news)')
+
+    args = parser.parse_args()
+
+    try:
+        uploader = UploadToCogfyManager(collection_name=args.collection)
+        uploader.upload(
+            agency=args.agency,
+            start_date=args.start_date,
+            end_date=args.end_date
+        )
+    except Exception as e:
+        logging.error(f"Error during upload: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    migrate_dataset_to_cogfy()
+    main()
