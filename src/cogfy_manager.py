@@ -179,6 +179,88 @@ class CogfyClient:
         payload = {"properties": properties}
 
         response = requests.post(url, headers=self.headers, json=payload)
+        try:
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            print(f"Error creating record: {e}")
+            print(f"Response: {response.text}")
+            raise e
+
+        return response.json()
+
+    def query_records(
+        self,
+        collection_id: str,
+        filter: Optional[Dict] = None,
+        order_by: Optional[List[Dict]] = None,
+        page_number: int = 0,
+        page_size: int = 50
+    ) -> Dict:
+        """Query records in a collection with filtering and ordering.
+
+        Args:
+            collection_id (str): The ID of the collection to query
+            filter (Optional[Dict]): Filter criteria for the query
+                Example: {
+                    "type": "and",
+                    "and": {
+                        "filters": [
+                            {
+                                "type": "equals",
+                                "equals": {
+                                    "fieldId": "field_id",
+                                    "value": "some_value"
+                                }
+                            }
+                        ]
+                    }
+                }
+            order_by (Optional[List[Dict]]): List of ordering criteria
+                Example: [
+                    {
+                        "fieldId": "field_id",
+                        "direction": "asc"
+                    }
+                ]
+            page_number (int): The page number to retrieve (starts at 0)
+            page_size (int): Number of results per page
+
+        Returns:
+            Dict: Response containing records data and pagination info
+                Example: {
+                    "data": [
+                        {
+                            "id": "record_id",
+                            "properties": {
+                                "field_id": {
+                                    "type": "text",
+                                    "text": {"value": "value"}
+                                }
+                            }
+                        }
+                    ],
+                    "pageNumber": 0,
+                    "pageSize": 50,
+                    "totalSize": 1
+                }
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails
+        """
+        url = urljoin(f"{self.base_url}/", f"collections/{collection_id}/records/query")
+
+        payload = {
+            "pageNumber": page_number,
+            "pageSize": page_size
+        }
+
+        if filter:
+            payload["filter"] = filter
+
+        if order_by:
+            payload["orderBy"] = order_by
+
+        response = requests.post(url, headers=self.headers, json=payload)
         response.raise_for_status()
 
         return response.json()
@@ -287,3 +369,68 @@ class CollectionManager:
         """
         response = self.client.create_record(self.collection_id, properties)
         return response["id"]
+
+    def query_records(
+        self,
+        filter: Optional[Dict] = None,
+        order_by: Optional[List[Dict]] = None,
+        page_number: int = 0,
+        page_size: int = 50
+    ) -> Dict:
+        """Query records in the managed collection with filtering and ordering.
+
+        Args:
+            filter (Optional[Dict]): Filter criteria for the query
+                Example: {
+                    "type": "and",
+                    "and": {
+                        "filters": [
+                            {
+                                "type": "equals",
+                                "equals": {
+                                    "fieldId": "field_id",
+                                    "value": "some_value"
+                                }
+                            }
+                        ]
+                    }
+                }
+            order_by (Optional[List[Dict]]): List of ordering criteria
+                Example: [
+                    {
+                        "fieldId": "field_id",
+                        "direction": "asc"
+                    }
+                ]
+            page_number (int): The page number to retrieve (starts at 0)
+            page_size (int): Number of results per page
+
+        Returns:
+            Dict: Response containing records data and pagination info
+                Example: {
+                    "data": [
+                        {
+                            "id": "record_id",
+                            "properties": {
+                                "field_id": {
+                                    "type": "text",
+                                    "text": {"value": "value"}
+                                }
+                            }
+                        }
+                    ],
+                    "pageNumber": 0,
+                    "pageSize": 50,
+                    "totalSize": 1
+                }
+
+        Raises:
+            requests.exceptions.RequestException: If the API request fails
+        """
+        return self.client.query_records(
+            self.collection_id,
+            filter=filter,
+            order_by=order_by,
+            page_number=page_number,
+            page_size=page_size
+        )

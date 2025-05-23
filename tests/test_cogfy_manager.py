@@ -255,3 +255,54 @@ def test_create_record_all_fields(client):
     record = result["data"][0]
     date_field_value = record["properties"][field_map["date_field_01"].id]["date"]["value"]
     assert date_field_value == current_datetime
+
+def test_query_records(client):
+    """Test querying records from the test collection."""
+    collection_name = "_collection-for-test-purpose-only"
+    manager = CollectionManager(client, collection_name)
+
+    # Query all records
+    result = manager.query_records()
+
+    # Verify the response structure
+
+    assert "data" in result
+    assert "totalSize" in result
+    assert isinstance(result["data"], list)
+
+    # Verify we have at least one record
+    assert result["totalSize"] > 0
+    assert len(result["data"]) > 0
+
+    # Test filtering by text field
+    text_field = next(field for field in manager.list_columns() if field.name == "text_field_01")
+    filter_criteria = {
+        "type": "and",
+        "and": {
+            "filters": [
+                {
+                    "type": "equals",
+                    "equals": {
+                        "fieldId": text_field.id,
+                        "value": "Test text 1"
+                    }
+                }
+            ]
+        }
+    }
+
+    filtered_result = manager.query_records(filter=filter_criteria)
+    assert filtered_result["totalSize"] > 0
+    assert len(filtered_result["data"]) > 0
+
+    # Test ordering by text field
+    order_criteria = [
+        {
+            "fieldId": text_field.id,
+            "direction": "asc"
+        }
+    ]
+
+    ordered_result = manager.query_records(order_by=order_criteria)
+    assert ordered_result["totalSize"] > 0
+    assert len(ordered_result["data"]) > 0
