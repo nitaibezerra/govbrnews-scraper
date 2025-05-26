@@ -3,7 +3,7 @@ name: Scheduled Scraper
 on:
   schedule:
     # Runs every day at 4AM UTC (midnight Brasília)
-    - cron: '31 22 * * *'
+    - cron: '0 4 * * *'
 
 jobs:
   run-scheduled-scraper:
