@@ -3,7 +3,7 @@ name: Scheduled Scraper
 on:
   schedule:
     # Runs every day at 4AM UTC (midnight Brasília)
-    - cron: '0 4 * * *'
+    - cron: '25 23 * * *'
 
 jobs:
   run-scheduled-scraper:
@@ -31,6 +31,7 @@ jobs:
 
       - name: Upload to Cogfy
         env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
           COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
         run: |
           cd /app
