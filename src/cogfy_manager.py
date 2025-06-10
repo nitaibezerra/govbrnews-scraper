@@ -28,6 +28,7 @@ class CogfyClient:
         self.headers = {
             "Api-Key": api_key
         }
+        print(f"CogfyClient initialized to connect to server: {self.base_url}")
 
     def list_collections(self, page_number: int = 0, page_size: int = 10) -> Dict:
         """List collections from the Cogfy server.

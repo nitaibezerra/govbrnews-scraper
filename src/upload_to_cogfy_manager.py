@@ -22,7 +22,7 @@ logging.basicConfig(
 load_dotenv()
 
 class UploadToCogfyManager:
-    def __init__(self, collection_name: str = "noticiasgovbr-all-news"):
+    def __init__(self, server_url: str, collection_name: str):
         """
         Initialize the UploadToCogfyManager.
 
@@ -32,16 +32,16 @@ class UploadToCogfyManager:
         self.collection_name = collection_name
         self.client = None
         self.collection_manager = None
-        self._initialize_cogfy_interface()
+        self._initialize_cogfy_interface(server_url)
         self._unique_id_field_id = None
 
-    def _initialize_cogfy_interface(self) -> None:
+    def _initialize_cogfy_interface(self, server_url: str) -> None:
         """Initialize the Cogfy client and collection manager."""
         api_key = os.getenv("COGFY_API_KEY")
         if not api_key:
             raise ValueError("COGFY_API_KEY environment variable is not set")
 
-        self.client = CogfyClient(api_key, base_url="https://public-api.serpro.cogfy.com/")
+        self.client = CogfyClient(api_key, base_url=server_url)
         self.collection_manager = CollectionManager(self.client, self.collection_name)
 
     def _load_and_prepare_dataset(self) -> tuple[pd.DataFrame, dict]:
@@ -274,14 +274,16 @@ class UploadToCogfyManager:
         for index, row in df.iterrows():
             # Check if record already exists
             if self._record_exists(row['unique_id']):
-                logging.info(f"Skipping existing record. Unique ID: {row['unique_id']}")
+                published_at = row['published_at'].strftime("%Y-%m-%d")
+                logging.info(f"Skipping existing record published at: {published_at} "
+                             f"Unique ID: {row['unique_id']}")
                 skipped += 1
                 continue
 
             properties = self._create_record_properties(row, field_id_map, field_mapping)
             if self._create_record_with_retry(properties):
                 logging.info(f"Created record. Agency: {row['agency']} | "
-                             f"Published at: {row['published_at']}")
+                             f"Published at: {published_at}")
             else:
                 logging.error(f"Failed to create record. Unique ID: {row['unique_id']}")
 
@@ -300,11 +302,13 @@ def main():
     parser.add_argument('--end-date', help='Filter by end date (YYYY-MM-DD)')
     parser.add_argument('--collection', default="noticiasgovbr-all-news",
                        help='Cogfy collection name (default: noticiasgovbr-all-news)')
+    parser.add_argument('--server-url', default="https://api.cogfy.com/",
+                       help='Cogfy server URL (default: https://api.cogfy.com/)')
 
     args = parser.parse_args()
 
     try:
-        uploader = UploadToCogfyManager(collection_name=args.collection)
+        uploader = UploadToCogfyManager(server_url=args.server_url, collection_name=args.collection)
         uploader.upload(
             agency=args.agency,
             start_date=args.start_date,
