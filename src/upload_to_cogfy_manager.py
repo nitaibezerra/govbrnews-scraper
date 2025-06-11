@@ -273,8 +273,8 @@ class UploadToCogfyManager:
         skipped = 0
         for index, row in df.iterrows():
             # Check if record already exists
+            published_at = row['published_at'].strftime("%Y-%m-%d")
             if self._record_exists(row['unique_id']):
-                published_at = row['published_at'].strftime("%Y-%m-%d")
                 logging.info(f"Skipping existing record published at: {published_at} "
                              f"Unique ID: {row['unique_id']}")
                 skipped += 1
