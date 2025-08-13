@@ -13,6 +13,7 @@ class Field:
     id: str
     name: str
     type: str
+    data: str
     operation: Optional[str]
 
 class CogfyClient:
