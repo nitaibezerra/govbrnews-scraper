@@ -1,21 +1,64 @@
 import os
-import asyncio
 import datetime
 from collections import defaultdict
-import httpx
+from typing import Dict, List
+from cogfy_manager import CogfyClient, CollectionManager
+from dotenv import load_dotenv
 
-source_collection_id = "7e8540e7-2ed6-4aac-9408-a9a38005561d"
-target_collection_id = "5ab91622-af3b-4fda-a663-bf479325f779"
-base_api_url = "https://api.cogfy.com"
-api_key = os.getenv("COGFY_API_KEY")
 
-async def main():
-    async with httpx.AsyncClient(
-        headers={"Api-Key": api_key}
-    ) as client:
-        # --- Step 1: Query source collection ---
-        query_endpoint_url = f"{base_api_url}/collections/{source_collection_id}/records/query"
-        records_query = {
+class NewsGrouper:
+    """Groups news records by agency using Cogfy collections."""
+
+    def __init__(self, api_key: str, base_url: str = "https://api.cogfy.com"):
+        """Initialize the NewsGrouper with Cogfy client.
+
+        Args:
+            api_key (str): Cogfy API key
+            base_url (str): Base URL for Cogfy API
+        """
+        self.client = CogfyClient(api_key, base_url)
+        self._source_manager = None
+        self._target_manager = None
+        self._source_field_map = None
+        self._target_field_map = None
+
+    def setup_collections(self, source_collection_name: str, target_collection_name: str):
+        """Setup source and target collection managers.
+
+        Args:
+            source_collection_name (str): Name of the source collection
+            target_collection_name (str): Name of the target collection
+        """
+        self._source_manager = CollectionManager(self.client, source_collection_name)
+        self._target_manager = CollectionManager(self.client, target_collection_name)
+
+        # Build field mappings
+        self._source_field_map = {field.name: field.id for field in self._source_manager.list_columns()}
+        self._target_field_map = {field.name: field.id for field in self._target_manager.list_columns()}
+
+    def get_recent_news(self, days_back: int = 1) -> List[Dict]:
+        """Query news records from the last N days.
+
+        Args:
+            days_back (int): Number of days to look back
+
+        Returns:
+            List[Dict]: List of news records
+        """
+        if not self._source_manager or not self._source_field_map:
+            raise ValueError("Collections not setup. Call setup_collections() first.")
+
+        # Get the published_at field ID
+        published_at_field_id = self._source_field_map.get("published_at")
+        if not published_at_field_id:
+            raise ValueError("Field 'published_at' not found in source collection")
+
+        # Build filter for recent records
+        cutoff_date = (
+            datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_back)
+        ).isoformat().replace("+00:00", "Z")
+
+        filter_criteria = {
             "filter": {
                 "type": "and",
                 "and": {
@@ -23,10 +66,8 @@ async def main():
                         {
                             "type": "greaterThanOrEquals",
                             "greaterThanOrEquals": {
-                                "fieldId": "732a7629-4fb8-41f7-b9f1-c087a780a7a1",
-                                "value": (
-                                    datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
-                                ).isoformat().replace("+00:00", "Z")
+                                "fieldId": published_at_field_id,
+                                "value": cutoff_date
                             }
                         }
                     ]
@@ -34,52 +75,151 @@ async def main():
             }
         }
 
-        query_response = await client.post(query_endpoint_url, json=records_query)
-        query_response.raise_for_status()
-        response_records = query_response.json().get("data", [])
+        # Query records
+        result = self._source_manager.query_records(filter=filter_criteria.get("filter"))
+        return result.get("data", [])
 
-        # --- Step 2: Parse records ---
-        parsed_records = [
-            {
-                "id": record["id"],
-                "agency": record["properties"].get("1177bf35-e71b-4e65-a6e2-10b3e965032a")["text"]["value"],
-                "title": record["properties"].get("32dce3ba-7ef2-4d82-a901-43b515d4ffe5")["text"]["value"],
-                "category": record["properties"].get("040d8543-2b84-42d4-8176-c4dd044c7014")["text"]["value"],
-                "content": record["properties"].get("6eb744d4-f7d8-4c92-be16-4955ef04e6ae")["text"]["value"]
-            }
-            for record in response_records
-        ]
+    def parse_news_records(self, raw_records: List[Dict]) -> List[Dict]:
+        """Parse raw Cogfy records into simplified news records.
 
-        # --- Step 3: Group by agency ---
+        Args:
+            raw_records (List[Dict]): Raw records from Cogfy API
+
+        Returns:
+            List[Dict]: Parsed news records with agency, title, category, content
+        """
+        if not self._source_field_map:
+            raise ValueError("Source collection not setup. Call setup_collections() first.")
+
+        # Get field IDs
+        required_fields = ["agency", "title", "category", "content"]
+        field_ids = {}
+        for field_name in required_fields:
+            field_id = self._source_field_map.get(field_name)
+            if not field_id:
+                raise ValueError(f"Field '{field_name}' not found in source collection")
+            field_ids[field_name] = field_id
+
+        parsed_records = []
+        for record in raw_records:
+            try:
+                parsed_record = {
+                    "id": record["id"],
+                    "agency": record["properties"].get(field_ids["agency"])["text"]["value"],
+                    "title": record["properties"].get(field_ids["title"])["text"]["value"],
+                    "category": record["properties"].get(field_ids["category"])["text"]["value"],
+                    "content": record["properties"].get(field_ids["content"])["text"]["value"]
+                }
+                parsed_records.append(parsed_record)
+            except (KeyError, TypeError) as e:
+                print(f"Warning: Skipping record {record.get('id', 'unknown')} due to missing fields: {e}")
+                continue
+
+        return parsed_records
+
+    def group_by_agency(self, news_records: List[Dict]) -> Dict[str, List[Dict]]:
+        """Group news records by agency.
+
+        Args:
+            news_records (List[Dict]): List of parsed news records
+
+        Returns:
+            Dict[str, List[Dict]]: Dictionary mapping agency names to their records
+        """
         grouped_records = defaultdict(list)
-        for record in parsed_records:
+        for record in news_records:
             grouped_records[record["agency"]].append(record)
+        return dict(grouped_records)
 
-        # --- Step 4: Prepare async insert tasks ---
-        insert_endpoint_url = f"{base_api_url}/collections/{target_collection_id}/records"
-        tasks = []
+    def insert_grouped_records(self, grouped_records: Dict[str, List[Dict]]) -> int:
+        """Insert grouped records into the target collection.
+
+        Args:
+            grouped_records (Dict[str, List[Dict]]): Grouped records by agency
+
+        Returns:
+            int: Number of records inserted
+        """
+        if not self._target_manager or not self._target_field_map:
+            raise ValueError("Target collection not setup. Call setup_collections() first.")
+
+        # Get the news_by_agency field ID
+        news_by_agency_field_id = self._target_field_map.get("news_by_agency")
+        if not news_by_agency_field_id:
+            raise ValueError("Field 'news_by_agency' not found in target collection")
+
+        inserted_count = 0
         for agency, agency_records in grouped_records.items():
-            record_to_create = {
-                "properties": {
-                    "81ff2da8-4b46-4483-9843-ec01ba66a994": {
-                        "type": "json",
-                        "json": {
-                            "value": {
-                                "agency": agency,
-                                "records": agency_records
-                            }
+            record_properties = {
+                news_by_agency_field_id: {
+                    "type": "json",
+                    "json": {
+                        "value": {
+                            "agency": agency,
+                            "records": agency_records
                         }
                     }
                 }
             }
-            tasks.append(client.post(insert_endpoint_url, json=record_to_create))
 
-        # --- Step 5: Run all inserts in parallel ---
-        responses = await asyncio.gather(*tasks)
-        for r in responses:
-            r.raise_for_status()
+            try:
+                self._target_manager.create_record(record_properties)
+                inserted_count += 1
+            except Exception as e:
+                print(f"Error inserting record for agency '{agency}': {e}")
+                continue
 
-        print(f"Inserted {len(grouped_records)} grouped records into target collection.")
+        return inserted_count
+
+    def process_news_grouping(
+        self,
+        source_collection_name: str = "noticiasgovbr-all-news",
+        target_collection_name: str = "noticiasgovbr-by-agency",
+        days_back: int = 1
+    ) -> int:
+        """Complete workflow to group news by agency.
+
+        Args:
+            source_collection_name (str): Name of source collection
+            target_collection_name (str): Name of target collection
+            days_back (int): Number of days to look back
+
+        Returns:
+            int: Number of grouped records inserted
+        """
+        # Setup collections
+        self.setup_collections(source_collection_name, target_collection_name)
+
+        # Get recent news
+        raw_records = self.get_recent_news(days_back)
+        print(f"Found {len(raw_records)} records from the last {days_back} day(s)")
+
+        # Parse records
+        news_records = self.parse_news_records(raw_records)
+        print(f"Successfully parsed {len(news_records)} records")
+
+        # Group by agency
+        grouped_records = self.group_by_agency(news_records)
+        print(f"Grouped records into {len(grouped_records)} agencies")
+
+        # Insert grouped records
+        inserted_count = self.insert_grouped_records(grouped_records)
+        print(f"Inserted {inserted_count} grouped records into target collection")
+
+        return inserted_count
+
+
+def main():
+    """Main function to run the news grouping process."""
+    load_dotenv()
+    api_key = os.getenv("COGFY_API_KEY")
+    if not api_key:
+        raise ValueError("COGFY_API_KEY environment variable is required")
+
+    # Create grouper and process
+    grouper = NewsGrouper(api_key)
+    grouper.process_news_grouping(days_back=3)
+
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
