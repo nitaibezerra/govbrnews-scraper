@@ -92,7 +92,7 @@ class NewsGrouper:
             raise ValueError("Source collection not setup. Call setup_collections() first.")
 
         # Get field IDs
-        required_fields = ["agency", "title", "category", "content"]
+        required_fields = ["agency", "title", "category", "content", "theme_1_level_1"]
         field_ids = {}
         for field_name in required_fields:
             field_id = self._source_field_map.get(field_name)
