@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 class NewsGrouper:
-    """Groups news records by agency using Cogfy collections."""
+    """Groups news records by theme_1_level_1 using Cogfy collections."""
 
     def __init__(self, api_key: str, base_url: str = "https://api.cogfy.com"):
         """Initialize the NewsGrouper with Cogfy client.
@@ -86,7 +86,7 @@ class NewsGrouper:
             raw_records (List[Dict]): Raw records from Cogfy API
 
         Returns:
-            List[Dict]: Parsed news records with agency, title, category, content
+            List[Dict]: Parsed news records with agency, title, category, content, theme_1_level_1
         """
         if not self._source_field_map:
             raise ValueError("Source collection not setup. Call setup_collections() first.")
@@ -117,25 +117,25 @@ class NewsGrouper:
 
         return parsed_records
 
-    def group_by_agency(self, news_records: List[Dict]) -> Dict[str, List[Dict]]:
-        """Group news records by agency.
+    def group_by_theme(self, news_records: List[Dict]) -> Dict[str, List[Dict]]:
+        """Group news records by theme.
 
         Args:
             news_records (List[Dict]): List of parsed news records
 
         Returns:
-            Dict[str, List[Dict]]: Dictionary mapping agency names to their records
+            Dict[str, List[Dict]]: Dictionary mapping theme labels to their records
         """
         grouped_records = defaultdict(list)
         for record in news_records:
-            grouped_records[record["agency"]].append(record)
+            grouped_records[record["theme_1_level_1"]].append(record)
         return dict(grouped_records)
 
     def insert_grouped_records(self, grouped_records: Dict[str, List[Dict]]) -> int:
         """Insert grouped records into the target collection.
 
         Args:
-            grouped_records (Dict[str, List[Dict]]): Grouped records by agency
+            grouped_records (Dict[str, List[Dict]]): Grouped records by theme
 
         Returns:
             int: Number of records inserted
@@ -143,10 +143,10 @@ class NewsGrouper:
         if not self._target_manager or not self._target_field_map:
             raise ValueError("Target collection not setup. Call setup_collections() first.")
 
-        # Get the news_by_agency field ID
-        news_by_agency_field_id = self._target_field_map.get("news_by_agency")
-        if not news_by_agency_field_id:
-            raise ValueError("Field 'news_by_agency' not found in target collection")
+        # Get the news_by_theme_1_level_1 field ID
+        news_by_theme_1_level_1_field_id = self._target_field_map.get("news_by_theme_1_level_1")
+        if not news_by_theme_1_level_1_field_id:
+            raise ValueError("Field 'news_by_theme_1_level_1' not found in target collection")
 
         inserted_count = 0
         for agency, agency_records in grouped_records.items():
@@ -166,7 +166,7 @@ class NewsGrouper:
                 self._target_manager.create_record(record_properties)
                 inserted_count += 1
             except Exception as e:
-                print(f"Error inserting record for agency '{agency}': {e}")
+                print(f"Error inserting record for theme_1_level_1 '{theme}': {e}")
                 continue
 
         return inserted_count
@@ -174,10 +174,10 @@ class NewsGrouper:
     def process_news_grouping(
         self,
         source_collection_name: str = "noticiasgovbr-all-news",
-        target_collection_name: str = "noticiasgovbr-by-agency",
+        target_collection_name: str = "noticiasgovbr-by-theme_1_level_1",
         days_back: int = 1
     ) -> int:
-        """Complete workflow to group news by agency.
+        """Complete workflow to group news by theme_1_level_1.
 
         Args:
             source_collection_name (str): Name of source collection
@@ -198,9 +198,9 @@ class NewsGrouper:
         news_records = self.parse_news_records(raw_records)
         print(f"Successfully parsed {len(news_records)} records")
 
-        # Group by agency
-        grouped_records = self.group_by_agency(news_records)
-        print(f"Grouped records into {len(grouped_records)} agencies")
+        # Group by theme_1_level_1
+        grouped_records = self.group_by_theme(news_records)
+        print(f"Grouped records into {len(grouped_records)} themes")
 
         # Insert grouped records
         inserted_count = self.insert_grouped_records(grouped_records)
