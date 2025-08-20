@@ -218,7 +218,7 @@ def main():
 
     # Create grouper and process
     grouper = NewsGrouper(api_key)
-    grouper.process_news_grouping(days_back=3)
+    grouper.process_news_grouping(days_back=1)
 
 
 if __name__ == "__main__":
