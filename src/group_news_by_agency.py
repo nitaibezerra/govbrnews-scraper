@@ -150,14 +150,14 @@ class NewsGrouper:
             raise ValueError("Field 'news_by_theme_1_level_1' not found in target collection")
 
         inserted_count = 0
-        for agency, agency_records in grouped_records.items():
+        for theme, theme_records in grouped_records.items():
             record_properties = {
-                news_by_agency_field_id: {
+                news_by_theme_1_level_1_field_id: {
                     "type": "json",
                     "json": {
                         "value": {
-                            "agency": agency,
-                            "records": agency_records
+                            "theme_1_level_1": theme,
+                            "records": theme_records
                         }
                     }
                 }
