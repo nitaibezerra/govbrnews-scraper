@@ -108,7 +108,8 @@ class NewsGrouper:
                     "agency": record["properties"].get(field_ids["agency"])["text"]["value"],
                     "title": record["properties"].get(field_ids["title"])["text"]["value"],
                     "category": record["properties"].get(field_ids["category"])["text"]["value"],
-                    "content": record["properties"].get(field_ids["content"])["text"]["value"]
+                    "content": record["properties"].get(field_ids["content"])["text"]["value"],
+                    "theme_1_level_1": record["properties"].get(field_ids["theme_1_level_1"])["select"]["value"][0]["id"] if record["properties"].get(field_ids["theme_1_level_1"])["select"]["value"] else None
                 }
                 parsed_records.append(parsed_record)
             except (KeyError, TypeError) as e:
