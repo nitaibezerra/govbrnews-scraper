@@ -13,7 +13,7 @@ class Field:
     id: str
     name: str
     type: str
-    data: str
+    data: Optional[Dict[str, Dict[str, List[Dict[str, str]]]]]
     operation: Optional[str]
 
 class CogfyClient:
