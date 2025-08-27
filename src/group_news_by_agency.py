@@ -100,16 +100,24 @@ class NewsGrouper:
                 raise ValueError(f"Field '{field_name}' not found in source collection")
             field_ids[field_name] = field_id
 
+        theme_field = next(
+            (f for f in self._source_manager.list_columns() if f.type == "select" and f.name == "theme_1_level_1"),
+            None
+        )
+        theme_options = theme_field.data.get("select").get("options")
+
         parsed_records = []
         for record in raw_records:
             try:
+                theme_id = record["properties"].get(field_ids["theme_1_level_1"])["select"]["value"][0]["id"] if record["properties"].get(field_ids["theme_1_level_1"])["select"]["value"] else None
+
                 parsed_record = {
                     "id": record["id"],
                     "agency": record["properties"].get(field_ids["agency"])["text"]["value"],
                     "title": record["properties"].get(field_ids["title"])["text"]["value"],
                     "category": record["properties"].get(field_ids["category"])["text"]["value"],
                     "content": record["properties"].get(field_ids["content"])["text"]["value"],
-                    "theme_1_level_1": record["properties"].get(field_ids["theme_1_level_1"])["select"]["value"][0]["id"] if record["properties"].get(field_ids["theme_1_level_1"])["select"]["value"] else None
+                    "theme_1_level_1": next((opt["label"] for opt in theme_options if opt["id"] == theme_id), None)
                 }
                 parsed_records.append(parsed_record)
             except (KeyError, TypeError) as e:
