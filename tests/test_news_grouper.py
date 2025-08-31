@@ -313,13 +313,16 @@ class TestNewsGrouper:
         result = news_grouper.group_by_theme([])
         assert result == {}
 
+    @patch('group_news_by_agency.pd')
     @patch('group_news_by_agency.datetime')
-    def test_get_recent_news(self, mock_datetime, news_grouper):
-        """Test get_recent_news method."""
+    def test_get_news_by_date_range(self, mock_datetime, mock_pd, news_grouper):
+        """Test get_news_by_date_range method."""
         # Setup mocks
         mock_datetime.datetime.now.return_value = datetime.datetime(2024, 1, 15, 12, 0, 0, tzinfo=datetime.timezone.utc)
         mock_datetime.timedelta = datetime.timedelta
         mock_datetime.timezone = datetime.timezone
+        mock_pd.to_datetime.return_value = Mock()
+        mock_pd.to_datetime.return_value.tz_localize.return_value = datetime.datetime(2024, 1, 14, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
         news_grouper._source_manager = Mock()
         news_grouper._source_field_map = {"published_at": "published_field_123"}
@@ -327,23 +330,23 @@ class TestNewsGrouper:
         mock_result = {"data": [{"id": "record_1"}, {"id": "record_2"}]}
         news_grouper._source_manager.query_records.return_value = mock_result
 
-        result = news_grouper.get_recent_news(days_back=1)
+        result = news_grouper.get_news_by_date_range(start_date="2024-01-14", end_date="2024-01-15")
 
         assert result == [{"id": "record_1"}, {"id": "record_2"}]
         news_grouper._source_manager.query_records.assert_called_once()
 
-    def test_get_recent_news_no_setup(self, news_grouper):
-        """Test get_recent_news when collections are not setup."""
+    def test_get_news_by_date_range_no_setup(self, news_grouper):
+        """Test get_news_by_date_range when collections are not setup."""
         with pytest.raises(ValueError, match="Collections not setup"):
-            news_grouper.get_recent_news()
+            news_grouper.get_news_by_date_range()
 
-    def test_get_recent_news_missing_field(self, news_grouper):
-        """Test get_recent_news when published_at field is missing."""
+    def test_get_news_by_date_range_missing_field(self, news_grouper):
+        """Test get_news_by_date_range when published_at field is missing."""
         news_grouper._source_manager = Mock()
         news_grouper._source_field_map = {"other_field": "field_123"}  # Setup field map but missing published_at
 
         with pytest.raises(ValueError, match="Field 'published_at' not found"):
-            news_grouper.get_recent_news()
+            news_grouper.get_news_by_date_range()
 
     def test_insert_grouped_records(self, news_grouper):
         """Test insert_grouped_records method."""
@@ -376,9 +379,9 @@ class TestNewsGrouper:
     @patch.object(NewsGrouper, 'insert_grouped_records')
     @patch.object(NewsGrouper, 'group_by_theme')
     @patch.object(NewsGrouper, 'parse_news_records')
-    @patch.object(NewsGrouper, 'get_recent_news')
+    @patch.object(NewsGrouper, 'get_news_by_date_range')
     @patch.object(NewsGrouper, 'setup_collections')
-    def test_process_news_grouping(self, mock_setup, mock_get_news, mock_parse,
+    def test_process_news_grouping(self, mock_setup, mock_get_news, mock_parse, 
                                  mock_group, mock_insert, news_grouper):
         """Test complete process_news_grouping workflow."""
         # Setup mock returns
@@ -387,11 +390,11 @@ class TestNewsGrouper:
         mock_group.return_value = {"theme": [{"grouped": "record"}]}
         mock_insert.return_value = 5
 
-        result = news_grouper.process_news_grouping()
+        result = news_grouper.process_news_grouping(start_date="2024-01-14", end_date="2024-01-15")
 
         # Verify all methods were called
         mock_setup.assert_called_once_with("noticiasgovbr-all-news", "noticiasgovbr-by-theme_1_level_1")
-        mock_get_news.assert_called_once_with(1)
+        mock_get_news.assert_called_once_with("2024-01-14", "2024-01-15")
         mock_parse.assert_called_once_with([{"raw": "record"}])
         mock_group.assert_called_once_with([{"parsed": "record"}])
         mock_insert.assert_called_once_with({"theme": [{"grouped": "record"}]})

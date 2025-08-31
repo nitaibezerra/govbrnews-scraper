@@ -1,7 +1,8 @@
 import os
 import datetime
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
+import pandas as pd
 from cogfy_manager import CogfyClient, CollectionManager
 from dotenv import load_dotenv
 
@@ -36,11 +37,12 @@ class NewsGrouper:
         self._source_field_map = {field.name: field.id for field in self._source_manager.list_columns()}
         self._target_field_map = {field.name: field.id for field in self._target_manager.list_columns()}
 
-    def get_recent_news(self, days_back: int = 1) -> List[Dict]:
-        """Query news records from the last N days.
+    def get_news_by_date_range(self, start_date: Optional[Union[str, datetime.datetime]] = None, end_date: Optional[Union[str, datetime.datetime]] = None) -> List[Dict]:
+        """Query news records within a specific date range.
 
         Args:
-            days_back (int): Number of days to look back
+            start_date: Start date for filtering (inclusive). If None, defaults to 1 day ago
+            end_date: End date for filtering (inclusive). If None, defaults to current time
 
         Returns:
             List[Dict]: List of news records
@@ -53,11 +55,22 @@ class NewsGrouper:
         if not published_at_field_id:
             raise ValueError("Field 'published_at' not found in source collection")
 
-        # Build filter for recent records
-        cutoff_date = (
-            datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days_back)
-        ).isoformat().replace("+00:00", "Z")
+        # Set default dates if not provided
+        if start_date is None:
+            start_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
+        elif isinstance(start_date, str):
+            start_date = pd.to_datetime(start_date).tz_localize(datetime.timezone.utc)
+            
+        if end_date is None:
+            end_date = datetime.datetime.now(datetime.timezone.utc)
+        elif isinstance(end_date, str):
+            end_date = pd.to_datetime(end_date).tz_localize(datetime.timezone.utc)
 
+        # Convert to ISO format for API
+        start_date_iso = start_date.isoformat().replace("+00:00", "Z")
+        end_date_iso = end_date.isoformat().replace("+00:00", "Z")
+
+        # Build filter for date range
         filter_criteria = {
             "filter": {
                 "type": "and",
@@ -67,7 +80,14 @@ class NewsGrouper:
                             "type": "greaterThanOrEquals",
                             "greaterThanOrEquals": {
                                 "fieldId": published_at_field_id,
-                                "value": cutoff_date
+                                "value": start_date_iso
+                            }
+                        },
+                        {
+                            "type": "lessThanOrEquals",
+                            "lessThanOrEquals": {
+                                "fieldId": published_at_field_id,
+                                "value": end_date_iso
                             }
                         }
                     ]
@@ -252,14 +272,16 @@ class NewsGrouper:
         self,
         source_collection_name: str = "noticiasgovbr-all-news",
         target_collection_name: str = "noticiasgovbr-by-theme_1_level_1",
-        days_back: int = 1
+        start_date: Optional[Union[str, datetime.datetime]] = None,
+        end_date: Optional[Union[str, datetime.datetime]] = None
     ) -> int:
         """Complete workflow to group news by theme_1_level_1.
 
         Args:
             source_collection_name (str): Name of source collection
             target_collection_name (str): Name of target collection
-            days_back (int): Number of days to look back
+            start_date: Start date for filtering (inclusive). If None, defaults to 1 day ago
+            end_date: End date for filtering (inclusive). If None, defaults to current time
 
         Returns:
             int: Number of grouped records inserted
@@ -267,9 +289,10 @@ class NewsGrouper:
         # Setup collections
         self.setup_collections(source_collection_name, target_collection_name)
 
-        # Get recent news
-        raw_records = self.get_recent_news(days_back)
-        print(f"Found {len(raw_records)} records from the last {days_back} day(s)")
+        # Get news within date range
+        raw_records = self.get_news_by_date_range(start_date, end_date)
+        date_range_str = f"from {start_date or '1 day ago'} to {end_date or 'now'}"
+        print(f"Found {len(raw_records)} records {date_range_str}")
 
         # Parse records
         news_records = self.parse_news_records(raw_records)
@@ -287,15 +310,38 @@ class NewsGrouper:
 
 
 def main():
-    """Main function to run the news grouping process."""
+    """Main entry point for the script."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Group GovBR News by theme_1_level_1')
+    parser.add_argument('--start-date', help='Start date for filtering (YYYY-MM-DD)')
+    parser.add_argument('--end-date', help='Filter by end date (YYYY-MM-DD)')
+    parser.add_argument('--source-collection', default="noticiasgovbr-all-news",
+                       help='Source Cogfy collection name (default: noticiasgovbr-all-news)')
+    parser.add_argument('--target-collection', default="noticiasgovbr-by-theme_1_level_1",
+                       help='Target Cogfy collection name (default: noticiasgovbr-by-theme_1_level_1)')
+    parser.add_argument('--server-url', default="https://api.cogfy.com/",
+                       help='Cogfy server URL (default: https://api.cogfy.com/)')
+    
+    args = parser.parse_args()
+    
     load_dotenv()
     api_key = os.getenv("COGFY_API_KEY")
     if not api_key:
         raise ValueError("COGFY_API_KEY environment variable is required")
 
-    # Create grouper and process
-    grouper = NewsGrouper(api_key)
-    grouper.process_news_grouping(days_back=2)
+    try:
+        # Create grouper and process
+        grouper = NewsGrouper(api_key, base_url=args.server_url)
+        grouper.process_news_grouping(
+            source_collection_name=args.source_collection,
+            target_collection_name=args.target_collection,
+            start_date=args.start_date,
+            end_date=args.end_date
+        )
+    except Exception as e:
+        print(f"Error during grouping: {str(e)}")
+        raise
 
 
 if __name__ == "__main__":

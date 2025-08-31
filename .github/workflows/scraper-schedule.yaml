@@ -37,3 +37,16 @@ jobs:
           cd /app
           python src/upload_to_cogfy_manager.py \
             --start-date $ONE_WEEK_AGO
+
+      - name: Wait before grouping
+        run: |
+          echo "Waiting 30 minutes before running news grouper..."
+          sleep 1800
+
+      - name: Group news by theme
+        env:
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          cd /app
+          python src/group_news_by_agency.py \
+            --start-date $ONE_WEEK_AGO
