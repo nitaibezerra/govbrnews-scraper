@@ -13,13 +13,14 @@ jobs:
       options: --workdir /app
 
     steps:
-      - name: Set ONE_WEEK_AGO environment variable
+      - name: Set date environment variables
         run: |
-          echo "ONE_WEEK_AGO=$(date -d '7 days ago' +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "YESTERDAY=$(date -d '1 day ago' +'%Y-%m-%d')" >> $GITHUB_ENV
+          echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
 
       - name: Print date information
         run: |
-          echo "Scheduled run. Using min-date=$ONE_WEEK_AGO"
+          echo "Scheduled run. Processing from $YESTERDAY to $TODAY"
 
       - name: Run scraper
         env:
@@ -27,7 +28,8 @@ jobs:
         run: |
           cd /app
           python src/main.py scrape \
-            --min-date $ONE_WEEK_AGO
+            --start-date $YESTERDAY \
+            --end-date $TODAY
 
       - name: Upload to Cogfy
         env:
@@ -36,7 +38,8 @@ jobs:
         run: |
           cd /app
           python src/upload_to_cogfy_manager.py \
-            --start-date $ONE_WEEK_AGO
+            --start-date $YESTERDAY \
+            --end-date $TODAY
 
       - name: Wait before grouping
         run: |
@@ -48,5 +51,6 @@ jobs:
           COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
         run: |
           cd /app
-          python src/group_news_by_agency.py \
-            --start-date $ONE_WEEK_AGO
+          python src/news_grouper.py \
+            --start-date $YESTERDAY \
+            --end-date $TODAY

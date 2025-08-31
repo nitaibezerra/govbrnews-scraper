@@ -26,7 +26,7 @@ def run_scraper(args):
     agencies = args.agencies.split(",") if args.agencies else None
 
     scrape_manager.run_scraper(
-        agencies, args.min_date, args.max_date, args.sequential, args.allow_update
+        agencies, args.start_date, args.end_date, args.sequential, args.allow_update
     )
 
 
@@ -40,15 +40,15 @@ def run_augment(args):
     Executes the augmentation (news classification) logic using the arguments
     provided by the 'augment' subcommand.
     """
-    # If no max_date is provided, default to something like "2100-12-31"
-    if not args.max_date:
-        args.max_date = "2100-12-31"
+    # If no end_date is provided, default to something like "2100-12-31"
+    if not args.end_date:
+        args.end_date = "2100-12-31"
 
     augmentation_manager = AugmentationManager()
 
     # Pass agencies (if provided), along with the date range
     augmentation_manager.classify_and_update_dataset(
-        min_date=args.min_date, max_date=args.max_date, agency=args.agencies
+        min_date=args.start_date, max_date=args.end_date, agency=args.agencies
     )
 
 
@@ -70,13 +70,13 @@ def main():
         "scrape", help="Scrape news data and upload to a Hugging Face dataset."
     )
     scraper_parser.add_argument(
-        "--min-date",
+        "--start-date",
         required=True,
-        help="The minimum date for scraping news (format: YYYY-MM-DD).",
+        help="The start date for scraping news (format: YYYY-MM-DD).",
     )
     scraper_parser.add_argument(
-        "--max-date",
-        help="The maximum date for scraping news (format: YYYY-MM-DD).",
+        "--end-date",
+        help="The end date for scraping news (format: YYYY-MM-DD).",
     )
     scraper_parser.add_argument(
         "--agencies",
@@ -104,16 +104,16 @@ def main():
         help="OpenAI API key (will use OPENAI_API_KEY env var if not provided).",
     )
     augment_parser.add_argument(
-        "--min-date",
+        "--start-date",
         type=str,
         default=None,
-        help="Minimum date to process files from (format: 'YYYY-MM-DD').",
+        help="Start date to process files from (format: 'YYYY-MM-DD').",
     )
     augment_parser.add_argument(
-        "--max-date",
+        "--end-date",
         type=str,
         default=None,
-        help="Maximum date to process files up to (format: 'YYYY-MM-DD').",
+        help="End date to process files up to (format: 'YYYY-MM-DD').",
     )
     augment_parser.add_argument(
         "--agencies",

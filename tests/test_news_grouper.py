@@ -10,7 +10,7 @@ import os
 # Add src to path to import modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from group_news_by_agency import NewsGrouper
+from news_grouper import NewsGrouper
 
 
 class TestNewsGrouper:
@@ -104,8 +104,8 @@ class TestNewsGrouper:
         assert news_grouper._source_field_map is None
         assert news_grouper._target_field_map is None
 
-    @patch('group_news_by_agency.CollectionManager')
-    @patch('group_news_by_agency.CogfyClient')
+    @patch('news_grouper.CollectionManager')
+    @patch('news_grouper.CogfyClient')
     def test_setup_collections(self, mock_cogfy_client, mock_collection_manager, news_grouper):
         """Test setup_collections method."""
         # Mock field objects
@@ -313,8 +313,8 @@ class TestNewsGrouper:
         result = news_grouper.group_by_theme([])
         assert result == {}
 
-    @patch('group_news_by_agency.pd')
-    @patch('group_news_by_agency.datetime')
+    @patch('news_grouper.pd')
+    @patch('news_grouper.datetime')
     def test_get_news_by_date_range(self, mock_datetime, mock_pd, news_grouper):
         """Test get_news_by_date_range method."""
         # Setup mocks
@@ -381,7 +381,7 @@ class TestNewsGrouper:
     @patch.object(NewsGrouper, 'parse_news_records')
     @patch.object(NewsGrouper, 'get_news_by_date_range')
     @patch.object(NewsGrouper, 'setup_collections')
-    def test_process_news_grouping(self, mock_setup, mock_get_news, mock_parse, 
+    def test_process_news_grouping(self, mock_setup, mock_get_news, mock_parse,
                                  mock_group, mock_insert, news_grouper):
         """Test complete process_news_grouping workflow."""
         # Setup mock returns

@@ -60,7 +60,7 @@ class NewsGrouper:
             start_date = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)
         elif isinstance(start_date, str):
             start_date = pd.to_datetime(start_date).tz_localize(datetime.timezone.utc)
-            
+
         if end_date is None:
             end_date = datetime.datetime.now(datetime.timezone.utc)
         elif isinstance(end_date, str):
@@ -312,7 +312,7 @@ class NewsGrouper:
 def main():
     """Main entry point for the script."""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Group GovBR News by theme_1_level_1')
     parser.add_argument('--start-date', help='Start date for filtering (YYYY-MM-DD)')
     parser.add_argument('--end-date', help='Filter by end date (YYYY-MM-DD)')
@@ -322,9 +322,9 @@ def main():
                        help='Target Cogfy collection name (default: noticiasgovbr-by-theme_1_level_1)')
     parser.add_argument('--server-url', default="https://api.cogfy.com/",
                        help='Cogfy server URL (default: https://api.cogfy.com/)')
-    
+
     args = parser.parse_args()
-    
+
     load_dotenv()
     api_key = os.getenv("COGFY_API_KEY")
     if not api_key:
