@@ -351,14 +351,36 @@ class TestNewsGrouper:
     def test_insert_grouped_records(self, news_grouper):
         """Test insert_grouped_records method."""
         news_grouper._target_manager = Mock()
-        news_grouper._target_field_map = {"news_by_theme_1_level_1": "field_123"}
+        news_grouper._target_field_map = {
+            "theme_1_level_1": "field_123",
+            "group_records": "field_124", 
+            "records_number": "field_125",
+            "published_at": "field_126",
+            "unique_id": "field_127"
+        }
+        
+        # Mock ensure_fields and list_columns
+        news_grouper._target_manager.ensure_fields = Mock()
+        
+        # Create mock field objects with name attribute
+        mock_fields = []
+        for name, field_id in news_grouper._target_field_map.items():
+            mock_field = Mock()
+            mock_field.name = name
+            mock_field.id = field_id
+            mock_fields.append(mock_field)
+            
+        news_grouper._target_manager.list_columns.return_value = mock_fields
+        
+        # Mock query_records to return no existing records
+        news_grouper._target_manager.query_records.return_value = {"data": []}
 
         grouped_records = {
             "Meio Ambiente": [{"id": "record_1", "title": "News 1"}],
             "Economia": [{"id": "record_2", "title": "News 2"}]
         }
 
-        result = news_grouper.insert_grouped_records(grouped_records)
+        result = news_grouper.insert_grouped_records(grouped_records, "2024-01-14")
 
         assert result == 2
         assert news_grouper._target_manager.create_record.call_count == 2
@@ -366,15 +388,21 @@ class TestNewsGrouper:
     def test_insert_grouped_records_no_setup(self, news_grouper):
         """Test insert_grouped_records when target collection is not setup."""
         with pytest.raises(ValueError, match="Target collection not setup"):
-            news_grouper.insert_grouped_records({})
+            news_grouper.insert_grouped_records({}, "2024-01-14")
 
     def test_insert_grouped_records_missing_field(self, news_grouper):
         """Test insert_grouped_records when required field is missing."""
         news_grouper._target_manager = Mock()
         news_grouper._target_field_map = {"other_field": "field_123"}  # Setup field map but missing required field
+        
+        # Mock ensure_fields and list_columns to simulate missing field
+        news_grouper._target_manager.ensure_fields = Mock()
+        news_grouper._target_manager.list_columns.return_value = [
+            Mock(name="other_field", id="field_123")
+        ]
 
-        with pytest.raises(ValueError, match="Field 'news_by_theme_1_level_1' not found"):
-            news_grouper.insert_grouped_records({})
+        with pytest.raises(ValueError, match="Field 'theme_1_level_1' not found"):
+            news_grouper.insert_grouped_records({}, "2024-01-14")
 
     @patch.object(NewsGrouper, 'insert_grouped_records')
     @patch.object(NewsGrouper, 'group_by_theme')
@@ -397,7 +425,7 @@ class TestNewsGrouper:
         mock_get_news.assert_called_once_with("2024-01-14", "2024-01-15")
         mock_parse.assert_called_once_with([{"raw": "record"}])
         mock_group.assert_called_once_with([{"parsed": "record"}])
-        mock_insert.assert_called_once_with({"theme": [{"grouped": "record"}]})
+        mock_insert.assert_called_once_with({"theme": [{"grouped": "record"}]}, "2024-01-14")
 
         assert result == 5
 

@@ -1,0 +1,167 @@
+{
+  "01 - Economia e Finanças": [
+    "01.01 - Política Econômica",
+    "01.02 - Fiscalização e Tributação",
+    "01.03 - Investimentos e Comércio Exterior",
+    "01.04 - Financiamento e Apoio Financeiro",
+    "01.05 - Novas Economias e Inovações Financeiras"
+  ],
+  "02 - Educação": [
+    "02.01 - Ensino Básico",
+    "02.02 - Ensino Superior",
+    "02.03 - Educação Profissional e Capacitação",
+    "02.04 - Programas e Políticas Educacionais"
+  ],
+  "03 - Saúde": [
+    "03.01 - Sistema Único de Saúde (SUS)",
+    "03.02 - Campanhas de Saúde Pública",
+    "03.03 - Vigilância Sanitária",
+    "03.04 - Saúde Pública",
+    "03.05 - Programas e Projetos em Saúde"
+  ],
+  "04 - Segurança Pública": [
+    "04.01 - Policiamento",
+    "04.02 - Combate ao Crime Organizado",
+    "04.03 - Prevenção e Enfrentamento à Violência",
+    "04.04 - Justiça e Segurança"
+  ],
+  "05 - Meio Ambiente e Sustentabilidade": [
+    "05.01 - Conservação Ambiental",
+    "05.02 - Mudanças Climáticas",
+    "05.03 - Energia Renovável e Limpa",
+    "05.04 - Gestão de Resíduos e Licenciamento"
+  ],
+  "06 - Ciência, Tecnologia e Inovação": [
+    "06.01 - Pesquisa Científica",
+    "06.02 - Desenvolvimento Tecnológico",
+    "06.03 - Inovação",
+    "06.04 - Sustentabilidade e Descarbonização",
+    "06.05 - Política e Regulação"
+  ],
+  "07 - Infraestrutura e Transportes": [
+    "07.01 - Obras Públicas",
+    "07.02 - Mobilidade Urbana",
+    "07.03 - Logística e Transporte",
+    "07.04 - Aviação Civil",
+    "07.05 - Malha Ferroviária"
+  ],
+  "08 - Cultura, Artes e Patrimônio": [
+    "08.01 - Eventos Culturais",
+    "08.02 - Preservação do Patrimônio",
+    "08.03 - Incentivo às Artes",
+    "08.04 - Cultura e Identidade Nacional",
+    "08.05 - Cultura e Inovação"
+  ],
+  "09 - Esportes e Lazer": [
+    "09.01 - Competições Esportivas",
+    "09.02 - Políticas de Lazer",
+    "09.03 - Incentivo ao Esporte",
+    "09.04 - Esporte e Inclusão",
+    "09.05 - Integridade Esportiva"
+  ],
+  "10 - Agricultura, Pecuária e Abastecimento": [
+    "10.01 - Agronegócio",
+    "10.02 - Segurança Alimentar",
+    "10.03 - Política Agrícola",
+    "10.04 - Agricultura Familiar",
+    "10.05 - Sanidade"
+  ],
+  "11 - Indústria e Comércio": [
+    "11.01 - Desenvolvimento Industrial",
+    "11.02 - Comércio Interno e Exterior",
+    "11.03 - Pequenas e Médias Empresas",
+    "11.04 - Cadeia Produtiva",
+    "11.05 - Integridade Empresarial"
+  ],
+  "12 - Relações Internacionais e Diplomacia": [
+    "12.01 - Acordos Internacionais",
+    "12.02 - Cooperação Internacional",
+    "12.03 - Política Externa",
+    "12.04 - Integração Regional",
+    "12.05 - Eventos e Conferências Internacionais"
+  ],
+  "13 - Justiça e Direitos Humanos": [
+    "13.01 - Sistema Judiciário",
+    "13.02 - Direitos Humanos",
+    "13.03 - Direitos Fundamentais"
+  ],
+  "14 - Trabalho e Emprego": [
+    "14.01 - Mercado de Trabalho",
+    "14.02 - Legislação Trabalhista",
+    "14.03 - Programas de Emprego",
+    "14.04 - Auditoria e Inspeção do Trabalho",
+    "14.05 - Segurança e Saúde no Trabalho"
+  ],
+  "15 - Desenvolvimento Social": [
+    "15.01 - Programas Sociais",
+    "15.02 - Combate à Pobreza",
+    "15.03 - Previdência Social"
+  ],
+  "16 - Turismo": [
+    "16.01 - Promoção Turística",
+    "16.02 - Infraestrutura Turística",
+    "16.03 - Eventos Turísticos",
+    "16.04 - Sustentabilidade no Turismo",
+    "16.05 - Capacitação e Qualificação"
+  ],
+  "17 - Energia e Recursos Minerais": [
+    "17.01 - Petróleo e Gás",
+    "17.02 - Mineração",
+    "17.03 - Políticas Energéticas",
+    "17.04 - Energias Renováveis",
+    "17.05 - Infraestrutura e Investimentos"
+  ],
+  "18 - Comunicações e Mídia": [
+    "18.01 - Telecomunicações",
+    "18.02 - Regulamentação da Mídia",
+    "18.03 - Comunicação Digital"
+  ],
+  "19 - Defesa e Forças Armadas": [
+    "19.01 - Segurança Nacional",
+    "19.02 - Missões Militares",
+    "19.03 - Defesa Civil",
+    "19.04 - Situações de Emergência",
+    "19.05 - Políticas e Estratégias de Defesa"
+  ],
+  "20 - Políticas Públicas e Governança": [
+    "20.01 - Transparência e Prestação de Contas",
+    "20.02 - Planejamento Governamental",
+    "20.03 - Gestão Pública",
+    "20.04 - Administração Pública",
+    "20.05 - Participação e Colaboração Social"
+  ],
+  "21 - Legislação e Regulamentação": [
+    "21.01 - Novas Leis e Decretos",
+    "21.02 - Reformas Legislativas",
+    "21.03 - Consultas Públicas",
+    "21.04 - Avaliação Regulatória",
+    "21.05 - Boas Práticas e Inovação Regulatória"
+  ],
+  "22 - Eventos Oficiais e Cerimônias": [
+    "22.01 - Discursos Oficiais",
+    "22.02 - Inaugurações",
+    "22.03 - Visitas Oficiais",
+    "22.04 - Luto Oficial",
+    "22.05 - Comemorações e Datas Festivas"
+  ],
+  "23 - Estatísticas e Dados Públicos": [
+    "23.01 - Censos e Pesquisas",
+    "23.02 - Indicadores Econômicos e Sociais",
+    "23.03 - Interoperabilidade",
+    "23.04 - Transparência e Acesso à Informação"
+  ],
+  "24 - Minorias e Grupos Especiais": [
+    "24.01 - Políticas para Mulheres",
+    "24.02 - Populações Indígenas",
+    "24.03 - Comunidade LGBTQIA+",
+    "24.04 - Comunidades Tradicionais",
+    "24.05 - Direitos das Pessoas com Deficiência"
+  ],
+  "25 - Habitação e Urbanismo": [
+    "25.01 - Programas Habitacionais",
+    "25.02 - Planejamento Urbano",
+    "25.03 - Saneamento Básico",
+    "25.04 - Desenvolvimento Urbano",
+    "25.05 - Infraestrutura Urbana"
+  ]
+}
