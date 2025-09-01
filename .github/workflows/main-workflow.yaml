@@ -36,7 +36,7 @@ jobs:
             echo "start_date=$(date -d '1 day ago' +'%Y-%m-%d')" >> $GITHUB_OUTPUT
             echo "end_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
           fi
-      
+
       - name: Print date information
         run: |
           echo "Pipeline will process from ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}"
@@ -93,7 +93,7 @@ jobs:
           echo "Waiting 30 minutes before running news grouper..."
           echo "This allows time for Cogfy to process uploaded data"
           sleep 1800
-      
+
       - name: Group news by theme
         env:
           COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
@@ -119,7 +119,7 @@ jobs:
           echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
           echo "Grouper status: ${{ needs.group-news.result }}"
           echo "============================================"
-          
+
           if [ "${{ needs.scraper.result }}" = "success" ] && \
              [ "${{ needs.upload-to-cogfy.result }}" = "success" ] && \
              [ "${{ needs.group-news.result }}" = "success" ]; then
