@@ -353,15 +353,15 @@ class TestNewsGrouper:
         news_grouper._target_manager = Mock()
         news_grouper._target_field_map = {
             "theme_1_level_1": "field_123",
-            "group_records": "field_124", 
+            "group_records": "field_124",
             "records_number": "field_125",
             "published_at": "field_126",
             "unique_id": "field_127"
         }
-        
+
         # Mock ensure_fields and list_columns
         news_grouper._target_manager.ensure_fields = Mock()
-        
+
         # Create mock field objects with name attribute
         mock_fields = []
         for name, field_id in news_grouper._target_field_map.items():
@@ -369,9 +369,9 @@ class TestNewsGrouper:
             mock_field.name = name
             mock_field.id = field_id
             mock_fields.append(mock_field)
-            
+
         news_grouper._target_manager.list_columns.return_value = mock_fields
-        
+
         # Mock query_records to return no existing records
         news_grouper._target_manager.query_records.return_value = {"data": []}
 
@@ -394,7 +394,7 @@ class TestNewsGrouper:
         """Test insert_grouped_records when required field is missing."""
         news_grouper._target_manager = Mock()
         news_grouper._target_field_map = {"other_field": "field_123"}  # Setup field map but missing required field
-        
+
         # Mock ensure_fields and list_columns to simulate missing field
         news_grouper._target_manager.ensure_fields = Mock()
         news_grouper._target_manager.list_columns.return_value = [

@@ -244,26 +244,26 @@ class NewsGrouper:
 
         # Ensure required fields exist in target collection
         self._ensure_target_fields()
-        
+
         # Refresh field mapping after ensuring fields
         self._target_field_map = {field.name: field.id for field in self._target_manager.list_columns()}
-        
+
         # Get field IDs
         field_ids = self._get_target_field_ids()
-        
+
         inserted_count = 0
         skipped_count = 0
-        
+
         for theme, theme_records in grouped_records.items():
             # Generate unique_id for this theme group
             unique_id = self._generate_unique_id(theme, start_date)
-            
+
             # Check if record already exists
             if self._record_exists(unique_id, field_ids["unique_id"]):
                 print(f"Skipping existing record for theme '{theme}' on date {start_date}")
                 skipped_count += 1
                 continue
-            
+
             # Create record properties with new schema
             record_properties = {
                 field_ids["theme_1_level_1"]: {
@@ -303,55 +303,55 @@ class NewsGrouper:
         """Ensure that all required fields exist in the target collection."""
         required_fields = {
             "theme_1_level_1": "text",
-            "group_records": "json", 
+            "group_records": "json",
             "records_number": "number",
             "published_at": "text",
             "unique_id": "text"
         }
-        
+
         print("Ensuring required fields exist in target collection...")
         self._target_manager.ensure_fields(required_fields)
-    
+
     def _get_target_field_ids(self) -> Dict[str, str]:
         """Get field IDs for all required target fields.
-        
+
         Returns:
             Dict[str, str]: Mapping of field names to field IDs
-            
+
         Raises:
             ValueError: If any required field is not found
         """
         required_fields = ["theme_1_level_1", "group_records", "records_number", "published_at", "unique_id"]
         field_ids = {}
-        
+
         for field_name in required_fields:
             field_id = self._target_field_map.get(field_name)
             if not field_id:
                 raise ValueError(f"Field '{field_name}' not found in target collection")
             field_ids[field_name] = field_id
-            
+
         return field_ids
-    
+
     def _generate_unique_id(self, theme: str, published_at: str) -> str:
         """Generate a unique identifier based on theme and published_at.
-        
+
         Args:
             theme (str): The theme name
             published_at (str): The published date (YYYY-MM-DD format)
-            
+
         Returns:
             str: A unique hash string
         """
         hash_input = f"{theme}_{published_at}".encode("utf-8")
         return hashlib.md5(hash_input).hexdigest()
-    
+
     def _record_exists(self, unique_id: str, unique_id_field_id: str) -> bool:
         """Check if a record with the given unique_id already exists.
-        
+
         Args:
             unique_id (str): The unique identifier to check
             unique_id_field_id (str): The field ID for unique_id field
-            
+
         Returns:
             bool: True if record exists, False otherwise
         """
@@ -369,7 +369,7 @@ class NewsGrouper:
                 ]
             }
         }
-        
+
         try:
             result = self._target_manager.query_records(
                 filter=filter_criteria,
@@ -416,7 +416,7 @@ class NewsGrouper:
 
         # Convert start_date to string for reference
         reference_date = start_date if isinstance(start_date, str) else (start_date.strftime('%Y-%m-%d') if start_date else datetime.datetime.now().strftime('%Y-%m-%d'))
-        
+
         # Insert grouped records
         inserted_count = self.insert_grouped_records(grouped_records, reference_date)
         print(f"Inserted {inserted_count} grouped records into target collection")
