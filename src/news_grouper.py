@@ -383,7 +383,7 @@ class NewsGrouper:
     def process_news_grouping(
         self,
         source_collection_name: str = "noticiasgovbr-all-news",
-        target_collection_name: str = "noticiasgovbr-by-theme_1_level_1",
+        target_collection_name: str = "publications-by-theme_level_1",
         start_date: Optional[Union[str, datetime.datetime]] = None,
         end_date: Optional[Union[str, datetime.datetime]] = None
     ) -> int:
@@ -433,8 +433,8 @@ def main():
     parser.add_argument('--end-date', help='Filter by end date (YYYY-MM-DD)')
     parser.add_argument('--source-collection', default="noticiasgovbr-all-news",
                        help='Source Cogfy collection name (default: noticiasgovbr-all-news)')
-    parser.add_argument('--target-collection', default="noticiasgovbr-by-theme_1_level_1",
-                       help='Target Cogfy collection name (default: noticiasgovbr-by-theme_1_level_1)')
+    parser.add_argument('--target-collection', default="publications-by-theme_level_1",
+                       help='Target Cogfy collection name (default: publications-by-theme_level_1)')
     parser.add_argument('--server-url', default="https://api.cogfy.com/",
                        help='Cogfy server URL (default: https://api.cogfy.com/)')
 
