@@ -15,9 +15,6 @@ on:
         required: false
         type: string
 
-env:
-  CONTAINER_IMAGE: ghcr.io/nitaibezerra/govbrnews-scraper:latest
-
 jobs:
   setup-dates:
     name: Setup Date Variables
@@ -46,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup-dates
     container:
-      image: ${{ env.CONTAINER_IMAGE }}
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
     steps:
       - name: Run news scraper
@@ -65,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup-dates, scraper]
     container:
-      image: ${{ env.CONTAINER_IMAGE }}
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
     steps:
       - name: Upload news to Cogfy
@@ -85,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [setup-dates, upload-to-cogfy]
     container:
-      image: ${{ env.CONTAINER_IMAGE }}
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
     steps:
       - name: Wait before grouping
