@@ -285,6 +285,10 @@ class NewsGrouper:
                 field_ids["unique_id"]: {
                     "type": "text",
                     "text": {"value": unique_id}
+                },
+                field_ids["unique_theme_published_at"]: {
+                    "type": "text",
+                    "text": {"value": f"{theme}-{start_date}"}
                 }
             }
 
@@ -306,7 +310,8 @@ class NewsGrouper:
             "group_records": "json",
             "records_number": "number",
             "published_at": "text",
-            "unique_id": "text"
+            "unique_id": "text",
+            "unique_theme_published_at": "text"
         }
 
         print("Ensuring required fields exist in target collection...")
@@ -321,7 +326,7 @@ class NewsGrouper:
         Raises:
             ValueError: If any required field is not found
         """
-        required_fields = ["theme_1_level_1", "group_records", "records_number", "published_at", "unique_id"]
+        required_fields = ["theme_1_level_1", "group_records", "records_number", "published_at", "unique_id", "unique_theme_published_at"]
         field_ids = {}
 
         for field_name in required_fields:

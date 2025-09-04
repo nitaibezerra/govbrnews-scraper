@@ -1,7 +1,6 @@
 import pytest
 import datetime
-from unittest.mock import Mock, MagicMock, patch
-from collections import defaultdict
+from unittest.mock import Mock, patch
 
 # Import the module to test
 import sys
@@ -356,7 +355,8 @@ class TestNewsGrouper:
             "group_records": "field_124",
             "records_number": "field_125",
             "published_at": "field_126",
-            "unique_id": "field_127"
+            "unique_id": "field_127",
+            "unique_theme_published_at": "field_128"
         }
 
         # Mock ensure_fields and list_columns
@@ -421,7 +421,7 @@ class TestNewsGrouper:
         result = news_grouper.process_news_grouping(start_date="2024-01-14", end_date="2024-01-15")
 
         # Verify all methods were called
-        mock_setup.assert_called_once_with("noticiasgovbr-all-news", "noticiasgovbr-by-theme_1_level_1")
+        mock_setup.assert_called_once_with("noticiasgovbr-all-news", "publications-by-theme_level_1")
         mock_get_news.assert_called_once_with("2024-01-14", "2024-01-15")
         mock_parse.assert_called_once_with([{"raw": "record"}])
         mock_group.assert_called_once_with([{"parsed": "record"}])
