@@ -1,0 +1,128 @@
+name: Main News Processing Pipeline
+
+on:
+  schedule:
+    # Runs every day at 4AM UTC (midnight Brasília)
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start date (YYYY-MM-DD)'
+        required: false
+        type: string
+      end_date:
+        description: 'End date (YYYY-MM-DD)'
+        required: false
+        type: string
+
+jobs:
+  setup-dates:
+    name: Setup Date Variables
+    runs-on: ubuntu-latest
+    outputs:
+      start_date: ${{ steps.dates.outputs.start_date }}
+      end_date: ${{ steps.dates.outputs.end_date }}
+    steps:
+      - name: Set date variables
+        id: dates
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.start_date }}" ]; then
+            echo "start_date=${{ inputs.start_date }}" >> $GITHUB_OUTPUT
+            echo "end_date=${{ inputs.end_date || inputs.start_date }}" >> $GITHUB_OUTPUT
+          else
+            echo "start_date=$(date -d '1 day ago' +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+            echo "end_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Print date information
+        run: |
+          echo "Pipeline will process from ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}"
+
+  scraper:
+    name: News Scraper
+    runs-on: ubuntu-latest
+    needs: setup-dates
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Run news scraper
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo "Starting news scraper for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          cd /app
+          python src/main.py scrape \
+            --start-date ${{ needs.setup-dates.outputs.start_date }} \
+            --end-date ${{ needs.setup-dates.outputs.end_date }}
+          echo "News scraper completed successfully"
+
+  upload-to-cogfy:
+    name: Upload to Cogfy
+    runs-on: ubuntu-latest
+    needs: [setup-dates, scraper]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Upload news to Cogfy
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          echo "Starting upload to Cogfy for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          cd /app
+          python src/upload_to_cogfy_manager.py \
+            --start-date ${{ needs.setup-dates.outputs.start_date }} \
+            --end-date ${{ needs.setup-dates.outputs.end_date }}
+          echo "Upload to Cogfy completed successfully"
+
+  group-news:
+    name: Group News by Theme
+    runs-on: ubuntu-latest
+    needs: [setup-dates, upload-to-cogfy]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Wait before grouping
+        run: |
+          echo "Waiting 30 minutes before running news grouper..."
+          echo "This allows time for Cogfy to process uploaded data"
+          sleep 1800
+
+      - name: Group news by theme
+        env:
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          echo "Starting news grouping for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          cd /app
+          python src/news_grouper.py \
+            --start-date ${{ needs.setup-dates.outputs.start_date }} \
+            --end-date ${{ needs.setup-dates.outputs.end_date }}
+          echo "News grouping completed successfully"
+
+  pipeline-summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [setup-dates, scraper, upload-to-cogfy, group-news]
+    if: always()
+    steps:
+      - name: Pipeline completion summary
+        run: |
+          echo "=== News Processing Pipeline Summary ==="
+          echo "Date range: ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          echo "Scraper status: ${{ needs.scraper.result }}"
+          echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
+          echo "Grouper status: ${{ needs.group-news.result }}"
+          echo "============================================"
+
+          if [ "${{ needs.scraper.result }}" = "success" ] && \
+             [ "${{ needs.upload-to-cogfy.result }}" = "success" ] && \
+             [ "${{ needs.group-news.result }}" = "success" ]; then
+            echo "✅ All pipeline stages completed successfully!"
+            exit 0
+          else
+            echo "❌ Pipeline had failures. Check individual job logs."
+            exit 1
+          fi

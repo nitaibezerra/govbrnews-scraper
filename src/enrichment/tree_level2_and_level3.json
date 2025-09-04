@@ -1,0 +1,732 @@
+{
+  "01.01 - Política Econômica": [
+    "01.01.01 - Política Fiscal",
+    "01.01.02 - Autonomia Econômica",
+    "01.01.03 - Análise Econômica",
+    "01.01.04 - Boletim Econômico"
+  ],
+  "01.02 - Fiscalização e Tributação": [
+    "01.02.01 - Fiscalização Econômica",
+    "01.02.02 - Tributação e Impostos",
+    "01.02.03 - Combate à Evasão Fiscal",
+    "01.02.04 - Regulamentação Financeira"
+  ],
+  "01.03 - Investimentos e Comércio Exterior": [
+    "01.03.01 - Atração de Investimentos",
+    "01.03.02 - Investimentos no Exterior",
+    "01.03.03 - Investimentos Verdes",
+    "01.03.04 - Balança Comercial",
+    "01.03.05 - Política de Comércio Internacional"
+  ],
+  "01.04 - Financiamento e Apoio Financeiro": [
+    "01.04.01 - Apoio Financeiro a Pequenas Empresas",
+    "01.04.02 - Apoio Financeiro para Inovação",
+    "01.04.03 - Financiamento de Infraestrutura",
+    "01.04.04 - Microcrédito e Inclusão Financeira"
+  ],
+  "01.05 - Novas Economias e Inovações Financeiras": [
+    "01.05.01 - Economia Circular",
+    "01.05.02 - Economia Digital",
+    "01.05.03 - Economia Solidária",
+    "01.05.04 - Criptomoedas e Finanças Descentralizadas"
+  ],
+  "02.01 - Ensino Básico": [
+    "02.01.01 - Educação Infantil",
+    "02.01.02 - Ensino Fundamental",
+    "02.01.03 - Alimentação Escolar",
+    "02.01.04 - Internet nas Escolas"
+  ],
+  "02.02 - Ensino Superior": [
+    "02.02.01 - Pesquisa Acadêmica e Inovação"
+  ],
+  "02.03 - Educação Profissional e Capacitação": [
+    "02.03.01 - Aprendizagem Profissional",
+    "02.03.02 - Capacitação Profissional",
+    "02.03.03 - Formação Profissional",
+    "02.03.04 - Políticas de Incentivo à Educação Profissional"
+  ],
+  "02.04 - Programas e Políticas Educacionais": [
+    "02.04.01 - Políticas Educacionais",
+    "02.04.02 - Campanhas Educativas",
+    "02.04.03 - Bolsas e Incentivos",
+    "02.04.04 - Educação Inclusiva",
+    "02.04.05 - Apoio e Desenvolvimento Acadêmico"
+  ],
+  "03.01 - Sistema Único de Saúde (SUS)": [
+    "03.01.01 - Atenção Primária",
+    "03.01.02 - Assistência em Saúde",
+    "03.01.03 - Atenção Integral",
+    "03.01.04 - Linhas de Cuidado",
+    "03.01.05 - Manejo Clínico"
+  ],
+  "03.02 - Campanhas de Saúde Pública": [
+    "03.02.01 - Combate à Dengue",
+    "03.02.02 - Saúde da Criança",
+    "03.02.03 - Saúde Mental",
+    "03.02.04 - Alimentação Saudável"
+  ],
+  "03.03 - Vigilância Sanitária": [
+    "03.03.01 - Vigilância em Saúde",
+    "03.03.02 - Inovação em Saúde",
+    "03.03.03 - Controle de Doenças",
+    "03.03.04 - Inspeção de Produtos",
+    "03.03.05 - Fiscalização de Serviços de Saúde"
+  ],
+  "03.04 - Saúde Pública": [
+    "03.04.01 - Políticas de Saúde Pública",
+    "03.04.02 - Epidemiologia",
+    "03.04.03 - Educação em Saúde",
+    "03.04.04 - Controle de Fatores Ambientais"
+  ],
+  "03.05 - Programas e Projetos em Saúde": [
+    "03.05.01 - Saúde Bucal",
+    "03.05.02 - Saúde do Idoso",
+    "03.05.03 - Saúde do Trabalhador",
+    "03.05.04 - Pesquisa e Desenvolvimento em Saúde"
+  ],
+  "04.01 - Policiamento": [
+    "04.01.01 - Policiamento Ostensivo",
+    "04.01.02 - Policiamento Comunitário",
+    "04.01.03 - Policiamento Preventivo",
+    "04.01.04 - Patrulhamento Urbano",
+    "04.01.05 - Policiamento em Áreas Rurais"
+  ],
+  "04.02 - Combate ao Crime Organizado": [
+    "04.02.01 - Investigação de Organizações Criminosas",
+    "04.02.02 - Operações Contra o Tráfico de Drogas",
+    "04.02.03 - Combate ao Tráfico de Armas",
+    "04.02.04 - Combate ao Crime Cibernético",
+    "04.02.05 - Repressão a Facções Criminosas"
+  ],
+  "04.03 - Prevenção e Enfrentamento à Violência": [
+    "04.03.01 - Prevenção à Violência",
+    "04.03.02 - Campanhas de Conscientização",
+    "04.03.03 - Enfrentamento à Violência Doméstica",
+    "04.03.04 - Enfrentamento ao Bullying e Cyberbullying",
+    "04.03.05 - Resolução de Conflitos"
+  ],
+  "04.04 - Justiça e Segurança": [
+    "04.04.01 - Cooperação entre Polícia e Sistema Judiciário",
+    "04.04.02 - Execução Penal e Reintegração Social",
+    "04.04.03 - Garantia de Direitos Humanos no Sistema Penal",
+    "04.04.04 - Atuação da Defensoria Pública",
+    "04.04.05 - Investigação de Crimes de Colarinho Branco"
+  ],
+  "05.01 - Conservação Ambiental": [
+    "05.01.01 - Proteção da Vida Selvagem",
+    "05.01.02 - Conservação Marinha",
+    "05.01.03 - Qualidade da Água",
+    "05.01.04 - Qualidade do Ar",
+    "05.01.05 - Recursos Hídricos",
+    "05.01.06 - Agricultura Sustentável"
+  ],
+  "05.02 - Mudanças Climáticas": [
+    "05.02.01 - Catástrofes Climáticas",
+    "05.02.02 - Justiça Climática",
+    "05.02.03 - Educação Ambiental",
+    "05.02.04 - Desenvolvimento Sustentável"
+  ],
+  "05.03 - Energia Renovável e Limpa": [
+    "05.03.01 - Energia Renovável",
+    "05.03.02 - Energia Limpa"
+  ],
+  "05.04 - Gestão de Resíduos e Licenciamento": [
+    "05.04.01 - Gestão de Resíduos",
+    "05.04.02 - Licenciamento Ambiental"
+  ],
+  "06.01 - Pesquisa Científica": [
+    "06.01.01 - Ciência Aberta",
+    "06.01.02 - Ciência e Democracia",
+    "06.01.03 - Inteligência em Dados"
+  ],
+  "06.02 - Desenvolvimento Tecnológico": [
+    "06.02.01 - Inteligência Artificial",
+    "06.02.02 - Propriedade Intelectual",
+    "06.02.03 - Novas Tecnologias",
+    "06.02.04 - Transferência de Tecnologia"
+  ],
+  "06.03 - Inovação": [
+    "06.03.01 - Inovação e Startups",
+    "06.03.02 - Inovação Aberta",
+    "06.03.03 - Inovação em Rede",
+    "06.03.04 - Política de Inovação"
+  ],
+  "06.04 - Sustentabilidade e Descarbonização": [
+    "06.04.01 - Inovação e Sustentabilidade",
+    "06.04.02 - Inovação e Descarbonização",
+    "06.04.03 - Tecnologias Verdes"
+  ],
+  "06.05 - Política e Regulação": [
+    "06.05.01 - Políticas de Ciência e Tecnologia",
+    "06.05.02 - Regulação Tecnológica",
+    "06.05.03 - Ética em Tecnologia e Inovação"
+  ],
+  "07.01 - Obras Públicas": [
+    "07.01.01 - Construção de Estradas",
+    "07.01.02 - Construção de Pontes e Viadutos",
+    "07.01.03 - Infraestrutura de Qualidade",
+    "07.01.04 - Saneamento e Drenagem",
+    "07.01.05 - Urbanização de Áreas"
+  ],
+  "07.02 - Mobilidade Urbana": [
+    "07.02.01 - Transporte Público",
+    "07.02.02 - Inovação e Mobilidade Verde",
+    "07.02.03 - Ciclovias e Pedestres",
+    "07.02.04 - Infraestrutura para Bicicletas",
+    "07.02.05 - Acessibilidade Urbana"
+  ],
+  "07.03 - Logística e Transporte": [
+    "07.03.01 - Transporte Rodoviário",
+    "07.03.02 - Transporte Ferroviário",
+    "07.03.03 - Transporte Aquaviário",
+    "07.03.04 - Transporte de Cargas",
+    "07.03.05 - Logística Integrada"
+  ],
+  "07.04 - Aviação Civil": [
+    "07.04.01 - Infraestrutura Aeroportuária",
+    "07.04.02 - Conectividade e Infraestrutura",
+    "07.04.03 - Segurança e Regulamentação",
+    "07.04.04 - Serviços Aeroportuários",
+    "07.04.05 - Expansão da Malha Aérea"
+  ],
+  "07.05 - Malha Ferroviária": [
+    "07.05.01 - Expansão da Malha Ferroviária",
+    "07.05.02 - Modernização de Infraestrutura Ferroviária",
+    "07.05.03 - Segurança no Transporte Ferroviário",
+    "07.05.04 - Concessões Ferroviárias",
+    "07.05.05 - Transporte de Passageiros e Cargas"
+  ],
+  "08.01 - Eventos Culturais": [
+    "08.01.01 - Festivais e Feiras",
+    "08.01.02 - Mostras e Exposições",
+    "08.01.03 - Apresentações Artísticas",
+    "08.01.04 - Eventos Tradicionais",
+    "08.01.05 - Encontros Comunitários"
+  ],
+  "08.02 - Preservação do Patrimônio": [
+    "08.02.01 - Patrimônio Histórico",
+    "08.02.02 - Patrimônio Imaterial",
+    "08.02.03 - Patrimônio Natural",
+    "08.02.04 - Educação Patrimonial",
+    "08.02.05 - Restauração e Conservação"
+  ],
+  "08.03 - Incentivo às Artes": [
+    "08.03.01 - Apoio a Artistas",
+    "08.03.02 - Financiamento e Editais",
+    "08.03.03 - Formação e Capacitação Artística",
+    "08.03.04 - Produção Audiovisual",
+    "08.03.05 - Artes Plásticas"
+  ],
+  "08.04 - Cultura e Identidade Nacional": [
+    "08.04.01 - Artesanato Brasileiro",
+    "08.04.02 - Língua e Cultura",
+    "08.04.03 - Tradições e Costumes",
+    "08.04.04 - Cultura Popular",
+    "08.04.05 - Diversidade Cultural",
+    "08.04.06 - Mestres e Mestras da Cultura"
+  ],
+  "08.05 - Cultura e Inovação": [
+    "08.05.01 - Cultura Digital",
+    "08.05.02 - Economia Criativa",
+    "08.05.03 - Integração Cultural",
+    "08.05.04 - Intercâmbio Cultural",
+    "08.05.05 - Pontos de Cultura",
+    "08.05.06 - Agentes Culturais Comunitários"
+  ],
+  "09.01 - Competições Esportivas": [
+    "09.01.01 - Jogos Olímpicos",
+    "09.01.02 - Jogos Paralímpicos",
+    "09.01.03 - Jogos de Inverno",
+    "09.01.04 - Competições Nacionais",
+    "09.01.05 - Competições Internacionais"
+  ],
+  "09.02 - Políticas de Lazer": [
+    "09.02.01 - Lazer Comunitário",
+    "09.02.02 - Infraestrutura de Lazer",
+    "09.02.03 - Festivais e Eventos Recreativos",
+    "09.02.04 - Parques e Espaços Públicos",
+    "09.02.05 - Campanhas de Lazer Saudável"
+  ],
+  "09.03 - Incentivo ao Esporte": [
+    "09.03.01 - Financiamento Esportivo",
+    "09.03.02 - Desenvolvimento Esportivo",
+    "09.03.03 - Apoio a Atletas",
+    "09.03.04 - Educação e Formação no Esporte",
+    "09.03.05 - Parcerias e Patrocínios"
+  ],
+  "09.04 - Esporte e Inclusão": [
+    "09.04.01 - Inclusão Social no Esporte",
+    "09.04.02 - Esporte para Pessoas com Deficiência",
+    "09.04.03 - Esporte para Idosos",
+    "09.04.04 - Diversidade no Esporte",
+    "09.04.05 - Acessibilidade em Infraestruturas Esportivas"
+  ],
+  "09.05 - Integridade Esportiva": [
+    "09.05.01 - Combate à Manipulação de Resultados",
+    "09.05.02 - Antidoping e Controle de Substâncias",
+    "09.05.03 - Ética e Conduta Esportiva",
+    "09.05.04 - Transparência em Organizações Esportivas",
+    "09.05.05 - Proteção de Jovens Atletas"
+  ],
+  "10.01 - Agronegócio": [
+    "10.01.01 - Produção de Alimentos",
+    "10.01.02 - Desenvolvimento Rural",
+    "10.01.03 - Agricultura e Pecuária"
+  ],
+  "10.02 - Segurança Alimentar": [
+    "10.02.01 - Abastecimento e Distribuição de Alimentos",
+    "10.02.02 - Combate à Fome",
+    "10.02.03 - Nutrição e Sustentabilidade"
+  ],
+  "10.03 - Política Agrícola": [
+    "10.03.01 - Incentivos e Subsídios",
+    "10.03.02 - Crédito Agrícola",
+    "10.03.03 - Seguros Rurais"
+  ],
+  "10.04 - Agricultura Familiar": [
+    "10.04.01 - Assistência Técnica e Extensão Rural",
+    "10.04.02 - Cooperativismo e Associativismo",
+    "10.04.03 - Apoio a Pequenos Produtores"
+  ],
+  "10.05 - Sanidade": [
+    "10.05.01 - Sanidade Animal",
+    "10.05.02 - Sanidade Vegetal",
+    "10.05.03 - Controle de Pragas e Doenças"
+  ],
+  "11.01 - Desenvolvimento Industrial": [
+    "11.01.01 - Inovação Tecnológica",
+    "11.01.02 - Políticas de Incentivo",
+    "11.01.03 - Capacitação Profissional",
+    "11.01.04 - Sustentabilidade Industrial",
+    "11.01.05 - Indústria 4.0"
+  ],
+  "11.02 - Comércio Interno e Exterior": [
+    "11.02.01 - Exportação e Importação",
+    "11.02.02 - Acordos Comerciais",
+    "11.02.03 - Competitividade",
+    "11.02.04 - Tarifas e Barreiras Comerciais",
+    "11.02.05 - Feiras e Eventos Comerciais"
+  ],
+  "11.03 - Pequenas e Médias Empresas": [
+    "11.03.01 - Crédito e Financiamento",
+    "11.03.02 - Formalização e Regularização",
+    "11.03.03 - Empreendedorismo e Startups",
+    "11.03.04 - Capacitação para Pequenos Negócios",
+    "11.03.05 - Redes de Apoio e Parcerias"
+  ],
+  "11.04 - Cadeia Produtiva": [
+    "11.04.01 - Logística e Distribuição",
+    "11.04.02 - Fornecedores e Subcontratados",
+    "11.04.03 - Gestão de Qualidade",
+    "11.04.04 - Sustentabilidade na Cadeia Produtiva",
+    "11.04.05 - Processos de Produção"
+  ],
+  "11.05 - Integridade Empresarial": [
+    "11.05.01 - Compliance e Ética",
+    "11.05.02 - Transparência Corporativa",
+    "11.05.03 - Anticorrupção",
+    "11.05.04 - Gestão de Riscos",
+    "11.05.05 - Responsabilidade Social Empresarial"
+  ],
+  "12.01 - Acordos Internacionais": [
+    "12.01.01 - Acordos Comerciais",
+    "12.01.02 - Acordos de Cooperação Técnica",
+    "12.01.03 - Acordos Ambientais",
+    "12.01.04 - Acordos Culturais",
+    "12.01.05 - Acordos de Defesa e Segurança"
+  ],
+  "12.02 - Cooperação Internacional": [
+    "12.02.01 - Assistência Humanitária",
+    "12.02.02 - Cooperação Técnica para o Desenvolvimento",
+    "12.02.03 - Parcerias de Pesquisa e Educação",
+    "12.02.04 - Capacitação e Treinamento",
+    "12.02.05 - Cooperação em Saúde Pública"
+  ],
+  "12.03 - Política Externa": [
+    "12.03.01 - Estratégia Geopolítica",
+    "12.03.02 - Relações Bilaterais",
+    "12.03.03 - Relações Multilaterais",
+    "12.03.04 - Representações Diplomáticas",
+    "12.03.05 - Política Externa Econômica"
+  ],
+  "12.04 - Integração Regional": [
+    "12.04.01 - Mercosul",
+    "12.04.02 - Aliança para o Pacífico",
+    "12.04.03 - Integração Energética",
+    "12.04.04 - Infraestrutura e Logística Regional",
+    "12.04.05 - Integração Cultural e Educacional"
+  ],
+  "12.05 - Eventos e Conferências Internacionais": [
+    "12.05.01 - Reuniões de Alto Nível",
+    "12.05.02 - Eventos de Promoção Comercial"
+  ],
+  "13.01 - Sistema Judiciário": [
+    "13.01.01 - Advocacia Pública",
+    "13.01.02 - Direitos do Consumidor",
+    "13.01.03 - Justiça e Lei",
+    "13.01.04 - Prevenção e Combate à Corrupção"
+  ],
+  "13.02 - Direitos Humanos": [
+    "13.02.01 - Direitos das Crianças",
+    "13.02.02 - Justiça Social",
+    "13.02.03 - Liberdade Religiosa",
+    "13.02.04 - Políticas Antidiscriminatórias",
+    "13.02.05 - Justiça Climática"
+  ],
+  "13.03 - Direitos Fundamentais": [
+    "13.03.01 - Direitos das Crianças",
+    "13.03.02 - Liberdade Religiosa"
+  ],
+  "14.01 - Mercado de Trabalho": [
+    "14.01.01 - Emprego e Renda",
+    "14.01.02 - Inserção no Mercado",
+    "14.01.03 - Intermediação de Mão de Obra",
+    "14.01.04 - Carreira Profissional",
+    "14.01.05 - Conferência Internacional do Trabalho"
+  ],
+  "14.02 - Legislação Trabalhista": [
+    "14.02.01 - Direitos Trabalhistas",
+    "14.02.02 - Contratos de Trabalho",
+    "14.02.03 - Carteira de Trabalho Digital",
+    "14.02.04 - Acordos e Convenções Coletivas",
+    "14.02.05 - Rescisão Contratual"
+  ],
+  "14.03 - Programas de Emprego": [
+    "14.03.01 - Qualificação Profissional",
+    "14.03.02 - Incentivos ao Emprego",
+    "14.03.03 - Políticas Ativas de Emprego",
+    "14.03.04 - Inclusão no Trabalho",
+    "14.03.05 - Apoio ao Primeiro Emprego"
+  ],
+  "14.04 - Auditoria e Inspeção do Trabalho": [
+    "14.04.01 - Auditoria Fiscal do Trabalho",
+    "14.04.02 - Inspeção do Trabalho",
+    "14.04.03 - Combate ao Trabalho Infantil",
+    "14.04.04 - Combate ao Trabalho Escravo",
+    "14.04.05 - Monitoramento de Condições de Trabalho"
+  ],
+  "14.05 - Segurança e Saúde no Trabalho": [
+    "14.05.01 - Normas Regulamentadoras (NRs)",
+    "14.05.02 - Prevenção de Acidentes de Trabalho",
+    "14.05.03 - Condições Ambientais de Trabalho",
+    "14.05.04 - Ergonomia no Trabalho",
+    "14.05.05 - Saúde Ocupacional"
+  ],
+  "15.01 - Programas Sociais": [
+    "15.01.01 - Bolsa Família",
+    "15.01.02 - Iniciativa Social",
+    "15.01.03 - Juventude no Campo",
+    "15.01.04 - Programas para a Juventude",
+    "15.01.05 - Juventude Rural",
+    "15.01.06 - Atenção ao Idoso"
+  ],
+  "15.02 - Combate à Pobreza": [
+    "15.02.01 - Combate à Desigualdade",
+    "15.02.02 - Combate à Fome",
+    "15.02.03 - Apoio Emergencial",
+    "15.02.04 - Igualdade Social"
+  ],
+  "15.03 - Previdência Social": [
+    "15.03.01 - Benefícios Previdenciários",
+    "15.03.02 - Assistência à Aposentadoria"
+  ],
+  "16.01 - Promoção Turística": [
+    "16.01.01 - Campanhas de Divulgação",
+    "16.01.02 - Parcerias e Cooperação Internacional",
+    "16.01.03 - Promoção de Destinos Nacionais",
+    "16.01.04 - Promoção de Destinos Regionais"
+  ],
+  "16.02 - Infraestrutura Turística": [
+    "16.02.01 - Investimentos em Hospedagem",
+    "16.02.02 - Transporte e Acessibilidade",
+    "16.02.03 - Centros de Informação Turística",
+    "16.02.04 - Infraestrutura em Parques Naturais e Áreas de Lazer"
+  ],
+  "16.03 - Eventos Turísticos": [
+    "16.03.01 - Feiras e Exposições",
+    "16.03.02 - Festivais e Celebrações Locais",
+    "16.03.03 - Eventos Esportivos de Turismo",
+    "16.03.04 - Congressos e Conferências"
+  ],
+  "16.04 - Sustentabilidade no Turismo": [
+    "16.04.01 - Turismo Ecológico e de Natureza",
+    "16.04.02 - Práticas Sustentáveis em Destinos Turísticos",
+    "16.04.03 - Proteção de Patrimônio Cultural e Natural"
+  ],
+  "16.05 - Capacitação e Qualificação": [
+    "16.05.01 - Formação Profissional em Turismo",
+    "16.05.02 - Qualificação de Guias Turísticos",
+    "16.05.03 - Cursos de Atendimento ao Cliente",
+    "16.05.04 - Treinamentos para Hotéis e Restaurantes",
+    "16.05.05 - Idiomas para Profissionais do Turismo"
+  ],
+  "17.01 - Petróleo e Gás": [
+    "17.01.01 - Exploração de Petróleo",
+    "17.01.02 - Produção e Refino de Petróleo",
+    "17.01.03 - Exploração de Gás Natural",
+    "17.01.04 - Logística e Distribuição",
+    "17.01.05 - Investimentos no Setor de Petróleo e Gás"
+  ],
+  "17.02 - Mineração": [
+    "17.02.01 - Extração de Minerais",
+    "17.02.02 - Processamento Mineral",
+    "17.02.03 - Pesquisa e Desenvolvimento Mineral",
+    "17.02.04 - Levantamento Geológico",
+    "17.02.05 - Sustentabilidade e Impacto Ambiental"
+  ],
+  "17.03 - Políticas Energéticas": [
+    "17.03.01 - Regulação e Legislação Energética",
+    "17.03.02 - Subsídios e Incentivos",
+    "17.03.03 - Planejamento Energético Nacional",
+    "17.03.04 - Parcerias e Acordos Internacionais",
+    "17.03.05 - Luz para Todos"
+  ],
+  "17.04 - Energias Renováveis": [
+    "17.04.01 - Energia Solar",
+    "17.04.02 - Energia Eólica",
+    "17.04.03 - Energia Hidrelétrica",
+    "17.04.04 - Biomassa e Biocombustíveis",
+    "17.04.05 - Pesquisa e Inovação em Energias Renováveis"
+  ],
+  "17.05 - Infraestrutura e Investimentos": [
+    "17.05.01 - Investimentos em Transmissão e Distribuição",
+    "17.05.02 - Modernização da Infraestrutura Energética",
+    "17.05.03 - Redes de Energia Inteligente",
+    "17.05.04 - Manutenção e Expansão da Infraestrutura",
+    "17.05.05 - Parcerias Público-Privadas no Setor Energético"
+  ],
+  "18.01 - Telecomunicações": [
+    "18.01.01 - Serviços Digitais",
+    "18.01.02 - Ligações Indesejadas",
+    "18.01.03 - Inclusão Digital",
+    "18.01.04 - Segurança da Informação",
+    "18.01.05 - Proteção de Dados"
+  ],
+  "18.02 - Regulamentação da Mídia": [
+    "18.02.01 - Liberdade de Imprensa",
+    "18.02.02 - Linha Editorial",
+    "18.02.03 - Integridade da Informação",
+    "18.02.04 - Combate à Desinformação",
+    "18.02.05 - Linguagem Simples"
+  ],
+  "18.03 - Comunicação Digital": [
+    "18.03.01 - Interação Digital",
+    "18.03.02 - Cidadania Digital",
+    "18.03.03 - Comunicação Antirracista",
+    "18.03.04 - Comunicação Pública",
+    "18.03.05 - Comunicação Digital"
+  ],
+  "19.01 - Segurança Nacional": [
+    "19.01.01 - Inteligência e Contrainteligência",
+    "19.01.02 - Proteção de Infraestruturas Críticas",
+    "19.01.03 - Combate ao Terrorismo",
+    "19.01.04 - Segurança de Fronteiras",
+    "19.01.05 - Controle do Espaço Aéreo e Marítimo"
+  ],
+  "19.02 - Missões Militares": [
+    "19.02.01 - Operações de Paz",
+    "19.02.02 - Operações no Exterior",
+    "19.02.03 - Cooperação Internacional em Defesa",
+    "19.02.04 - Treinamentos e Exercícios Militares",
+    "19.02.05 - Operações Antidrogas"
+  ],
+  "19.03 - Defesa Civil": [
+    "19.03.01 - Preparação para Desastres",
+    "19.03.02 - Planejamento de Evacuação",
+    "19.03.03 - Resposta a Desastres",
+    "19.03.04 - Monitoramento de Riscos Naturais",
+    "19.03.05 - Gestão de Abrigos"
+  ],
+  "19.04 - Situações de Emergência": [
+    "19.04.01 - Resgate e Salvamento",
+    "19.04.02 - Logística de Emergência",
+    "19.04.03 - Ações Humanitárias",
+    "19.04.04 - Reconstrução Pós-Desastre",
+    "19.04.05 - Assistência a Deslocados Internos"
+  ],
+  "19.05 - Políticas e Estratégias de Defesa": [
+    "19.05.01 - Planejamento de Defesa Nacional",
+    "19.05.02 - Modernização das Forças Armadas",
+    "19.05.03 - Estratégia de Defesa Cibernética",
+    "19.05.04 - Desenvolvimento Militar",
+    "19.05.05 - Relações com a Indústria de Defesa"
+  ],
+  "20.01 - Transparência e Prestação de Contas": [
+    "20.01.01 - Controle Interno",
+    "20.01.02 - Controle Social",
+    "20.01.03 - Integridade Pública"
+  ],
+  "20.02 - Planejamento Governamental": [
+    "20.02.01 - Fortalecimento Institucional",
+    "20.02.02 - Reforma Administrativa",
+    "20.02.03 - Melhorias na Gestão"
+  ],
+  "20.03 - Gestão Pública": [
+    "20.03.01 - Recursos Humanos",
+    "20.03.02 - Capacitação de Servidores",
+    "20.03.03 - Licitações e Contratos"
+  ],
+  "20.04 - Administração Pública": [
+    "20.04.01 - Concursos Públicos",
+    "20.04.02 - Serviços Públicos",
+    "20.04.03 - Atendimento à População"
+  ],
+  "20.05 - Participação e Colaboração Social": [
+    "20.05.01 - Sociedade Civil",
+    "20.05.02 - Transparência e Diálogo"
+  ],
+  "21.01 - Novas Leis e Decretos": [
+    "21.01.01 - Publicação de Leis e Decretos",
+    "21.01.02 - Aplicação e Vigência",
+    "21.01.03 - Alterações e Ajustes Normativos",
+    "21.01.04 - Regulamentações Complementares"
+  ],
+  "21.02 - Reformas Legislativas": [
+    "21.02.01 - Propostas de Reforma",
+    "21.02.02 - Análise de Impacto das Reformas",
+    "21.02.03 - Aprovação de Reformas",
+    "21.02.04 - Implementação das Reformas"
+  ],
+  "21.03 - Consultas Públicas": [
+    "21.03.01 - Abertura de Consultas",
+    "21.03.02 - Recebimento de Contribuições",
+    "21.03.03 - Análise de Contribuições",
+    "21.03.04 - Resultados de Consultas"
+  ],
+  "21.04 - Avaliação Regulatória": [
+    "21.04.01 - Revisão de Normas e Regulamentos",
+    "21.04.02 - Análise de Impacto Regulatório",
+    "21.04.03 - Monitoramento da Implementação",
+    "21.04.04 - Relatórios de Desempenho Regulatórios"
+  ],
+  "21.05 - Boas Práticas e Inovação Regulatória": [
+    "21.05.01 - Boas Práticas Regulatórias",
+    "21.05.02 - Inovação Jurídica e Regulatória",
+    "21.05.03 - Política Regulatória",
+    "21.05.04 - Cooperação Internacional em Regulação"
+  ],
+  "22.01 - Discursos Oficiais": [
+    "22.01.01 - Pronunciamento em Rede Nacional",
+    "22.01.02 - Discursos em Cerimônias Públicas",
+    "22.01.03 - Entrevistas e Coletivas de Imprensa",
+    "22.01.04 - Discursos em Eventos Internacionais",
+    "22.01.05 - Mensagens de Fim de Ano e Comemorações"
+  ],
+  "22.02 - Inaugurações": [
+    "22.02.01 - Inauguração de Obras Públicas",
+    "22.02.02 - Lançamento de Programas e Projetos",
+    "22.02.03 - Inauguração de Equipamentos Públicos",
+    "22.02.04 - Eventos de Entrega de Infraestrutura",
+    "22.02.05 - Cerimônias de Descerramento de Placas"
+  ],
+  "22.03 - Visitas Oficiais": [
+    "22.03.01 - Visitas Internacionais de Chefes de Estado",
+    "22.03.02 - Visitas a Estados e Municípios",
+    "22.03.03 - Recepção de Dignitários Estrangeiros",
+    "22.03.04 - Encontros Bilaterais e Multilaterais",
+    "22.03.05 - Inspeções e Visitas Técnicas"
+  ],
+  "22.04 - Luto Oficial": [
+    "22.04.01 - Declarações de Luto Nacional",
+    "22.04.02 - Homenagens Oficiais",
+    "22.04.03 - Cerimônias de Condolências"
+  ],
+  "22.05 - Comemorações e Datas Festivas": [
+    "22.05.01 - Comemoração de Datas Cívicas",
+    "22.05.02 - Celebrações de Efemérides",
+    "22.05.03 - Eventos Comemorativos de Instituições Públicas",
+    "22.05.04 - Cerimônias de Posse e Aniversários de Instituições",
+    "22.05.05 - Homenagens e Reconhecimentos Públicos"
+  ],
+  "23.01 - Censos e Pesquisas": [
+    "23.01.01 - Censo Demográfico",
+    "23.01.02 - Censo Agropecuário",
+    "23.01.03 - Pesquisa de Emprego e Renda",
+    "23.01.04 - Pesquisa de Saúde",
+    "23.01.05 - Pesquisa de Educação"
+  ],
+  "23.02 - Indicadores Econômicos e Sociais": [
+    "23.02.01 - Índice de Preços",
+    "23.02.02 - Indicadores de Pobreza",
+    "23.02.03 - Índice de Desenvolvimento Humano (IDH)",
+    "23.02.04 - Taxa de Desemprego",
+    "23.02.05 - Taxa de Escolaridade"
+  ],
+  "23.03 - Interoperabilidade": [
+    "23.03.01 - Dados Abertos",
+    "23.03.02 - Infraestrutura de Dados Públicos (IDP)",
+    "23.03.03 - Integração de Bases de Dados"
+  ],
+  "23.04 - Transparência e Acesso à Informação": [
+    "23.04.01 - Portal da Transparência",
+    "23.04.02 - Lei de Acesso à Informação (LAI)",
+    "23.04.03 - Relatórios de Prestação de Contas",
+    "23.04.04 - Auditorias e Fiscalizações Públicas",
+    "23.04.05 - Dados sobre Licitações e Contratos Públicos"
+  ],
+  "24.01 - Políticas para Mulheres": [
+    "24.01.01 - Igualdade de Gênero",
+    "24.01.02 - Liderança Feminina",
+    "24.01.03 - Violência contra Mulheres",
+    "24.01.04 - Saúde da Mulher",
+    "24.01.05 - Educação e Empoderamento Feminino"
+  ],
+  "24.02 - Populações Indígenas": [
+    "24.02.01 - Direitos Territoriais",
+    "24.02.02 - Saúde e Bem-Estar Indígena",
+    "24.02.03 - Educação Indígena"
+  ],
+  "24.03 - Comunidade LGBTQIA+": [
+    "24.03.01 - Direitos e Políticas LGBTQIA+",
+    "24.03.02 - Saúde LGBTQIA+",
+    "24.03.03 - Combate à Discriminação",
+    "24.03.04 - Visibilidade e Inclusão"
+  ],
+  "24.04 - Comunidades Tradicionais": [
+    "24.04.01 - Quilombolas",
+    "24.04.02 - Povos Ribeirinhos",
+    "24.04.03 - Povos de Terreiro",
+    "24.04.04 - Preservação Cultural e Patrimônio",
+    "24.04.05 - Acesso a Recursos Naturais"
+  ],
+  "24.05 - Direitos das Pessoas com Deficiência": [
+    "24.05.01 - Acessibilidade e Inclusão",
+    "24.05.02 - Saúde e Reabilitação",
+    "24.05.03 - Inclusão no Mercado de Trabalho",
+    "24.05.04 - Direitos e Políticas Públicas para Deficientes"
+  ],
+  "25.01 - Programas Habitacionais": [
+    "25.01.01 - Minha Casa Minha Vida",
+    "25.01.02 - Parcerias Público-Privadas em Habitação",
+    "25.01.03 - Financiamento Habitacional",
+    "25.01.04 - Regularização Fundiária",
+    "25.01.05 - Moradia de Interesse Social"
+  ],
+  "25.02 - Planejamento Urbano": [
+    "25.02.01 - Zoneamento Urbano",
+    "25.02.02 - Uso e Ocupação do Solo",
+    "25.02.03 - Áreas de Preservação e Espaços Verdes",
+    "25.02.04 - Licenciamento Urbano"
+  ],
+  "25.03 - Saneamento Básico": [
+    "25.03.01 - Abastecimento de Água",
+    "25.03.02 - Coleta e Tratamento de Esgoto",
+    "25.03.03 - Gestão de Resíduos Sólidos",
+    "25.03.04 - Drenagem Urbana",
+    "25.03.05 - Saneamento Rural"
+  ],
+  "25.04 - Desenvolvimento Urbano": [
+    "25.04.01 - Revitalização de Áreas Urbanas",
+    "25.04.02 - Sustentabilidade Urbana",
+    "25.04.03 - Projetos de Reurbanização",
+    "25.04.04 - Parcerias para Desenvolvimento Local",
+    "25.04.05 - Governança Metropolitana"
+  ],
+  "25.05 - Infraestrutura Urbana": [
+    "25.05.01 - Obras Públicas e Infraestrutura Viária",
+    "25.05.02 - Iluminação Pública",
+    "25.05.03 - Equipamentos Urbanos (praças, parques)",
+    "25.05.04 - Acessibilidade Urbana",
+    "25.05.05 - Conservação e Manutenção Urbana"
+  ]
+}

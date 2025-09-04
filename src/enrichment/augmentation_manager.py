@@ -1,7 +1,7 @@
 import logging
 import pandas as pd
 
-from augmentation.classifier_summarizer import ClassifierSummarizer
+from enrichment.classifier_summarizer import ClassifierSummarizer
 from dataset_manager import DatasetManager
 
 # Set up logging

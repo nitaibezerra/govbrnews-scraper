@@ -2,7 +2,7 @@ import os
 import pytest
 import yaml
 
-from src.augmentation.classifier_summarizer import ClassifierSummarizer
+from src.enrichment.classifier_summarizer import ClassifierSummarizer
 
 
 def _load_test_cases():
