@@ -42,7 +42,7 @@ log_step() {
 # Function to cleanup existing container and image
 cleanup_existing() {
     log_step "Cleaning up existing container and image"
-    
+
     # Stop and remove existing container if it exists
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         log_info "Stopping existing container: ${CONTAINER_NAME}"
@@ -53,7 +53,7 @@ cleanup_existing() {
     else
         log_info "No existing container found"
     fi
-    
+
     # Remove existing image if it exists
     if docker images --format '{{.Repository}}' | grep -q "^${IMAGE_NAME}$"; then
         log_info "Removing existing image: ${IMAGE_NAME}"
@@ -67,7 +67,7 @@ cleanup_existing() {
 # Function to check if port is available
 check_port() {
     log_step "Checking port availability"
-    
+
     if lsof -i :${POSTGRES_PORT} >/dev/null 2>&1; then
         log_warning "Port ${POSTGRES_PORT} is already in use!"
         log_info "Services using port ${POSTGRES_PORT}:"
@@ -82,7 +82,7 @@ check_port() {
 # Function to create Docker volume
 create_volume() {
     log_step "Creating Docker volume for persistent storage"
-    
+
     if docker volume ls --format '{{.Name}}' | grep -q "^${VOLUME_NAME}$"; then
         log_info "Volume ${VOLUME_NAME} already exists"
     else
@@ -95,12 +95,12 @@ create_volume() {
 # Function to build Docker image
 build_image() {
     log_step "Building Docker image"
-    
+
     log_info "Building image: ${IMAGE_NAME}"
     log_info "This may take a few minutes on first build..."
-    
+
     start_time=$(date +%s)
-    
+
     if docker build -t ${IMAGE_NAME} . --quiet; then
         end_time=$(date +%s)
         build_duration=$((end_time - start_time))
@@ -114,11 +114,11 @@ build_image() {
 # Function to run container
 run_container() {
     log_step "Starting PostgreSQL container"
-    
+
     log_info "Starting container: ${CONTAINER_NAME}"
     log_info "Port mapping: localhost:${POSTGRES_PORT} -> container:5432"
     log_info "Using persistent volume: ${VOLUME_NAME}"
-    
+
     container_id=$(docker run -d \
         --name ${CONTAINER_NAME} \
         -p ${POSTGRES_PORT}:5432 \
@@ -127,17 +127,17 @@ run_container() {
         -e POSTGRES_PASSWORD=postgres \
         -v ${VOLUME_NAME}:/var/lib/postgresql/data \
         ${IMAGE_NAME})
-    
+
     log_success "Container started with ID: ${container_id:0:12}"
 }
 
 # Function to wait for PostgreSQL to be ready
 wait_for_postgres() {
     log_step "Waiting for PostgreSQL to be ready"
-    
+
     max_attempts=60
     attempt=1
-    
+
     while [ $attempt -le $max_attempts ]; do
         if docker exec ${CONTAINER_NAME} pg_isready -U postgres >/dev/null 2>&1; then
             log_success "PostgreSQL is ready after ${attempt} attempts"
@@ -148,7 +148,7 @@ wait_for_postgres() {
             attempt=$((attempt + 1))
         fi
     done
-    
+
     log_error "PostgreSQL failed to start within expected time"
     log_info "Container logs:"
     docker logs ${CONTAINER_NAME} --tail 20
@@ -158,25 +158,25 @@ wait_for_postgres() {
 # Function to wait for database initialization
 wait_for_initialization() {
     log_step "Waiting for database initialization to complete"
-    
+
     # Check if database already contains data (from persistent volume)
     sleep 5  # Give PostgreSQL a moment to start
-    
+
     if docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" 2>/dev/null | grep -q -E "[0-9]+" && [ "$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" 2>/dev/null | xargs)" -gt 0 ]; then
         record_count=$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" 2>/dev/null | xargs)
         log_success "Database already initialized with ${record_count} records (using persistent volume)"
         return 0
     fi
-    
+
     log_info "Fresh database detected - monitoring initialization progress..."
     log_info "This process downloads ~290k news records from HuggingFace and may take 2-5 minutes"
-    
+
     start_time=$(date +%s)
-    
+
     # Monitor logs for completion
     timeout=600  # 10 minutes timeout
     elapsed=0
-    
+
     while [ $elapsed -lt $timeout ]; do
         # Check if initialization completed successfully
         if docker logs ${CONTAINER_NAME} 2>&1 | grep -q "Database initialization completed successfully"; then
@@ -185,7 +185,7 @@ wait_for_initialization() {
             log_success "Database initialization completed in ${init_duration} seconds"
             return 0
         fi
-        
+
         # Check for initialization failure
         if docker logs ${CONTAINER_NAME} 2>&1 | grep -q "Database initialization failed"; then
             log_error "Database initialization failed!"
@@ -193,15 +193,15 @@ wait_for_initialization() {
             docker logs ${CONTAINER_NAME} --tail 20
             exit 1
         fi
-        
+
         # Check if PostgreSQL skipped initialization (database already exists)
         if docker logs ${CONTAINER_NAME} 2>&1 | grep -q "Skipping initialization"; then
             log_warning "PostgreSQL skipped initialization - database directory already exists"
             log_info "Checking if database contains data..."
-            
+
             # Wait a bit more for PostgreSQL to be fully ready
             sleep 10
-            
+
             if docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" 2>/dev/null | grep -q -E "[0-9]+"; then
                 record_count=$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" 2>/dev/null | xargs)
                 if [ "$record_count" -gt 0 ]; then
@@ -216,7 +216,7 @@ wait_for_initialization() {
                 exit 1
             fi
         fi
-        
+
         # Show progress indicators
         if docker logs ${CONTAINER_NAME} 2>&1 | grep -q "Downloading govbrnews dataset"; then
             log_info "📥 Downloading dataset from HuggingFace..."
@@ -225,11 +225,11 @@ wait_for_initialization() {
         elif docker logs ${CONTAINER_NAME} 2>&1 | grep -q "Inserting data into PostgreSQL"; then
             log_info "💾 Inserting data into PostgreSQL..."
         fi
-        
+
         sleep 5
         elapsed=$((elapsed + 5))
     done
-    
+
     log_error "Initialization timeout after ${timeout} seconds"
     log_info "Container logs:"
     docker logs ${CONTAINER_NAME} --tail 30
@@ -239,12 +239,12 @@ wait_for_initialization() {
 # Function to run test queries
 run_test_queries() {
     log_step "Running test queries to verify functionality"
-    
+
     # Test 1: Basic connection and record count
     log_info "Test 1: Checking total record count"
     record_count=$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" | xargs)
     log_success "✅ Total records in database: ${record_count}"
-    
+
     # Test 2: Check schema with new theme column
     log_info "Test 2: Verifying theme_1_level_1 column exists"
     if docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "\d news" | grep -q "theme_1_level_1"; then
@@ -253,38 +253,38 @@ run_test_queries() {
         log_error "❌ theme_1_level_1 column not found in schema"
         exit 1
     fi
-    
+
     # Test 3: Sample data query
     log_info "Test 3: Querying recent news samples"
     echo -e "\n${YELLOW}Recent news sample:${NC}"
     docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -c "
-        SELECT 
+        SELECT
             LEFT(title, 60) || '...' as title_preview,
             agency,
             published_at::date as date,
             CASE WHEN theme_1_level_1 IS NULL THEN 'No theme' ELSE theme_1_level_1 END as theme
-        FROM news 
+        FROM news
         WHERE published_at > '2025-09-01'
-        ORDER BY published_at DESC 
+        ORDER BY published_at DESC
         LIMIT 5;"
-    
+
     # Test 4: Agency statistics
     log_info "Test 4: Agency statistics"
     echo -e "\n${YELLOW}Top 5 agencies by news count:${NC}"
     docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -c "
-        SELECT 
+        SELECT
             agency,
             COUNT(*) as news_count
-        FROM news 
+        FROM news
         WHERE agency IS NOT NULL
-        GROUP BY agency 
-        ORDER BY news_count DESC 
+        GROUP BY agency
+        ORDER BY news_count DESC
         LIMIT 5;"
-    
+
     # Test 5: Theme column status
     log_info "Test 5: Theme column statistics"
     theme_stats=$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "
-        SELECT 
+        SELECT
             COUNT(*) as total,
             COUNT(theme_1_level_1) as with_theme,
             COUNT(*) - COUNT(theme_1_level_1) as without_theme
@@ -295,30 +295,30 @@ run_test_queries() {
 # Function to show connection info
 show_connection_info() {
     log_step "Connection Information"
-    
+
     echo -e "${GREEN}🎉 PostgreSQL server is ready!${NC}\n"
-    
+
     echo -e "${YELLOW}Connection Details:${NC}"
     echo -e "  Host: localhost"
     echo -e "  Port: ${POSTGRES_PORT}"
     echo -e "  Database: govbrnews"
     echo -e "  Username: postgres"
     echo -e "  Password: postgres"
-    
+
     echo -e "\n${YELLOW}Quick Connection Commands:${NC}"
     echo -e "  # Connect using psql (external):"
     echo -e "  PGPASSWORD=postgres psql -h localhost -p ${POSTGRES_PORT} -U postgres -d govbrnews"
-    
+
     echo -e "\n  # Connect using Docker exec:"
     echo -e "  docker exec -it ${CONTAINER_NAME} psql -U postgres -d govbrnews"
-    
+
     echo -e "\n${YELLOW}Management Commands:${NC}"
     echo -e "  # View logs:"
     echo -e "  docker logs -f ${CONTAINER_NAME}"
-    
+
     echo -e "\n  # Stop container:"
     echo -e "  docker stop ${CONTAINER_NAME}"
-    
+
     echo -e "\n  # Remove container:"
     echo -e "  docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME}"
 }
@@ -331,13 +331,13 @@ main() {
     echo "║                   Build, Run & Test Script                     ║"
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}\n"
-    
+
     # Check if we're in the right directory
     if [ ! -f "Dockerfile" ]; then
         log_error "Dockerfile not found! Please run this script from the docker/ directory"
         exit 1
     fi
-    
+
     # Execute main steps
     cleanup_existing
     check_port
@@ -348,7 +348,7 @@ main() {
     wait_for_initialization
     run_test_queries
     show_connection_info
-    
+
     log_success "🚀 Setup completed successfully!"
 }
 
