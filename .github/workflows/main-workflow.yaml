@@ -110,11 +110,6 @@ jobs:
       image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
     steps:
-      - name: Wait before enrichment
-        run: |
-          echo "Waiting 10 minutes before running theme enrichment..."
-          echo "This allows time for theme grouping to complete"
-          sleep 600
 
       - name: Enrich dataset with themes
         env:
