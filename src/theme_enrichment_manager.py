@@ -3,7 +3,7 @@ import logging
 import argparse
 from datetime import datetime
 from typing import Dict, Optional, Union, Tuple
-from time import sleep
+from time import sleep, time
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -312,6 +312,7 @@ class ThemeEnrichmentManager:
         """
         successful_updates = 0
         failed_updates = 0
+        start_time = time()
 
         for idx, row in records_to_process.iterrows():
             unique_id = row['unique_id']
@@ -324,7 +325,9 @@ class ThemeEnrichmentManager:
                     successful_updates += 1
 
                     if successful_updates % 10 == 0:
-                        logging.info(f"Processed {successful_updates} records...")
+                        elapsed_time = time() - start_time
+                        records_per_min = (successful_updates / elapsed_time) * 60 if elapsed_time > 0 else 0
+                        logging.info(f"Processed {successful_updates} records in {elapsed_time:.1f}s ({records_per_min:.1f} records/min)")
                 else:
                     failed_updates += 1
 
@@ -446,7 +449,15 @@ class ThemeEnrichmentManager:
 
 
         # Process records for themes
+        logging.info(f"Starting processing of {len(records_to_process)} records...")
+        start_time = time()
         successful_updates, failed_updates = self._process_records_for_themes(df, records_to_process)
+        total_time = time() - start_time
+        
+        if successful_updates > 0:
+            avg_time_per_record = total_time / successful_updates
+            records_per_min = (successful_updates / total_time) * 60 if total_time > 0 else 0
+            logging.info(f"Processing completed in {total_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
 
         # Report statistics
         self._report_enrichment_statistics(df, successful_updates, failed_updates)
