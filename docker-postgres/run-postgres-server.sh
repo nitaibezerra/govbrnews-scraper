@@ -334,7 +334,7 @@ main() {
 
     # Check if we're in the right directory
     if [ ! -f "Dockerfile" ]; then
-        log_error "Dockerfile not found! Please run this script from the docker/ directory"
+        log_error "Dockerfile not found! Please run this script from the docker-postgres/ directory"
         exit 1
     fi
 

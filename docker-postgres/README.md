@@ -54,7 +54,7 @@ O servidor PostgreSQL criado por este container:
 
 ```bash
 # A partir do diretório raiz do projeto govbrnews
-cd docker
+cd docker-postgres
 docker build -t govbrnews-postgres .
 ```
 
@@ -373,7 +373,7 @@ O dataset é baixado apenas durante a inicialização do container. Para obter d
 
 Para contribuir com melhorias neste setup PostgreSQL:
 
-1. Faça suas modificações nos arquivos do diretório `docker/`
+1. Faça suas modificações nos arquivos do diretório `docker-postgres/`
 2. Teste localmente construindo e executando a imagem
 3. Documente suas mudanças neste README
 4. Submeta um pull request
