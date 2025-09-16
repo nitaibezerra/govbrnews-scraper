@@ -24,37 +24,33 @@ logger = logging.getLogger(__name__)
 
 # Database configuration
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': '/var/run/postgresql',  # Use Unix socket during init
     'dbname': os.getenv('POSTGRES_DB', 'govbrnews'),
     'user': os.getenv('POSTGRES_USER', 'postgres'),
-    'password': os.getenv('POSTGRES_PASSWORD', 'postgres'),
-    'port': '5432'
+    'password': os.getenv('POSTGRES_PASSWORD', 'postgres')
 }
 
 # HuggingFace dataset configuration
 DATASET_PATH = "nitaibezerra/govbrnews"
 
 def wait_for_postgres():
-    """Wait for PostgreSQL to be ready."""
+    """Wait for PostgreSQL and govbrnews database to be ready."""
     max_retries = 10
     retry_count = 0
 
-    # First try to connect to the default postgres database
-    postgres_config = DB_CONFIG.copy()
-    postgres_config['dbname'] = 'postgres'
-
     while retry_count < max_retries:
         try:
-            conn = psycopg.connect(**postgres_config)
+            # Try to connect to the govbrnews database directly
+            conn = psycopg.connect(**DB_CONFIG)
             conn.close()
-            logger.info("PostgreSQL is ready!")
+            logger.info("PostgreSQL and govbrnews database are ready!")
             return True
         except psycopg.OperationalError as e:
             retry_count += 1
-            logger.info(f"Waiting for PostgreSQL... ({retry_count}/{max_retries})")
-            time.sleep(1)
+            logger.info(f"Database not ready yet, attempt {retry_count}/{max_retries}: {e}")
+            time.sleep(3)
 
-    logger.error("PostgreSQL is not ready after maximum retries")
+    logger.error("Database not ready after maximum retries")
     return False
 
 def create_tables():
@@ -220,9 +216,8 @@ def main():
     try:
         logger.info("Starting GovBR News database initialization...")
 
-        # Wait for PostgreSQL to be ready
-        if not wait_for_postgres():
-            sys.exit(1)
+        # Give a short delay to ensure database is ready (init scripts run when DB is ready)
+        time.sleep(2)
 
         # Create database tables
         create_tables()
