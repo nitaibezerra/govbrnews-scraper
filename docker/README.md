@@ -27,16 +27,17 @@ O servidor PostgreSQL criado por este container:
 | Coluna | Tipo | Descrição |
 |--------|------|-----------|
 | `id` | SERIAL PRIMARY KEY | ID sequencial auto-incrementado |
-| `unique_id` | VARCHAR(255) UNIQUE | Identificador único da notícia |
-| `agency` | VARCHAR(255) | Agência governamental que publicou |
+| `unique_id` | TEXT UNIQUE | Identificador único da notícia |
+| `agency` | TEXT | Agência governamental que publicou |
 | `published_at` | TIMESTAMP | Data de publicação da notícia |
 | `title` | TEXT | Título da notícia |
 | `url` | TEXT | URL original da notícia |
 | `image` | TEXT | URL da imagem principal |
-| `category` | VARCHAR(255) | Categoria da notícia |
+| `category` | TEXT | Categoria da notícia |
 | `tags` | TEXT[] | Array de tags associadas |
 | `content` | TEXT | Conteúdo completo em Markdown |
 | `extracted_at` | TIMESTAMP | Data de extração dos dados |
+| `theme_1_level_1` | TEXT | Tema principal da notícia (nível 1) |
 | `created_at` | TIMESTAMP | Data de inserção no banco |
 
 ### Índices Criados
@@ -45,6 +46,7 @@ O servidor PostgreSQL criado por este container:
 - `idx_news_published_at` - Índice na coluna `published_at`
 - `idx_news_unique_id` - Índice na coluna `unique_id`
 - `idx_news_category` - Índice na coluna `category`
+- `idx_news_theme_1_level_1` - Índice na coluna `theme_1_level_1`
 
 ## Como Usar
 
@@ -232,6 +234,16 @@ SELECT
     MIN(published_at) as oldest_news,
     MAX(published_at) as newest_news
 FROM news;
+```
+
+### 6. Consultar por tema
+
+```sql
+SELECT theme_1_level_1, COUNT(*) as total_news
+FROM news
+WHERE theme_1_level_1 IS NOT NULL
+GROUP BY theme_1_level_1
+ORDER BY total_news DESC;
 ```
 
 ## Monitoramento e Logs
