@@ -1,6 +1,7 @@
 datasets==3.1.0
 pandas==2.2.3
-psycopg2-binary==2.9.9
+psycopg==3.2.10
+psycopg-binary==3.2.10
 huggingface_hub==0.25.2
 requests==2.32.3
 python-dotenv==1.0.1

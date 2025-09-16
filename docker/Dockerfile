@@ -1,11 +1,14 @@
 # PostgreSQL with HuggingFace GovBR News Dataset
 FROM postgres:16
 
-# Install Python and pip
+# Install Python, pip, and PostgreSQL development libraries
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
     python3-venv \
+    python3-dev \
+    libpq-dev \
+    build-essential \
     wget \
     curl \
     && rm -rf /var/lib/apt/lists/*
