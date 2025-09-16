@@ -102,10 +102,36 @@ jobs:
             --end-date ${{ needs.setup-dates.outputs.end_date }}
           echo "News grouping completed successfully"
 
+  enrich-themes:
+    name: Enrich Dataset with Themes
+    runs-on: ubuntu-latest
+    needs: [setup-dates, group-news]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Wait before enrichment
+        run: |
+          echo "Waiting 10 minutes before running theme enrichment..."
+          echo "This allows time for theme grouping to complete"
+          sleep 600
+
+      - name: Enrich dataset with themes
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          echo "Starting theme enrichment for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          cd /app
+          python src/theme_enrichment_manager.py \
+            --start-date ${{ needs.setup-dates.outputs.start_date }} \
+            --end-date ${{ needs.setup-dates.outputs.end_date }}
+          echo "Theme enrichment completed successfully"
+
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [setup-dates, scraper, upload-to-cogfy, group-news]
+    needs: [setup-dates, scraper, upload-to-cogfy, group-news, enrich-themes]
     if: always()
     steps:
       - name: Pipeline completion summary
@@ -115,11 +141,13 @@ jobs:
           echo "Scraper status: ${{ needs.scraper.result }}"
           echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
           echo "Grouper status: ${{ needs.group-news.result }}"
+          echo "Theme enrichment status: ${{ needs.enrich-themes.result }}"
           echo "============================================"
 
           if [ "${{ needs.scraper.result }}" = "success" ] && \
              [ "${{ needs.upload-to-cogfy.result }}" = "success" ] && \
-             [ "${{ needs.group-news.result }}" = "success" ]; then
+             [ "${{ needs.group-news.result }}" = "success" ] && \
+             [ "${{ needs.enrich-themes.result }}" = "success" ]; then
             echo "✅ All pipeline stages completed successfully!"
             exit 0
           else
