@@ -332,7 +332,7 @@ class ThemeEnrichmentManager:
                     failed_updates += 1
 
                 # Longer delay to help with server stability
-                sleep(1.0)
+                sleep(0.3)
 
             except Exception as e:
                 logging.error(f"Error processing record {unique_id}: {str(e)}")
@@ -428,7 +428,8 @@ class ThemeEnrichmentManager:
         self,
         start_date: Optional[Union[str, datetime]] = None,
         end_date: Optional[Union[str, datetime]] = None,
-        force_update: bool = False
+        force_update: bool = False,
+        chunk_size: int = 5000
     ) -> None:
         """
         Main method to enrich the HuggingFace dataset with theme information from Cogfy.
@@ -437,6 +438,7 @@ class ThemeEnrichmentManager:
             start_date: Start date for filtering records (inclusive)
             end_date: End date for filtering records (inclusive)
             force_update: If True, update even records that already have theme_1_level_1
+            chunk_size: Number of records to process before uploading to HuggingFace
         """
         logging.info("Starting theme enrichment process...")
 
@@ -459,25 +461,54 @@ class ThemeEnrichmentManager:
 
 
 
-        # Process records for themes
-        logging.info(f"Starting processing of {len(records_to_process)} records...")
-        start_time = time()
-        successful_updates, failed_updates = self._process_records_for_themes(df, records_to_process)
-        total_time = time() - start_time
+        # Process records in chunks to prevent data loss
+        logging.info(f"Starting chunked processing of {len(records_to_process)} records (chunk size: {chunk_size})...")
+        total_start_time = time()
+        total_successful_updates = 0
+        total_failed_updates = 0
 
-        if successful_updates > 0:
-            avg_time_per_record = total_time / successful_updates
-            records_per_min = (successful_updates / total_time) * 60 if total_time > 0 else 0
-            logging.info(f"Processing completed in {total_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
+        # Split records into chunks
+        num_chunks = (len(records_to_process) + chunk_size - 1) // chunk_size
+        logging.info(f"Processing in {num_chunks} chunks of up to {chunk_size} records each")
 
-        # Report statistics
-        self._report_enrichment_statistics(df, successful_updates, failed_updates)
+        for chunk_idx in range(num_chunks):
+            start_idx = chunk_idx * chunk_size
+            end_idx = min((chunk_idx + 1) * chunk_size, len(records_to_process))
+            chunk_records = records_to_process.iloc[start_idx:end_idx]
 
-        # Merge with full dataset if needed
-        final_df = self._merge_with_full_dataset(df, start_date, end_date)
+            logging.info(f"Processing chunk {chunk_idx + 1}/{num_chunks} ({len(chunk_records)} records)...")
+            chunk_start_time = time()
 
-        # Upload enriched dataset
-        self._upload_enriched_dataset(final_df)
+            # Process this chunk
+            successful_updates, failed_updates = self._process_records_for_themes(df, chunk_records)
+            chunk_time = time() - chunk_start_time
+
+            total_successful_updates += successful_updates
+            total_failed_updates += failed_updates
+
+            if successful_updates > 0:
+                avg_time_per_record = chunk_time / successful_updates
+                records_per_min = (successful_updates / chunk_time) * 60 if chunk_time > 0 else 0
+                logging.info(f"Chunk {chunk_idx + 1} completed in {chunk_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
+
+            # Upload after each chunk to prevent data loss
+            if successful_updates > 0:
+                logging.info(f"Uploading chunk {chunk_idx + 1} results to HuggingFace...")
+                chunk_df = self._merge_with_full_dataset(df, start_date, end_date)
+                self._upload_enriched_dataset(chunk_df)
+                logging.info(f"Chunk {chunk_idx + 1} uploaded successfully")
+            else:
+                logging.info(f"No updates in chunk {chunk_idx + 1}, skipping upload")
+
+        total_time = time() - total_start_time
+
+        if total_successful_updates > 0:
+            avg_time_per_record = total_time / total_successful_updates
+            records_per_min = (total_successful_updates / total_time) * 60 if total_time > 0 else 0
+            logging.info(f"All chunks completed in {total_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
+
+        # Report final statistics
+        self._report_enrichment_statistics(df, total_successful_updates, total_failed_updates)
 
         logging.info("Theme enrichment completed successfully!")
 
@@ -510,6 +541,12 @@ def main():
         action='store_true',
         help='Force update existing theme values (default: skip records that already have themes)'
     )
+    parser.add_argument(
+        '--chunk-size',
+        type=int,
+        default=5000,
+        help='Number of records to process before uploading to HuggingFace (default: 5000)'
+    )
 
     args = parser.parse_args()
 
@@ -522,7 +559,8 @@ def main():
         enrichment_manager.enrich_dataset_with_themes(
             start_date=args.start_date,
             end_date=args.end_date,
-            force_update=args.force
+            force_update=args.force,
+            chunk_size=args.chunk_size
         )
 
     except Exception as e:
