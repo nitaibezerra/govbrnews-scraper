@@ -394,7 +394,7 @@ class ThemeEnrichmentManager:
             # Update only the records that were processed - use safe individual updates
             # Create a mapping from unique_id to theme for safe updates
             theme_updates = df.dropna(subset=['theme_1_level_1']).set_index('unique_id')['theme_1_level_1'].to_dict()
-            
+
             # Apply updates one by one with validation
             updates_applied = 0
             for unique_id, theme in theme_updates.items():
@@ -402,7 +402,7 @@ class ThemeEnrichmentManager:
                 if mask.any():
                     full_df.loc[mask, 'theme_1_level_1'] = theme
                     updates_applied += 1
-            
+
             logging.info(f"Applied {updates_applied} theme updates to full dataset (out of {len(theme_updates)} available)")
 
             return full_df
@@ -456,6 +456,7 @@ class ThemeEnrichmentManager:
         if records_to_process.empty:
             logging.info("No records need theme enrichment")
             return
+
 
 
         # Process records for themes
