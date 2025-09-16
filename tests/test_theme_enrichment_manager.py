@@ -83,10 +83,10 @@ class TestThemeEnrichmentManager:
                 with patch('src.theme_enrichment_manager.CollectionManager') as mock_cm:
                     manager = ThemeEnrichmentManager()
 
-                    assert manager.server_url == "https://api.cogfy.com"
+                    assert manager.server_url == "https://api.cogfy.com/"
                     assert manager.collection_name == "noticiasgovbr-all-news"
                     mock_dm.assert_called_once()
-                    mock_client.assert_called_once_with("test_api_key", base_url="https://api.cogfy.com")
+                    mock_client.assert_called_once_with("test_api_key", base_url="https://api.cogfy.com/")
 
     def test_init_missing_api_key(self):
         """Test initialization fails without API key."""

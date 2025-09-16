@@ -391,9 +391,19 @@ class ThemeEnrichmentManager:
             if 'theme_1_level_1' not in full_df.columns:
                 full_df['theme_1_level_1'] = None
 
-            # Update only the records that were processed - use the enriched df
-            update_mask = full_df['unique_id'].isin(df['unique_id'])
-            full_df.loc[update_mask, 'theme_1_level_1'] = df.set_index('unique_id')['theme_1_level_1']
+            # Update only the records that were processed - use safe individual updates
+            # Create a mapping from unique_id to theme for safe updates
+            theme_updates = df.dropna(subset=['theme_1_level_1']).set_index('unique_id')['theme_1_level_1'].to_dict()
+            
+            # Apply updates one by one with validation
+            updates_applied = 0
+            for unique_id, theme in theme_updates.items():
+                mask = full_df['unique_id'] == unique_id
+                if mask.any():
+                    full_df.loc[mask, 'theme_1_level_1'] = theme
+                    updates_applied += 1
+            
+            logging.info(f"Applied {updates_applied} theme updates to full dataset (out of {len(theme_updates)} available)")
 
             return full_df
         else:
@@ -453,7 +463,7 @@ class ThemeEnrichmentManager:
         start_time = time()
         successful_updates, failed_updates = self._process_records_for_themes(df, records_to_process)
         total_time = time() - start_time
-        
+
         if successful_updates > 0:
             avg_time_per_record = total_time / successful_updates
             records_per_min = (successful_updates / total_time) * 60 if total_time > 0 else 0
