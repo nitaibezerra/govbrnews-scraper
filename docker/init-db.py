@@ -77,6 +77,7 @@ def create_tables():
             tags TEXT[],
             content TEXT,
             extracted_at TIMESTAMP,
+            theme_1_level_1 TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -85,6 +86,7 @@ def create_tables():
         CREATE INDEX IF NOT EXISTS idx_news_published_at ON news(published_at);
         CREATE INDEX IF NOT EXISTS idx_news_unique_id ON news(unique_id);
         CREATE INDEX IF NOT EXISTS idx_news_category ON news(category);
+        CREATE INDEX IF NOT EXISTS idx_news_theme_1_level_1 ON news(theme_1_level_1);
         """
 
         cursor.execute(create_table_sql)
@@ -144,7 +146,7 @@ def insert_data_to_postgres(df):
         # Prepare data for insertion
         columns = [
             'unique_id', 'agency', 'published_at', 'title', 'url',
-            'image', 'category', 'content', 'extracted_at'
+            'image', 'category', 'content', 'extracted_at', 'theme_1_level_1'
         ]
 
         # Fill missing columns with None
@@ -170,8 +172,8 @@ def insert_data_to_postgres(df):
         # Insert data using executemany for better performance
         insert_sql = """
         INSERT INTO news (unique_id, agency, published_at, title, url, image,
-                         category, content, extracted_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                         category, content, extracted_at, theme_1_level_1)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (unique_id) DO UPDATE SET
             agency = EXCLUDED.agency,
             published_at = EXCLUDED.published_at,
@@ -180,7 +182,8 @@ def insert_data_to_postgres(df):
             image = EXCLUDED.image,
             category = EXCLUDED.category,
             content = EXCLUDED.content,
-            extracted_at = EXCLUDED.extracted_at
+            extracted_at = EXCLUDED.extracted_at,
+            theme_1_level_1 = EXCLUDED.theme_1_level_1
         """
 
         cursor.executemany(insert_sql, data_tuples)
