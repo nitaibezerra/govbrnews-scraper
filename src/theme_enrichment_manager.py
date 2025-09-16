@@ -112,14 +112,10 @@ class ThemeEnrichmentManager:
             Theme ID string or None if not found
         """
         theme_property = record["properties"].get(self._theme_field_id)
-        if not theme_property or not theme_property.get("select", {}).get("value"):
+        if not theme_property or not theme_property["select"]["value"]:
             return None
 
-        theme_values = theme_property["select"]["value"]
-        if not theme_values or len(theme_values) == 0:
-            return None
-
-        return theme_values[0]["id"]
+        return theme_property["select"]["value"][0]["id"]
 
     def _map_theme_id_to_label(self, theme_id: Optional[str]) -> Optional[str]:
         """
@@ -161,18 +157,23 @@ class ThemeEnrichmentManager:
 
         # Build filter for single unique_id (following news_grouper.py pattern)
         filter_criteria = {
-            "filter": {
-                "type": "equals",
-                "equals": {
-                    "fieldId": self._unique_id_field_id,
-                    "value": unique_id
-                }
+            "type": "and",
+            "and": {
+                "filters": [
+                    {
+                        "type": "equals",
+                        "equals": {
+                            "fieldId": self._unique_id_field_id,
+                            "value": unique_id
+                        }
+                    }
+                ]
             }
         }
 
         try:
             result = self.collection_manager.query_records(
-                filter=filter_criteria.get("filter"),
+                filter=filter_criteria,
                 page_number=0,
                 page_size=1
             )
@@ -355,7 +356,7 @@ class ThemeEnrichmentManager:
         logging.info(f"  - Total enriched in dataset: {total_enriched} records")
         logging.info(f"  - Total missing themes: {total_missing} records")
         logging.info(f"  - Overall enrichment rate: {total_enriched/len(df)*100:.1f}%")
-        
+
         if failed_updates > 0:
             logging.info("Note: Failed updates are often due to Cogfy server instability (502/504 errors)")
             logging.info("Consider retrying during off-peak hours for better success rates")
@@ -442,6 +443,7 @@ class ThemeEnrichmentManager:
         if records_to_process.empty:
             logging.info("No records need theme enrichment")
             return
+
 
         # Process records for themes
         successful_updates, failed_updates = self._process_records_for_themes(df, records_to_process)
