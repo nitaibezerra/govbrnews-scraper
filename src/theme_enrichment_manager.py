@@ -39,7 +39,7 @@ class ThemeEnrichmentManager:
     5. Pushing the updated dataset back to HuggingFace
     """
 
-    def __init__(self, server_url: str = "https://api.cogfy.com", collection_name: str = "noticiasgovbr-all-news"):
+    def __init__(self, server_url: str = "https://api.cogfy.com/", collection_name: str = "noticiasgovbr-all-news"):
         """
         Initialize the ThemeEnrichmentManager.
 
@@ -183,7 +183,13 @@ class ThemeEnrichmentManager:
             return None
 
         except Exception as e:
-            logging.error(f"Error querying Cogfy for unique_id {unique_id}: {str(e)}")
+            error_msg = str(e)
+            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
+                logging.warning(f"Cogfy server timeout/gateway error for {unique_id}: {error_msg}")
+            elif "400" in error_msg:
+                logging.warning(f"Cogfy bad request for {unique_id}: {error_msg}")
+            else:
+                logging.error(f"Error querying Cogfy for unique_id {unique_id}: {error_msg}")
             return None
 
     def _get_theme_for_unique_id(self, unique_id: str) -> Optional[str]:
@@ -217,7 +223,11 @@ class ThemeEnrichmentManager:
             return theme_label
 
         except Exception as e:
-            logging.error(f"Error getting theme for unique_id {unique_id}: {str(e)}")
+            error_msg = str(e)
+            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
+                logging.debug(f"Cogfy server timeout/gateway error for {unique_id}: {error_msg}")
+            else:
+                logging.error(f"Error getting theme for unique_id {unique_id}: {error_msg}")
             return None
 
     def _load_and_filter_dataset(
@@ -345,6 +355,10 @@ class ThemeEnrichmentManager:
         logging.info(f"  - Total enriched in dataset: {total_enriched} records")
         logging.info(f"  - Total missing themes: {total_missing} records")
         logging.info(f"  - Overall enrichment rate: {total_enriched/len(df)*100:.1f}%")
+        
+        if failed_updates > 0:
+            logging.info("Note: Failed updates are often due to Cogfy server instability (502/504 errors)")
+            logging.info("Consider retrying during off-peak hours for better success rates")
 
     def _merge_with_full_dataset(
         self,
@@ -464,8 +478,8 @@ def main():
     )
     parser.add_argument(
         '--server-url',
-        default="https://api.cogfy.com",
-        help='Cogfy server URL (default: https://api.cogfy.com)'
+        default="https://api.cogfy.com/",
+        help='Cogfy server URL (default: https://api.cogfy.com/)'
     )
     parser.add_argument(
         '-f', '--force',
