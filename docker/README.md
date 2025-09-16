@@ -81,6 +81,14 @@ docker run -d \
   -e POSTGRES_PASSWORD=postgres \
   -v govbrnews-data:/var/lib/postgresql/data \
   govbrnews-postgres
+
+# Se a porta 5432 estiver em uso, use a porta 5433:
+docker run -d \
+  --name govbrnews-db \
+  -p 5433:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  -v govbrnews-data:/var/lib/postgresql/data \
+  govbrnews-postgres
 ```
 
 #### Opção C: Usando Docker Compose
@@ -123,7 +131,10 @@ docker-compose up -d
 docker exec -it govbrnews-db psql -U postgres -d govbrnews
 
 # Ou conectar externamente (se tiver psql instalado)
-psql -h localhost -p 5432 -U postgres -d govbrnews
+PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d govbrnews
+
+# Se a porta 5432 estiver em uso (ex: Cursor, PostgreSQL local), use a porta 5433:
+PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d govbrnews
 ```
 
 #### Usando Python
@@ -143,9 +154,9 @@ conn = psycopg2.connect(
 
 # Exemplo de consulta
 query = """
-SELECT agency, COUNT(*) as total_news 
-FROM news 
-GROUP BY agency 
+SELECT agency, COUNT(*) as total_news
+FROM news
+GROUP BY agency
 ORDER BY total_news DESC;
 """
 
@@ -165,7 +176,7 @@ Você pode conectar usando qualquer cliente PostgreSQL:
 
 **Credenciais padrão:**
 - Host: `localhost`
-- Port: `5432`
+- Port: `5432` (ou `5433` se houver conflito de porta)
 - Database: `govbrnews`
 - Username: `postgres`
 - Password: `postgres`
@@ -175,10 +186,10 @@ Você pode conectar usando qualquer cliente PostgreSQL:
 ### 1. Contar notícias por agência
 
 ```sql
-SELECT agency, COUNT(*) as total_news 
-FROM news 
+SELECT agency, COUNT(*) as total_news
+FROM news
 WHERE agency IS NOT NULL
-GROUP BY agency 
+GROUP BY agency
 ORDER BY total_news DESC;
 ```
 
@@ -186,9 +197,9 @@ ORDER BY total_news DESC;
 
 ```sql
 SELECT title, agency, published_at, url
-FROM news 
+FROM news
 WHERE published_at IS NOT NULL
-ORDER BY published_at DESC 
+ORDER BY published_at DESC
 LIMIT 10;
 ```
 
@@ -196,8 +207,8 @@ LIMIT 10;
 
 ```sql
 SELECT title, agency, published_at, url
-FROM news 
-WHERE title ILIKE '%saúde%' 
+FROM news
+WHERE title ILIKE '%saúde%'
    OR content ILIKE '%saúde%'
 ORDER BY published_at DESC;
 ```
@@ -206,7 +217,7 @@ ORDER BY published_at DESC;
 
 ```sql
 SELECT COUNT(*) as total_news, agency
-FROM news 
+FROM news
 WHERE published_at BETWEEN '2024-01-01' AND '2024-12-31'
 GROUP BY agency
 ORDER BY total_news DESC;
@@ -215,7 +226,7 @@ ORDER BY total_news DESC;
 ### 5. Estatísticas gerais
 
 ```sql
-SELECT 
+SELECT
     COUNT(*) as total_news,
     COUNT(DISTINCT agency) as total_agencies,
     MIN(published_at) as oldest_news,
@@ -238,8 +249,14 @@ docker logs govbrnews-db | grep -E "(initialization|Download|Database)"
 ### Verificar status da inicialização
 
 ```bash
-# Conectar e verificar se os dados foram carregados
+# Conectar e verificar se os dados foram carregados (dentro do container)
 docker exec -it govbrnews-db psql -U postgres -d govbrnews -c "SELECT COUNT(*) FROM news;"
+
+# Ou conectar externamente (lembre-se de usar PGPASSWORD e a porta correta)
+PGPASSWORD=postgres psql -h localhost -p 5432 -U postgres -d govbrnews -c "SELECT COUNT(*) FROM news;"
+
+# Se usando porta 5433:
+PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d govbrnews -c "SELECT COUNT(*) FROM news;"
 ```
 
 ## Configurações Avançadas
@@ -290,7 +307,12 @@ cat backup_govbrnews.sql | docker exec -i govbrnews-db psql -U postgres -d govbr
    lsof -i :5432
    ```
 
-2. Verifique os logs:
+2. Se a porta 5432 estiver em uso (comum com Cursor ou PostgreSQL local), use a porta 5433:
+   ```bash
+   docker run -d --name govbrnews-db -p 5433:5432 -e POSTGRES_PASSWORD=postgres govbrnews-postgres
+   ```
+
+3. Verifique os logs:
    ```bash
    docker logs govbrnews-db
    ```
