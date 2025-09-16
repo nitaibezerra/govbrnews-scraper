@@ -140,11 +140,11 @@ class ThemeEnrichmentManager:
         )
 
     @retry(
-        exceptions=requests.exceptions.RequestException,
-        tries=3,
-        delay=1,
+        exceptions=(requests.exceptions.RequestException, requests.exceptions.HTTPError),
+        tries=5,
+        delay=2,
         backoff=2,
-        jitter=(0.5, 1.5)
+        jitter=(1, 3)
     )
     def _query_cogfy_single(self, unique_id: str) -> Optional[Dict]:
         """
@@ -317,8 +317,8 @@ class ThemeEnrichmentManager:
                 else:
                     failed_updates += 1
 
-                # Small delay to be respectful to the API
-                sleep(0.2)
+                # Longer delay to help with server stability
+                sleep(1.0)
 
             except Exception as e:
                 logging.error(f"Error processing record {unique_id}: {str(e)}")
