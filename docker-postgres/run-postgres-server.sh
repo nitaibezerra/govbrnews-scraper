@@ -2,6 +2,15 @@
 
 # GovBR News PostgreSQL Server - Build, Run & Test Script
 # This script automates the process of building and testing the PostgreSQL container
+# 
+# Usage:
+#   ./run-postgres-server.sh [COMMAND]
+#
+# Commands:
+#   (no args)  - Build and run PostgreSQL server (default)
+#   cleanup    - Remove container, image, and persistent volume (full cleanup)
+#   refresh    - Update dataset in running container (keeps existing data structure)
+#   help       - Show this help message
 
 set -e  # Exit on any error
 
@@ -39,6 +48,26 @@ log_step() {
     echo -e "\n${BLUE}===${NC} $1 ${BLUE}===${NC}"
 }
 
+# Function to show help
+show_help() {
+    echo -e "${BLUE}GovBR News PostgreSQL Server${NC}"
+    echo ""
+    echo -e "${YELLOW}Usage:${NC}"
+    echo "  ./run-postgres-server.sh [COMMAND]"
+    echo ""
+    echo -e "${YELLOW}Commands:${NC}"
+    echo "  ${GREEN}(no args)${NC}  Build and run PostgreSQL server with dataset (default)"
+    echo "  ${GREEN}cleanup${NC}    Remove container, image, and persistent volume (full reset)"
+    echo "  ${GREEN}refresh${NC}    Update dataset in running container (preserves structure)"
+    echo "  ${GREEN}help${NC}       Show this help message"
+    echo ""
+    echo -e "${YELLOW}Examples:${NC}"
+    echo "  ./run-postgres-server.sh           # Start the server"
+    echo "  ./run-postgres-server.sh cleanup   # Clean everything for fresh start"
+    echo "  ./run-postgres-server.sh refresh   # Update dataset in running container"
+    echo ""
+}
+
 # Function to cleanup existing container and image
 cleanup_existing() {
     log_step "Cleaning up existing container and image"
@@ -61,6 +90,89 @@ cleanup_existing() {
         log_success "Existing image removed"
     else
         log_info "No existing image found"
+    fi
+}
+
+# Function for full cleanup (container, image, and volume)
+full_cleanup() {
+    log_step "Performing full cleanup (container, image, and volume)"
+    
+    # Stop and remove container
+    if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        log_info "Stopping container: ${CONTAINER_NAME}"
+        docker stop ${CONTAINER_NAME} >/dev/null 2>&1 || true
+        log_info "Removing container: ${CONTAINER_NAME}"
+        docker rm ${CONTAINER_NAME} >/dev/null 2>&1 || true
+        log_success "Container removed"
+    else
+        log_info "No container found to remove"
+    fi
+    
+    # Remove image
+    if docker images --format '{{.Repository}}' | grep -q "^${IMAGE_NAME}$"; then
+        log_info "Removing image: ${IMAGE_NAME}"
+        docker rmi ${IMAGE_NAME} >/dev/null 2>&1 || true
+        log_success "Image removed"
+    else
+        log_info "No image found to remove"
+    fi
+    
+    # Remove volume
+    if docker volume ls --format '{{.Name}}' | grep -q "^${VOLUME_NAME}$"; then
+        log_info "Removing persistent volume: ${VOLUME_NAME}"
+        docker volume rm ${VOLUME_NAME} >/dev/null 2>&1 || true
+        log_success "Volume removed"
+    else
+        log_info "No volume found to remove"
+    fi
+    
+    log_success "🧹 Full cleanup completed! Run './run-postgres-server.sh' to start fresh."
+}
+
+# Function to refresh dataset in running container
+refresh_dataset() {
+    log_step "Refreshing dataset in running container"
+    
+    # Check if container is running
+    if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        log_error "Container '${CONTAINER_NAME}' is not running!"
+        log_info "To start the server, run: ./run-postgres-server.sh"
+        exit 1
+    fi
+    
+    log_info "Container is running, proceeding with dataset refresh..."
+    
+    # Check if container has our initialization script
+    if ! docker exec ${CONTAINER_NAME} test -f /docker-entrypoint-initdb.d/01-init-db.py; then
+        log_error "Initialization script not found in container. Please rebuild the container."
+        log_info "Run: ./run-postgres-server.sh cleanup && ./run-postgres-server.sh"
+        exit 1
+    fi
+    
+    log_info "Starting dataset refresh process..."
+    log_info "This will download the latest dataset and update the database..."
+    
+    log_info "📥 Downloading latest dataset from HuggingFace..."
+    start_time=$(date +%s)
+    
+    # Run the refresh process and capture output
+    if docker exec ${CONTAINER_NAME} bash -c "
+        source /opt/venv/bin/activate && 
+        python3 /docker-entrypoint-initdb.d/01-init-db.py
+    "; then
+        end_time=$(date +%s)
+        refresh_duration=$((end_time - start_time))
+        
+        # Verify the refresh
+        log_info "Verifying dataset refresh..."
+        record_count=$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" | xargs)
+        log_success "✅ Database now contains ${record_count} records"
+        log_success "🔄 Dataset refresh completed successfully in ${refresh_duration} seconds!"
+    else
+        log_error "Dataset refresh failed! Check container logs for details."
+        log_info "Container logs:"
+        docker logs ${CONTAINER_NAME} --tail 20
+        exit 1
     fi
 }
 
@@ -321,6 +433,16 @@ show_connection_info() {
 
     echo -e "\n  # Remove container:"
     echo -e "  docker stop ${CONTAINER_NAME} && docker rm ${CONTAINER_NAME}"
+
+    echo -e "\n${YELLOW}Script Commands:${NC}"
+    echo -e "  # Update dataset with latest data (container must be running):"
+    echo -e "  ./run-postgres-server.sh refresh"
+
+    echo -e "\n  # Full cleanup (remove container, image, and volume for fresh start):"
+    echo -e "  ./run-postgres-server.sh cleanup"
+
+    echo -e "\n  # Show help and available commands:"
+    echo -e "  ./run-postgres-server.sh help"
 }
 
 # Main execution
@@ -352,7 +474,36 @@ main() {
     log_success "🚀 Setup completed successfully!"
 }
 
-# Script execution
+# Script execution with argument handling
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
+    case "${1:-}" in
+        "cleanup")
+            echo -e "${BLUE}"
+            echo "╔════════════════════════════════════════════════════════════════╗"
+            echo "║                     Full Cleanup Mode                          ║"
+            echo "╚════════════════════════════════════════════════════════════════╝"
+            echo -e "${NC}\n"
+            full_cleanup
+            ;;
+        "refresh")
+            echo -e "${BLUE}"
+            echo "╔════════════════════════════════════════════════════════════════╗"
+            echo "║                   Dataset Refresh Mode                         ║"
+            echo "╚════════════════════════════════════════════════════════════════╝"
+            echo -e "${NC}\n"
+            refresh_dataset
+            ;;
+        "help"|"-h"|"--help")
+            show_help
+            ;;
+        "")
+            main "$@"
+            ;;
+        *)
+            log_error "Unknown command: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
 fi
