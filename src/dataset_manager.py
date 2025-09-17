@@ -254,9 +254,9 @@ class DatasetManager:
 
         self._push_dataset_to_hub(dataset)
         self._push_reduced_dataset(df)
-        self._push_global_csv(dataset)
-        self._push_csvs_by_agency(df)
-        self._push_csvs_by_year(df)
+        # self._push_global_csv(dataset)
+        # self._push_csvs_by_agency(df)
+        # self._push_csvs_by_year(df)
 
     def _push_dataset_to_hub(self, dataset: Dataset):
         """
