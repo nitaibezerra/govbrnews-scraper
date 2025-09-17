@@ -48,20 +48,20 @@ class EBCScrapeManager:
         """
         try:
             logging.info(f"Starting EBC scraping from {min_date} to {max_date}")
-            
+
             # Create the EBC scraper
             ebc_scraper = EBCWebScraper(min_date, max_date)
-            
+
             # Scrape the news data
             scraped_data = ebc_scraper.scrape_news()
-            
+
             if scraped_data:
                 logging.info(f"Successfully scraped {len(scraped_data)} articles from EBC")
                 logging.info("Processing and uploading EBC news to HF dataset.")
                 self._process_and_upload_data(scraped_data, allow_update)
             else:
                 logging.info("No EBC news found for the specified date range.")
-                
+
         except Exception as e:
             logging.error(f"Error during EBC scraping: {e}")
             raise
@@ -75,31 +75,31 @@ class EBCScrapeManager:
         """
         # Convert EBC data format to govbrnews format
         processed_data = self._convert_ebc_to_govbr_format(new_data)
-        
+
         # Preprocess the data (add unique IDs, reorder columns)
         processed_data = self._preprocess_data(processed_data)
-        
+
         # Insert into dataset
         self.dataset_manager.insert(processed_data, allow_update=allow_update)
 
     def _convert_ebc_to_govbr_format(self, ebc_data: List[Dict]) -> List[Dict]:
         """
         Convert EBC data format to match the govbrnews schema.
-        
+
         :param ebc_data: List of EBC news items as dictionaries.
         :return: List of news items in govbrnews format.
         """
         converted_data = []
-        
+
         for item in ebc_data:
             # Skip items with errors
             if item.get("error"):
                 logging.warning(f"Skipping item with error: {item['error']}")
                 continue
-            
+
             # Parse the date from EBC format to date object
             published_at = self._parse_ebc_date(item.get("date", ""))
-            
+
             converted_item = {
                 "title": item.get("title", "").strip(),
                 "url": item.get("url", "").strip(),
@@ -111,27 +111,27 @@ class EBCScrapeManager:
                 "agency": "ebc",  # All EBC articles get this agency
                 "extracted_at": datetime.now(),
             }
-            
+
             # Only add items with essential data
             if converted_item["title"] and converted_item["url"] and converted_item["content"]:
                 converted_data.append(converted_item)
             else:
                 logging.warning(f"Skipping incomplete item: {item.get('url', 'unknown URL')}")
-        
+
         return converted_data
 
     def _parse_ebc_date(self, date_str: str) -> date:
         """
         Parse EBC date string to date object.
         Expected format: "16/09/2025 - 13:40"
-        
+
         :param date_str: Date string from EBC.
         :return: Date object or current date if parsing fails.
         """
         try:
             if not date_str:
                 return datetime.now().date()
-            
+
             # Remove extra whitespace and split by ' - '
             date_part = date_str.strip().split(' - ')[0]
             # Parse the date part (DD/MM/YYYY)
@@ -160,7 +160,7 @@ class EBCScrapeManager:
         # Convert to columnar format
         if not data:
             return OrderedDict()
-            
+
         column_data = {
             key: [item.get(key, None) for item in data] for key in data[0].keys()
         }
@@ -173,12 +173,12 @@ class EBCScrapeManager:
             ordered_column_data["agency"] = column_data.pop("agency")
         if "published_at" in column_data:
             ordered_column_data["published_at"] = column_data.pop("published_at")
-        
+
         # Add remaining columns in order
         for key in ["title", "url", "category", "tags", "content", "image", "extracted_at"]:
             if key in column_data:
                 ordered_column_data[key] = column_data.pop(key)
-        
+
         # Add any remaining columns
         ordered_column_data.update(column_data)
 
