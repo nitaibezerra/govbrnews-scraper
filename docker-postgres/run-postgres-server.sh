@@ -2,7 +2,7 @@
 
 # GovBR News PostgreSQL Server - Build, Run & Test Script
 # This script automates the process of building and testing the PostgreSQL container
-# 
+#
 # Usage:
 #   ./run-postgres-server.sh [COMMAND]
 #
@@ -96,7 +96,7 @@ cleanup_existing() {
 # Function for full cleanup (container, image, and volume)
 full_cleanup() {
     log_step "Performing full cleanup (container, image, and volume)"
-    
+
     # Stop and remove container
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         log_info "Stopping container: ${CONTAINER_NAME}"
@@ -107,7 +107,7 @@ full_cleanup() {
     else
         log_info "No container found to remove"
     fi
-    
+
     # Remove image
     if docker images --format '{{.Repository}}' | grep -q "^${IMAGE_NAME}$"; then
         log_info "Removing image: ${IMAGE_NAME}"
@@ -116,7 +116,7 @@ full_cleanup() {
     else
         log_info "No image found to remove"
     fi
-    
+
     # Remove volume
     if docker volume ls --format '{{.Name}}' | grep -q "^${VOLUME_NAME}$"; then
         log_info "Removing persistent volume: ${VOLUME_NAME}"
@@ -125,44 +125,44 @@ full_cleanup() {
     else
         log_info "No volume found to remove"
     fi
-    
+
     log_success "🧹 Full cleanup completed! Run './run-postgres-server.sh' to start fresh."
 }
 
 # Function to refresh dataset in running container
 refresh_dataset() {
     log_step "Refreshing dataset in running container"
-    
+
     # Check if container is running
     if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         log_error "Container '${CONTAINER_NAME}' is not running!"
         log_info "To start the server, run: ./run-postgres-server.sh"
         exit 1
     fi
-    
+
     log_info "Container is running, proceeding with dataset refresh..."
-    
+
     # Check if container has our initialization script
     if ! docker exec ${CONTAINER_NAME} test -f /docker-entrypoint-initdb.d/01-init-db.py; then
         log_error "Initialization script not found in container. Please rebuild the container."
         log_info "Run: ./run-postgres-server.sh cleanup && ./run-postgres-server.sh"
         exit 1
     fi
-    
+
     log_info "Starting dataset refresh process..."
     log_info "This will download the latest dataset and update the database..."
-    
+
     log_info "📥 Downloading latest dataset from HuggingFace..."
     start_time=$(date +%s)
-    
+
     # Run the refresh process and capture output
     if docker exec ${CONTAINER_NAME} bash -c "
-        source /opt/venv/bin/activate && 
+        source /opt/venv/bin/activate &&
         python3 /docker-entrypoint-initdb.d/01-init-db.py
     "; then
         end_time=$(date +%s)
         refresh_duration=$((end_time - start_time))
-        
+
         # Verify the refresh
         log_info "Verifying dataset refresh..."
         record_count=$(docker exec ${CONTAINER_NAME} psql -U postgres -d govbrnews -t -c "SELECT COUNT(*) FROM news;" | xargs)
@@ -213,7 +213,7 @@ build_image() {
 
     start_time=$(date +%s)
 
-    if docker build -t ${IMAGE_NAME} . --quiet; then
+    if docker build -t ${IMAGE_NAME} . ; then
         end_time=$(date +%s)
         build_duration=$((end_time - start_time))
         log_success "Image built successfully in ${build_duration} seconds"

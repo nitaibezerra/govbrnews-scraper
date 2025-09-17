@@ -435,7 +435,7 @@ cat backup_govbrnews.sql | docker exec -i govbrnews-db psql -U postgres -d govbr
    ```bash
    docker run -d --name govbrnews-db -p 5433:5432 -e POSTGRES_PASSWORD=postgres govbrnews-postgres
    ```
-   
+
    **Ou use o script que detecta automaticamente:**
    ```bash
    ./run-postgres-server.sh  # Detecta conflito e usa porta 5433
