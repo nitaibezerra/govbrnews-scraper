@@ -247,7 +247,7 @@ run_container() {
 wait_for_postgres() {
     log_step "Waiting for PostgreSQL to be ready"
 
-    max_attempts=120
+    max_attempts=60
     attempt=1
 
     while [ $attempt -le $max_attempts ]; do
