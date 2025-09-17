@@ -5,14 +5,11 @@ Este diretório contém os arquivos necessários para criar um servidor PostgreS
 ## 🚀 Início Rápido
 
 ```bash
-# 1. Navegue para o diretório
-cd docker-postgres
+# 1. A partir do diretório raiz do projeto govbrnews
+./docker-postgres/run-postgres-server.sh
 
-# 2. Execute o script automatizado
-./run-postgres-server.sh
-
-# 3. Aguarde ~90 segundos para setup completo
-# 4. Use as credenciais: postgres/postgres na porta 5433
+# 2. Aguarde ~90 segundos para setup completo
+# 3. Use as credenciais: postgres/postgres na porta 5433
 ```
 
 **Pronto!** O servidor PostgreSQL estará rodando com 289k+ notícias carregadas e pronto para consultas.
@@ -71,24 +68,27 @@ O servidor PostgreSQL criado por este container:
 A maneira mais fácil de usar este servidor PostgreSQL é através do script automatizado que gerencia todo o processo:
 
 ```bash
-# A partir do diretório raiz do projeto govbrnews
-cd docker-postgres
+# Opção 1: A partir do diretório raiz do projeto govbrnews (recomendado)
+./docker-postgres/run-postgres-server.sh
 
-# Iniciar o servidor PostgreSQL (automático: build + run + test)
+# Opção 2: A partir do diretório docker-postgres/
+cd docker-postgres
 ./run-postgres-server.sh
 
 # Ver todas as opções disponíveis
-./run-postgres-server.sh help
+./docker-postgres/run-postgres-server.sh help
 ```
+
+**💡 Vantagem**: O script pode ser executado de qualquer lugar - ele automaticamente detecta sua localização e muda para o diretório correto (`docker-postgres/`) antes de executar.
 
 ### 📋 Comandos do Script
 
 | Comando | Descrição | Tempo | Uso |
 |---------|-----------|-------|-----|
-| `./run-postgres-server.sh` | Setup completo (build + run + test) | ~90s | Primeira execução |
-| `./run-postgres-server.sh refresh` | Atualizar dataset (sem rebuild) | ~60s | Atualizações de dados |
-| `./run-postgres-server.sh cleanup` | Limpeza completa (container + imagem + volume) | ~5s | Reinício do zero |
-| `./run-postgres-server.sh help` | Mostrar ajuda e exemplos | <1s | Consultar comandos |
+| `./docker-postgres/run-postgres-server.sh` | Setup completo (build + run + test) | ~90s | Primeira execução |
+| `./docker-postgres/run-postgres-server.sh refresh` | Atualizar dataset (sem rebuild) | ~60s | Atualizações de dados |
+| `./docker-postgres/run-postgres-server.sh cleanup` | Limpeza completa (container + imagem + volume) | ~5s | Reinício do zero |
+| `./docker-postgres/run-postgres-server.sh help` | Mostrar ajuda e exemplos | <1s | Consultar comandos |
 
 ### 🔧 Opção Manual: Docker Direto
 

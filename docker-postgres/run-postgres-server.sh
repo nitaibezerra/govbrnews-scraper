@@ -2,9 +2,15 @@
 
 # GovBR News PostgreSQL Server - Build, Run & Test Script
 # This script automates the process of building and testing the PostgreSQL container
-#
+# 
+# Features:
+#   - Can be run from anywhere (automatically changes to correct directory)
+#   - Full container lifecycle management (build, run, cleanup, refresh)
+#   - Comprehensive error handling and logging
+# 
 # Usage:
 #   ./run-postgres-server.sh [COMMAND]
+#   docker-postgres/run-postgres-server.sh [COMMAND]  # From project root
 #
 # Commands:
 #   (no args)  - Build and run PostgreSQL server (default)
@@ -66,6 +72,10 @@ show_help() {
     echo "  ./run-postgres-server.sh cleanup   # Clean everything for fresh start"
     echo "  ./run-postgres-server.sh refresh   # Update dataset in running container"
     echo ""
+    echo -e "${YELLOW}Note:${NC}"
+    echo "  This script can be run from anywhere - it will automatically"
+    echo "  change to the correct directory (docker-postgres/) before executing."
+    echo ""
 }
 
 # Function to cleanup existing container and image
@@ -96,7 +106,10 @@ cleanup_existing() {
 # Function for full cleanup (container, image, and volume)
 full_cleanup() {
     log_step "Performing full cleanup (container, image, and volume)"
-
+    
+    # Ensure we're in the correct directory for any Docker operations
+    ensure_correct_directory
+    
     # Stop and remove container
     if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         log_info "Stopping container: ${CONTAINER_NAME}"
@@ -132,7 +145,10 @@ full_cleanup() {
 # Function to refresh dataset in running container
 refresh_dataset() {
     log_step "Refreshing dataset in running container"
-
+    
+    # Ensure we're in the correct directory (though not strictly needed for refresh)
+    ensure_correct_directory
+    
     # Check if container is running
     if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         log_error "Container '${CONTAINER_NAME}' is not running!"
@@ -445,6 +461,32 @@ show_connection_info() {
     echo -e "  ./run-postgres-server.sh help"
 }
 
+# Function to ensure we're in the correct directory
+ensure_correct_directory() {
+    # Get the directory where this script is located
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    
+    # Change to the script directory (docker-postgres/)
+    cd "$SCRIPT_DIR"
+    
+    log_info "Working directory: $SCRIPT_DIR"
+    
+    # Verify we have the required files
+    if [ ! -f "Dockerfile" ]; then
+        log_error "Dockerfile not found in $SCRIPT_DIR"
+        log_error "This script must be located in the docker-postgres/ directory with the Dockerfile"
+        exit 1
+    fi
+    
+    if [ ! -f "init-db.py" ]; then
+        log_error "init-db.py not found in $SCRIPT_DIR"
+        log_error "Required files are missing from the docker-postgres/ directory"
+        exit 1
+    fi
+    
+    log_success "✅ All required files found in $SCRIPT_DIR"
+}
+
 # Main execution
 main() {
     echo -e "${BLUE}"
@@ -454,11 +496,8 @@ main() {
     echo "╚════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}\n"
 
-    # Check if we're in the right directory
-    if [ ! -f "Dockerfile" ]; then
-        log_error "Dockerfile not found! Please run this script from the docker-postgres/ directory"
-        exit 1
-    fi
+    # Ensure we're in the correct directory
+    ensure_correct_directory
 
     # Execute main steps
     cleanup_existing
