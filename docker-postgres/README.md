@@ -2,6 +2,18 @@
 
 Este diretório contém os arquivos necessários para criar um servidor PostgreSQL que automaticamente baixa e disponibiliza o dataset de notícias governamentais brasileiras do HuggingFace.
 
+## 🚀 Início Rápido
+
+```bash
+# 1. A partir do diretório raiz do projeto govbrnews
+./docker-postgres/run-postgres-server.sh
+
+# 2. Aguarde ~90 segundos para setup completo
+# 3. Use as credenciais: postgres/postgres na porta 5433
+```
+
+**Pronto!** O servidor PostgreSQL estará rodando com 289k+ notícias carregadas e pronto para consultas.
+
 ## Visão Geral
 
 O servidor PostgreSQL criado por este container:
@@ -18,6 +30,7 @@ O servidor PostgreSQL criado por este container:
 - `requirements.txt` - Dependências Python necessárias
 - `init-db.py` - Script Python que baixa o dataset e popula o banco
 - `init-db.sh` - Script shell que orquestra a inicialização
+- `run-postgres-server.sh` - **Script principal** para gerenciar o servidor (build, run, cleanup, refresh)
 - `README.md` - Este arquivo de documentação
 
 ## Estrutura do Banco de Dados
@@ -50,7 +63,38 @@ O servidor PostgreSQL criado por este container:
 
 ## Como Usar
 
-### 1. Construir a Imagem Docker
+### 🚀 Opção Recomendada: Script Automatizado
+
+A maneira mais fácil de usar este servidor PostgreSQL é através do script automatizado que gerencia todo o processo:
+
+```bash
+# Opção 1: A partir do diretório raiz do projeto govbrnews (recomendado)
+./docker-postgres/run-postgres-server.sh
+
+# Opção 2: A partir do diretório docker-postgres/
+cd docker-postgres
+./run-postgres-server.sh
+
+# Ver todas as opções disponíveis
+./docker-postgres/run-postgres-server.sh help
+```
+
+**💡 Vantagem**: O script pode ser executado de qualquer lugar - ele automaticamente detecta sua localização e muda para o diretório correto (`docker-postgres/`) antes de executar.
+
+### 📋 Comandos do Script
+
+| Comando | Descrição | Tempo | Uso |
+|---------|-----------|-------|-----|
+| `./docker-postgres/run-postgres-server.sh` | Setup completo (build + run + test) | ~90s | Primeira execução |
+| `./docker-postgres/run-postgres-server.sh refresh` | Atualizar dataset (sem rebuild) | ~60s | Atualizações de dados |
+| `./docker-postgres/run-postgres-server.sh cleanup` | Limpeza completa (container + imagem + volume) | ~5s | Reinício do zero |
+| `./docker-postgres/run-postgres-server.sh help` | Mostrar ajuda e exemplos | <1s | Consultar comandos |
+
+### 🔧 Opção Manual: Docker Direto
+
+Se preferir controlar manualmente cada etapa:
+
+#### 1. Construir a Imagem Docker
 
 ```bash
 # A partir do diretório raiz do projeto govbrnews
@@ -58,7 +102,7 @@ cd docker-postgres
 docker build -t govbrnews-postgres .
 ```
 
-### 2. Executar o Container
+#### 2. Executar o Container
 
 #### Opção A: Execução Simples (dados temporários)
 
@@ -123,6 +167,35 @@ Execute com:
 ```bash
 docker-compose up -d
 ```
+
+## 🔄 Gerenciamento com Script Automatizado
+
+O script `run-postgres-server.sh` oferece comandos avançados para gerenciar o servidor:
+
+### 🧹 Limpeza Completa
+```bash
+./run-postgres-server.sh cleanup
+```
+- **Remove**: Container + Imagem + Volume persistente
+- **Quando usar**: Problemas no container, corrupção de dados, ou restart completo
+- **Resultado**: Estado limpo para iniciar do zero
+
+### 🔄 Atualização do Dataset
+```bash
+./run-postgres-server.sh refresh
+```
+- **Atualiza**: Apenas os dados (baixa dataset mais recente do HuggingFace)
+- **Preserva**: Container, configurações, e estrutura do banco
+- **Quando usar**: Obter notícias mais recentes sem perder configurações
+- **Requisito**: Container deve estar rodando
+
+### 📖 Ajuda e Exemplos
+```bash
+./run-postgres-server.sh help
+```
+- Mostra todos os comandos disponíveis
+- Inclui exemplos de uso
+- Documenta casos de uso para cada comando
 
 ### 3. Conectar ao Banco de Dados
 
@@ -310,9 +383,48 @@ sleep 30
 cat backup_govbrnews.sql | docker exec -i govbrnews-db psql -U postgres -d govbrnews
 ```
 
-## Solução de Problemas
+## 🛠️ Solução de Problemas
 
-### Container não inicia
+### Problemas com o Script Automatizado
+
+#### Comando `refresh` falha
+1. **Verifique se o container está rodando:**
+   ```bash
+   docker ps | grep govbrnews-db
+   ```
+
+2. **Se não estiver rodando, inicie o servidor:**
+   ```bash
+   ./run-postgres-server.sh
+   ```
+
+3. **Se o refresh continuar falhando, faça limpeza completa:**
+   ```bash
+   ./run-postgres-server.sh cleanup
+   ./run-postgres-server.sh
+   ```
+
+#### Erro "Dockerfile not found"
+- Certifique-se de estar no diretório `docker-postgres/`:
+  ```bash
+  cd docker-postgres
+  ./run-postgres-server.sh
+  ```
+
+#### Container não inicia após cleanup
+1. **Verifique se o Docker está rodando:**
+   ```bash
+   docker info
+   ```
+
+2. **Verifique logs do script:**
+   ```bash
+   ./run-postgres-server.sh help  # Para ver comandos disponíveis
+   ```
+
+### Problemas Gerais do Container
+
+#### Container não inicia
 
 1. Verifique se a porta 5432 não está em uso:
    ```bash
@@ -324,12 +436,17 @@ cat backup_govbrnews.sql | docker exec -i govbrnews-db psql -U postgres -d govbr
    docker run -d --name govbrnews-db -p 5433:5432 -e POSTGRES_PASSWORD=postgres govbrnews-postgres
    ```
 
+   **Ou use o script que detecta automaticamente:**
+   ```bash
+   ./run-postgres-server.sh  # Detecta conflito e usa porta 5433
+   ```
+
 3. Verifique os logs:
    ```bash
    docker logs govbrnews-db
    ```
 
-### Dataset não foi carregado
+#### Dataset não foi carregado
 
 1. Verifique se há conectividade com a internet no container
 2. Verifique os logs de inicialização:
@@ -337,7 +454,12 @@ cat backup_govbrnews.sql | docker exec -i govbrnews-db psql -U postgres -d govbr
    docker logs govbrnews-db | grep -i "download\|error\|dataset"
    ```
 
-### Performance lenta
+3. **Para forçar reload do dataset:**
+   ```bash
+   ./run-postgres-server.sh refresh
+   ```
+
+#### Performance lenta
 
 1. Considere aumentar a memória disponível para o container:
    ```bash
@@ -349,9 +471,47 @@ cat backup_govbrnews.sql | docker exec -i govbrnews-db psql -U postgres -d govbr
    SELECT indexname, tablename FROM pg_indexes WHERE tablename = 'news';
    ```
 
-## Atualizações do Dataset
+### 🆘 Solução Universal
+Em caso de problemas persistentes:
 
-O dataset é baixado apenas durante a inicialização do container. Para obter dados atualizados:
+```bash
+# Limpeza completa e restart
+./run-postgres-server.sh cleanup
+./run-postgres-server.sh
+
+# Isso resolve a maioria dos problemas
+```
+
+## 🔄 Atualizações do Dataset
+
+### Método Recomendado: Refresh Automático
+Para atualizar apenas os dados (mais rápido):
+
+```bash
+./run-postgres-server.sh refresh
+```
+
+**Vantagens:**
+- ⚡ 33% mais rápido (~60s vs ~90s)
+- 🔒 Preserva configurações e conexões
+- 📊 Mantém estrutura do banco
+- ✅ Verifica pré-requisitos automaticamente
+
+### Método Alternativo: Rebuild Completo
+Para atualizações com mudanças na estrutura:
+
+1. **Limpeza completa:**
+   ```bash
+   ./run-postgres-server.sh cleanup
+   ```
+
+2. **Restart do zero:**
+   ```bash
+   ./run-postgres-server.sh
+   ```
+
+### Método Manual (Docker)
+Se estiver usando Docker manualmente:
 
 1. **Pare e remova o container atual:**
    ```bash
