@@ -41,7 +41,7 @@ class {Source}WebScraper:
     def __init__(self, min_date: str, max_date: Optional[str] = None):
         """
         Initialize the scraper with date filters.
-        
+
         :param min_date: Minimum date for scraping (YYYY-MM-DD)
         :param max_date: Maximum date for scraping (YYYY-MM-DD)
         """
@@ -56,17 +56,17 @@ class {Source}WebScraper:
 
     def scrape_news(self) -> List[Dict[str, str]]:
         """Main scraping entry point with pagination logic"""
-        
+
     def scrape_index_page(self, url: str) -> List[str]:
         """Extract news URLs from index/listing pages"""
-        
+
     def scrape_news_page(self, url: str) -> Dict[str, str]:
         """Extract article content from individual news pages"""
-        
+
     @retry(exceptions=requests.exceptions.RequestException, tries=5, delay=2, backoff=3)
     def fetch_page(self, url: str) -> Optional[requests.Response]:
         """Robust page fetching with retry logic"""
-        
+
     def parse_date(self, date_str: str) -> Optional[date]:
         """Parse date strings from target site format"""
 ```
@@ -113,13 +113,13 @@ class {Source}ScrapeManager:
 
     def run_scraper(self, min_date: str, max_date: str, sequential: bool, allow_update: bool = False):
         """Execute scraping and upload to dataset"""
-        
+
     def _convert_to_govbr_format(self, source_data: List[Dict]) -> List[Dict]:
         """Convert source data format to govbrnews schema"""
-        
+
     def _preprocess_data(self, data: List[Dict]) -> OrderedDict:
         """Add unique IDs and reorder columns"""
-        
+
     def _generate_unique_id(self, agency: str, published_at, title: str) -> str:
         """Generate MD5 hash for deduplication"""
 ```
@@ -238,17 +238,17 @@ def extract_title(self, soup: BeautifulSoup) -> str:
     title = soup.find('h1', class_='title')
     if title:
         return title.get_text(strip=True)
-    
+
     # Fallback strategies
     title = soup.find('h1')
     if title:
         return title.get_text(strip=True)
-    
+
     # Meta tag fallback
     meta_title = soup.find('meta', property='og:title')
     if meta_title:
         return meta_title.get('content', '').strip()
-    
+
     return "No Title"
 ```
 
@@ -264,7 +264,7 @@ def parse_date(self, date_str: str) -> Optional[date]:
         "%d/%m/%Y - %H:%M",
         "%d de %B de %Y",  # "16 de setembro de 2025"
     ]
-    
+
     for fmt in formats:
         try:
             return datetime.strptime(date_str.strip(), fmt).date()
@@ -296,11 +296,11 @@ def clean_content(self, content: str) -> str:
     """Clean and normalize content"""
     # Remove excessive whitespace
     content = re.sub(r'\n\s*\n', '\n\n', content)
-    
+
     # Remove tracking pixels and ads
     content = re.sub(r'\*Com informações.*', '', content)
     content = re.sub(r'Tags:.*', '', content)
-    
+
     return content.strip()
 ```
 

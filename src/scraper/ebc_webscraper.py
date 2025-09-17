@@ -50,47 +50,47 @@ class EBCWebScraper:
     def scrape_news(self) -> List[Dict[str, str]]:
         """
         Scrape news from EBC website until the min_date is reached.
-        
+
         :return: A list of dictionaries containing news data.
         """
         page = 0
-        
+
         while True:
             current_page_url = f"{self.base_url}?page={page}"
             page += 1
-            
+
             logging.info(f"Fetching latest news from index page: {current_page_url}")
-            
+
             try:
                 news_urls = self.scrape_index_page(current_page_url)
-                
+
                 if not news_urls:
                     logging.info("No more news URLs found. Stopping.")
                     break
-                
+
                 should_continue = self.process_news_urls(news_urls)
-                
+
                 if not should_continue:
                     logging.info("Reached minimum date limit. Stopping scraper.")
                     break
-                    
+
             except requests.exceptions.RequestException as e:
                 logging.error(f"Error fetching page {current_page_url}: {e}")
                 break
-                
+
         return self.news_data
 
     def scrape_index_page(self, url: str) -> List[str]:
         """
         Scrape a single index page to extract news URLs.
-        
+
         :param url: The URL of the index page to scrape.
         :return: List of news URLs found on the page.
         """
         response = self.fetch_page(url)
         if not response:
             return []
-            
+
         soup = BeautifulSoup(response.content, 'html.parser')
         news_container = soup.find('div', {'id': 'view-ultimas-noticias-ajax'})
 
@@ -100,7 +100,7 @@ class EBCWebScraper:
 
         news_divs = news_container.find_all('div', class_=['ultima_isotope', 'cmpGeneric'])
         news_urls = []
-        
+
         for i, div in enumerate(news_divs):
             try:
                 # Find all <a> tags in this div
@@ -128,7 +128,7 @@ class EBCWebScraper:
     def process_news_urls(self, news_urls: List[str]) -> bool:
         """
         Process a list of news URLs and extract article data.
-        
+
         :param news_urls: List of news URLs to process.
         :return: True if should continue scraping, False if min_date reached.
         """
@@ -138,27 +138,27 @@ class EBCWebScraper:
             # Skip audio news
             if "radios.ebc.com.br" not in url:
                 logging.info(f"Retrieving news from: {url}")
-                
+
                 full_news = self.scrape_news_page(url)
-                
+
                 if full_news.get("error"):
                     logging.warning(f"Error scraping {url}: {full_news['error']}")
                     continue
-                
+
                 # Check if current date is before minimum date
                 parsed_date = self.parse_date(full_news["date"])
                 if parsed_date:
                     if parsed_date < self.min_date:
                         logging.info(f"Reached minimum date limit. Current news date: {full_news['date']}, Minimum date: {self.min_date.strftime('%d/%m/%Y')}")
                         return False
-                    
+
                     if self.max_date and parsed_date > self.max_date:
                         logging.info(f"Skipping news dated {full_news['date']} as it is newer than max_date {self.max_date.strftime('%d/%m/%Y')}")
                         continue
-                
+
                 # Add to our data collection
                 self.news_data.append(full_news)
-        
+
         return True
 
     @retry(
@@ -171,7 +171,7 @@ class EBCWebScraper:
     def fetch_page(self, url: str) -> Optional[requests.Response]:
         """
         Fetch the page content from the given URL with retry logic.
-        
+
         :param url: The URL to fetch.
         :return: The Response object or None if the request fails.
         """
@@ -284,7 +284,7 @@ class EBCWebScraper:
                 text = p.get_text(strip=True)
                 if text and len(text) > 10:  # Only include substantial text
                     # Skip certain unwanted content
-                    if not (text.startswith('*Restrição de uso') or 
+                    if not (text.startswith('*Restrição de uso') or
                            text.startswith('Clique aqui para saber') or
                            text.startswith('Tags:')):
                         content_parts.append(text)
@@ -366,7 +366,7 @@ class EBCWebScraper:
         """
         Parse date string from EBC format to date object.
         Expected format: "16/09/2025 - 13:40"
-        
+
         :param date_str: Date string from EBC.
         :return: Date object or None if parsing fails.
         """
