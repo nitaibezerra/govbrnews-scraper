@@ -5,6 +5,7 @@ from enrichment.augmentation_manager import AugmentationManager
 from dataset_manager import DatasetManager
 from dotenv import load_dotenv
 from scraper.scrape_manager import ScrapeManager
+from scraper.ebc_scrape_manager import EBCScrapeManager
 
 # Load environment variables from .env
 load_dotenv()
@@ -27,6 +28,18 @@ def run_scraper(args):
 
     scrape_manager.run_scraper(
         agencies, args.start_date, args.end_date, args.sequential, args.allow_update
+    )
+
+
+def run_ebc_scraper(args):
+    """
+    Executes the EBC scraper logic using the arguments provided by the 'scrape-ebc' subcommand.
+    """
+    dataset_manager = DatasetManager()
+    ebc_scrape_manager = EBCScrapeManager(dataset_manager)
+
+    ebc_scrape_manager.run_scraper(
+        args.start_date, args.end_date, args.sequential, args.allow_update
     )
 
 
@@ -62,7 +75,7 @@ def main():
         description="Main entry point to run either the scraper or the news augmentation."
     )
 
-    # Create subparsers for 'scrape' and 'augment'
+    # Create subparsers for 'scrape', 'scrape-ebc', and 'augment'
     subparsers = parser.add_subparsers(dest="command", help="Sub-command to run.")
 
     # ------------------ SCRAPER SUBPARSER ------------------
@@ -88,6 +101,30 @@ def main():
         help="Process and upload each agency's news sequentially.",
     )
     scraper_parser.add_argument(
+        "--allow-update",
+        action="store_true",
+        help="If set, overwrite existing entries in the dataset instead of skipping them.",
+    )
+
+    # ------------------ EBC SCRAPER SUBPARSER ------------------
+    ebc_scraper_parser = subparsers.add_parser(
+        "scrape-ebc", help="Scrape EBC news data and upload to a Hugging Face dataset."
+    )
+    ebc_scraper_parser.add_argument(
+        "--start-date",
+        required=True,
+        help="The start date for scraping EBC news (format: YYYY-MM-DD).",
+    )
+    ebc_scraper_parser.add_argument(
+        "--end-date",
+        help="The end date for scraping EBC news (format: YYYY-MM-DD).",
+    )
+    ebc_scraper_parser.add_argument(
+        "--sequential",
+        action="store_true",
+        help="Process and upload news sequentially (always True for EBC).",
+    )
+    ebc_scraper_parser.add_argument(
         "--allow-update",
         action="store_true",
         help="If set, overwrite existing entries in the dataset instead of skipping them.",
@@ -127,6 +164,8 @@ def main():
 
     if args.command == "scrape":
         run_scraper(args)
+    elif args.command == "scrape-ebc":
+        run_ebc_scraper(args)
     elif args.command == "augment":
         run_augment(args)
     else:

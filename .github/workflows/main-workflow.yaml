@@ -57,10 +57,30 @@ jobs:
             --end-date ${{ needs.setup-dates.outputs.end_date }}
           echo "News scraper completed successfully"
 
+  ebc-scraper:
+    name: EBC News Scraper
+    runs-on: ubuntu-latest
+    needs: [setup-dates, scraper]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Run EBC news scraper
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo "Starting EBC news scraper for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          cd /app
+          python src/main.py scrape-ebc \
+            --start-date ${{ needs.setup-dates.outputs.start_date }} \
+            --end-date ${{ needs.setup-dates.outputs.end_date }} \
+            --allow-update
+          echo "EBC news scraper completed successfully"
+
   upload-to-cogfy:
     name: Upload to Cogfy
     runs-on: ubuntu-latest
-    needs: [setup-dates, scraper]
+    needs: [setup-dates, scraper, ebc-scraper]
     container:
       image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
@@ -126,7 +146,7 @@ jobs:
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [setup-dates, scraper, upload-to-cogfy, group-news, enrich-themes]
+    needs: [setup-dates, scraper, ebc-scraper, upload-to-cogfy, group-news, enrich-themes]
     if: always()
     steps:
       - name: Pipeline completion summary
@@ -134,12 +154,14 @@ jobs:
           echo "=== News Processing Pipeline Summary ==="
           echo "Date range: ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
           echo "Scraper status: ${{ needs.scraper.result }}"
+          echo "EBC Scraper status: ${{ needs.ebc-scraper.result }}"
           echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
           echo "Grouper status: ${{ needs.group-news.result }}"
           echo "Theme enrichment status: ${{ needs.enrich-themes.result }}"
           echo "============================================"
 
           if [ "${{ needs.scraper.result }}" = "success" ] && \
+             [ "${{ needs.ebc-scraper.result }}" = "success" ] && \
              [ "${{ needs.upload-to-cogfy.result }}" = "success" ] && \
              [ "${{ needs.group-news.result }}" = "success" ] && \
              [ "${{ needs.enrich-themes.result }}" = "success" ]; then
