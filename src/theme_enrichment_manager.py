@@ -2,8 +2,8 @@ import os
 import logging
 import argparse
 from datetime import datetime
-from typing import Dict, Optional, Union, Tuple
-from time import sleep, time
+from typing import Dict, Optional, Union, Tuple, List
+from time import time, sleep
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -85,6 +85,8 @@ class ThemeEnrichmentManager:
             raise ValueError("Required field 'unique_id' not found in Cogfy collection")
         if "theme_1_level_1" not in self._field_map:
             raise ValueError("Required field 'theme_1_level_1' not found in Cogfy collection")
+        if "published_at" not in self._field_map:
+            raise ValueError("Required field 'published_at' not found in Cogfy collection")
 
         self._unique_id_field_id = self._field_map["unique_id"]
         self._theme_field_id = self._field_map["theme_1_level_1"]
@@ -135,6 +137,129 @@ class ThemeEnrichmentManager:
             None
         )
 
+    def _build_single_day_filters(self, target_date: Union[str, datetime]) -> List[Dict]:
+        """
+        Build date filter criteria for a single day.
+
+        Args:
+            target_date: Date to filter for (inclusive)
+
+        Returns:
+            List of filter dictionaries for the specific day
+        """
+        if "published_at" not in self._field_map:
+            raise ValueError("Required field 'published_at' not found in Cogfy collection")
+
+        published_at_field_id = self._field_map["published_at"]
+
+        if isinstance(target_date, str):
+            target_date = pd.to_datetime(target_date)
+
+        date_str = target_date.strftime("%Y-%m-%d")
+
+        # Create filters for the entire day (00:00:00 to 23:59:59)
+        filters = [
+            {
+                "type": "greaterThanOrEquals",
+                "greaterThanOrEquals": {
+                    "fieldId": published_at_field_id,
+                    "value": f"{date_str}T00:00:00"
+                }
+            },
+            {
+                "type": "lessThanOrEquals",
+                "lessThanOrEquals": {
+                    "fieldId": published_at_field_id,
+                    "value": f"{date_str}T23:59:59"
+                }
+            }
+        ]
+
+        return filters
+
+    def _generate_date_range(self, start_date: Union[str, datetime], end_date: Union[str, datetime]) -> List[datetime]:
+        """
+        Generate a list of dates between start_date and end_date (inclusive).
+
+        Args:
+            start_date: Start date (inclusive)
+            end_date: End date (inclusive)
+
+        Returns:
+            List of datetime objects for each day in the range
+        """
+        if isinstance(start_date, str):
+            start_date = pd.to_datetime(start_date)
+        if isinstance(end_date, str):
+            end_date = pd.to_datetime(end_date)
+
+        # Generate date range
+        date_range = pd.date_range(start=start_date, end=end_date, freq='D')
+        return date_range.tolist()
+
+    def _build_filter_criteria(self, filters: List[Dict]) -> Optional[Dict]:
+        """
+        Build complete filter criteria for Cogfy query.
+
+        Args:
+            filters: List of individual filter dictionaries
+
+        Returns:
+            Complete filter criteria or None if no filters
+        """
+        if filters:
+            return {
+                "type": "and",
+                "and": {
+                    "filters": filters
+                }
+            }
+        return None
+
+    def _query_single_day(self, target_date: Union[str, datetime]) -> List[Dict]:
+        """
+        Query Cogfy for all records on a single day.
+
+        Args:
+            target_date: Date to query for
+
+        Returns:
+            List of records from Cogfy for that day
+
+        Raises:
+            Exception: If the query fails for any reason
+        """
+        filters = self._build_single_day_filters(target_date)
+        filter_criteria = self._build_filter_criteria(filters)
+
+        date_str = target_date.strftime("%Y-%m-%d") if isinstance(target_date, datetime) else target_date
+
+        try:
+            result = self.collection_manager.query_records(
+                filter=filter_criteria,
+                page_number=0,
+                page_size=1000  # Use larger page size for single day
+            )
+
+            records = result.get("data", [])
+            total_size = result.get("totalSize", 0)
+
+            logging.info(f"Day {date_str}: Retrieved {len(records)} records (total available: {total_size})")
+
+            return records
+
+        except Exception as e:
+            error_msg = str(e)
+            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
+                logging.error(f"Cogfy server timeout/gateway error for day {date_str}: {error_msg}")
+                raise Exception(f"Server timeout/gateway error for day {date_str}: {error_msg}")
+            elif "400" in error_msg:
+                logging.error(f"Cogfy bad request for day {date_str}: {error_msg}")
+                raise Exception(f"Bad request for day {date_str}: {error_msg}")
+            else:
+                logging.error(f"Error querying Cogfy for day {date_str}: {error_msg}")
+                raise Exception(f"Query failed for day {date_str}: {error_msg}")
+
     @retry(
         exceptions=(requests.exceptions.RequestException, requests.exceptions.HTTPError),
         tries=5,
@@ -142,94 +267,205 @@ class ThemeEnrichmentManager:
         backoff=2,
         jitter=(1, 3)
     )
-    def _query_cogfy_single(self, unique_id: str) -> Optional[Dict]:
+    def _query_cogfy_bulk(self, start_date: Optional[Union[str, datetime]] = None, end_date: Optional[Union[str, datetime]] = None) -> List[Dict]:
         """
-        Query Cogfy for a single record by unique_id.
+        Query Cogfy for all records in a date range using day-by-day queries.
 
         Args:
-            unique_id: Unique ID to query for
+            start_date: Start date for filtering records (inclusive)
+            end_date: End date for filtering records (inclusive)
 
         Returns:
-            Single record dict or None if not found
+            List of records from Cogfy
         """
-        if not unique_id:
-            return None
+        if not start_date or not end_date:
+            logging.warning("Both start_date and end_date are required for day-by-day queries")
+            return []
 
-        # Build filter for single unique_id (following news_grouper.py pattern)
-        filter_criteria = {
-            "type": "and",
-            "and": {
-                "filters": [
-                    {
-                        "type": "equals",
-                        "equals": {
-                            "fieldId": self._unique_id_field_id,
-                            "value": unique_id
-                        }
-                    }
-                ]
-            }
-        }
+        # Generate list of dates to query
+        date_range = self._generate_date_range(start_date, end_date)
+        logging.info(f"Querying {len(date_range)} days from {start_date} to {end_date}")
 
-        try:
-            result = self.collection_manager.query_records(
-                filter=filter_criteria,
-                page_number=0,
-                page_size=1
-            )
+        all_records = []
+        successful_days = 0
+        failed_days = 0
 
-            records = result.get("data", [])
-            if records:
-                return records[0]
-            return None
+        for i, target_date in enumerate(date_range, 1):
+            date_str = target_date.strftime("%Y-%m-%d")
+            logging.info(f"Processing day {i}/{len(date_range)}: {date_str}")
 
-        except Exception as e:
-            error_msg = str(e)
-            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
-                logging.warning(f"Cogfy server timeout/gateway error for {unique_id}: {error_msg}")
-            elif "400" in error_msg:
-                logging.warning(f"Cogfy bad request for {unique_id}: {error_msg}")
-            else:
-                logging.error(f"Error querying Cogfy for unique_id {unique_id}: {error_msg}")
-            return None
+            try:
+                day_records = self._query_single_day(target_date)
+                all_records.extend(day_records)
+                successful_days += 1
 
-    def _get_theme_for_unique_id(self, unique_id: str) -> Optional[str]:
+                logging.info(f"Day {date_str} completed: {len(day_records)} records (cumulative: {len(all_records)})")
+
+                # Add a small delay between requests to be gentle on the server
+                if i < len(date_range):  # Don't sleep after the last request
+                    sleep(0.5)
+
+            except Exception as e:
+                logging.error(f"Failed to query day {date_str}: {str(e)}")
+                logging.error(f"Stopping processing due to failure. Processed {successful_days}/{len(date_range)} days successfully.")
+                raise Exception(f"Day-by-day query failed on day {date_str} ({i}/{len(date_range)}): {str(e)}")
+
+        logging.info(f"Day-by-day query completed successfully:")
+        logging.info(f"  - Total days processed: {len(date_range)}")
+        logging.info(f"  - Successful days: {successful_days}")
+        logging.info(f"  - Failed days: 0")
+        logging.info(f"  - Total records retrieved: {len(all_records)}")
+
+        return all_records
+
+    def _extract_unique_id_from_record(self, record: Dict) -> Optional[str]:
         """
-        Get theme label for a single unique ID from Cogfy.
+        Extract unique_id from a Cogfy record.
 
         Args:
-            unique_id: Unique ID to get theme for
+            record: Cogfy record with properties
 
         Returns:
-            Theme label string or None if not found
+            Unique ID string or None if not found
         """
-        if not unique_id:
+        unique_id_property = record["properties"].get(self._unique_id_field_id)
+        if not unique_id_property or not unique_id_property.get("text", {}).get("value"):
             return None
+        return unique_id_property["text"]["value"]
 
-        try:
-            record = self._query_cogfy_single(unique_id)
-            if not record:
-                logging.debug(f"No record found for unique_id: {unique_id}")
-                return None
+    def _create_theme_mapping(self, cogfy_records: List[Dict]) -> Dict[str, str]:
+        """
+        Create a mapping from unique_id to theme_label from Cogfy records.
 
-            # Extract and map theme
-            theme_id = self._extract_theme_id_from_record(record)
-            theme_label = self._map_theme_id_to_label(theme_id)
+        Args:
+            cogfy_records: List of records from Cogfy bulk query
 
-            if theme_label:
-                logging.debug(f"Mapped {unique_id} -> {theme_label}")
+        Returns:
+            Dictionary mapping unique_id to theme_label
+        """
+        cogfy_theme_map = {}
+
+        for record in cogfy_records:
+            try:
+                unique_id = self._extract_unique_id_from_record(record)
+                if not unique_id:
+                    continue
+
+                theme_id = self._extract_theme_id_from_record(record)
+                theme_label = self._map_theme_id_to_label(theme_id)
+
+                if theme_label:
+                    cogfy_theme_map[unique_id] = theme_label
+
+            except Exception as e:
+                logging.debug(f"Error processing Cogfy record: {str(e)}")
+                continue
+
+        logging.info(f"Created theme mapping for {len(cogfy_theme_map)} records from Cogfy")
+        return cogfy_theme_map
+
+    def _update_dataframe_with_themes(self, df: pd.DataFrame, cogfy_theme_map: Dict[str, str], force_update: bool = False) -> Tuple[int, int]:
+        """
+        Update DataFrame with theme information from Cogfy mapping.
+
+        Args:
+            df: DataFrame to update
+            cogfy_theme_map: Mapping from unique_id to theme_label
+            force_update: If True, update even records that already have theme_1_level_1
+
+        Returns:
+            Tuple of (successful_updates, failed_updates)
+        """
+        successful_updates = 0
+        failed_updates = 0
+
+        for idx, row in df.iterrows():
+            unique_id = row['unique_id']
+
+            if not unique_id:
+                continue
+
+            # Check if we should update this record
+            if not force_update and pd.notna(row.get('theme_1_level_1')):
+                continue  # Skip records that already have themes
+
+            # Look up theme in our mapping
+            if unique_id in cogfy_theme_map:
+                theme_label = cogfy_theme_map[unique_id]
+                df.at[idx, 'theme_1_level_1'] = theme_label
+                successful_updates += 1
+
+                if successful_updates % 100 == 0:
+                    logging.info(f"Updated {successful_updates} records with themes...")
             else:
-                logging.debug(f"No theme found for unique_id: {unique_id}")
+                failed_updates += 1
 
-            return theme_label
+        return successful_updates, failed_updates
 
-        except Exception as e:
-            error_msg = str(e)
-            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
-                logging.debug(f"Cogfy server timeout/gateway error for {unique_id}: {error_msg}")
-            else:
-                logging.error(f"Error getting theme for unique_id {unique_id}: {error_msg}")
-            return None
+    def _process_bulk_cogfy_results(self, cogfy_records: List[Dict], df: pd.DataFrame, force_update: bool = False) -> Tuple[int, int]:
+        """
+        Process bulk Cogfy results and update the DataFrame with theme information.
+
+        Args:
+            cogfy_records: List of records from Cogfy bulk query
+            df: DataFrame to update
+            force_update: If True, update even records that already have theme_1_level_1
+
+        Returns:
+            Tuple of (successful_updates, failed_updates)
+        """
+        # Create theme mapping from Cogfy records
+        cogfy_theme_map = self._create_theme_mapping(cogfy_records)
+
+        # Update DataFrame with themes
+        return self._update_dataframe_with_themes(df, cogfy_theme_map, force_update)
+
+    def _load_dataset_from_huggingface(self) -> pd.DataFrame:
+        """
+        Load dataset from HuggingFace.
+
+        Returns:
+            pandas DataFrame from HuggingFace dataset
+        """
+        logging.info("Loading HuggingFace dataset...")
+        dataset = self.dataset_manager._load_existing_dataset()
+        if dataset is None:
+            raise ValueError("Failed to load dataset from HuggingFace")
+
+        df = dataset.to_pandas()
+        logging.info(f"Loaded dataset with {len(df)} records")
+        return df
+
+    def _apply_date_filtering(self, df: pd.DataFrame, start_date: Optional[Union[str, datetime]] = None, end_date: Optional[Union[str, datetime]] = None) -> pd.DataFrame:
+        """
+        Apply date filtering to DataFrame.
+
+        Args:
+            df: Input DataFrame
+            start_date: Start date for filtering records (inclusive)
+            end_date: End date for filtering records (inclusive)
+
+        Returns:
+            Filtered DataFrame
+        """
+        if not (start_date or end_date):
+            return df
+
+        df['published_at'] = pd.to_datetime(df['published_at'], errors='coerce')
+        df = df.dropna(subset=['published_at'])
+
+        if start_date:
+            if isinstance(start_date, str):
+                start_date = pd.to_datetime(start_date)
+            df = df[df['published_at'] >= start_date]
+
+        if end_date:
+            if isinstance(end_date, str):
+                end_date = pd.to_datetime(end_date)
+            df = df[df['published_at'] <= end_date]
+
+        logging.info(f"Filtered to {len(df)} records in date range")
+        return df
 
     def _load_and_filter_dataset(
         self,
@@ -246,33 +482,8 @@ class ThemeEnrichmentManager:
         Returns:
             Filtered pandas DataFrame
         """
-        logging.info("Loading HuggingFace dataset...")
-        dataset = self.dataset_manager._load_existing_dataset()
-        if dataset is None:
-            raise ValueError("Failed to load dataset from HuggingFace")
-
-        df = dataset.to_pandas()
-        original_count = len(df)
-        logging.info(f"Loaded dataset with {original_count} records")
-
-        # Apply date filtering if specified
-        if start_date or end_date:
-            df['published_at'] = pd.to_datetime(df['published_at'], errors='coerce')
-            df = df.dropna(subset=['published_at'])
-
-            if start_date:
-                if isinstance(start_date, str):
-                    start_date = pd.to_datetime(start_date)
-                df = df[df['published_at'] >= start_date]
-
-            if end_date:
-                if isinstance(end_date, str):
-                    end_date = pd.to_datetime(end_date)
-                df = df[df['published_at'] <= end_date]
-
-            logging.info(f"Filtered to {len(df)} records in date range")
-
-        return df
+        df = self._load_dataset_from_huggingface()
+        return self._apply_date_filtering(df, start_date, end_date)
 
     def _prepare_dataset_for_enrichment(self, df: pd.DataFrame, force_update: bool = False) -> pd.DataFrame:
         """
@@ -299,47 +510,6 @@ class ThemeEnrichmentManager:
 
         return records_to_process
 
-    def _process_records_for_themes(self, df: pd.DataFrame, records_to_process: pd.DataFrame) -> Tuple[int, int]:
-        """
-        Process records one by one to get theme information from Cogfy.
-
-        Args:
-            df: Full DataFrame to update
-            records_to_process: Records that need theme enrichment
-
-        Returns:
-            Tuple of (successful_updates, failed_updates)
-        """
-        successful_updates = 0
-        failed_updates = 0
-        start_time = time()
-
-        for idx, row in records_to_process.iterrows():
-            unique_id = row['unique_id']
-
-            try:
-                theme_label = self._get_theme_for_unique_id(unique_id)
-
-                if theme_label:
-                    df.at[idx, 'theme_1_level_1'] = theme_label
-                    successful_updates += 1
-
-                    if successful_updates % 10 == 0:
-                        elapsed_time = time() - start_time
-                        records_per_min = (successful_updates / elapsed_time) * 60 if elapsed_time > 0 else 0
-                        logging.info(f"Processed {successful_updates} records in {elapsed_time:.1f}s ({records_per_min:.1f} records/min)")
-                else:
-                    failed_updates += 1
-
-                # Longer delay to help with server stability
-                sleep(0.3)
-
-            except Exception as e:
-                logging.error(f"Error processing record {unique_id}: {str(e)}")
-                failed_updates += 1
-                continue
-
-        return successful_updates, failed_updates
 
     def _report_enrichment_statistics(self, df: pd.DataFrame, successful_updates: int, failed_updates: int) -> None:
         """
@@ -364,6 +534,55 @@ class ThemeEnrichmentManager:
             logging.info("Note: Failed updates are often due to Cogfy server instability (502/504 errors)")
             logging.info("Consider retrying during off-peak hours for better success rates")
 
+    def _load_full_dataset(self) -> pd.DataFrame:
+        """
+        Load the full dataset from HuggingFace.
+
+        Returns:
+            Full pandas DataFrame
+        """
+        full_dataset = self.dataset_manager._load_existing_dataset()
+        return full_dataset.to_pandas()
+
+    def _ensure_theme_column_exists(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Ensure theme_1_level_1 column exists in DataFrame.
+
+        Args:
+            df: Input DataFrame
+
+        Returns:
+            DataFrame with theme column added if needed
+        """
+        if 'theme_1_level_1' not in df.columns:
+            df['theme_1_level_1'] = None
+        return df
+
+    def _apply_theme_updates_to_full_dataset(self, full_df: pd.DataFrame, enriched_df: pd.DataFrame) -> int:
+        """
+        Apply theme updates from enriched DataFrame to full dataset.
+
+        Args:
+            full_df: Full dataset DataFrame
+            enriched_df: Enriched DataFrame with theme updates
+
+        Returns:
+            Number of updates applied
+        """
+        # Create a mapping from unique_id to theme for safe updates
+        theme_updates = enriched_df.dropna(subset=['theme_1_level_1']).set_index('unique_id')['theme_1_level_1'].to_dict()
+
+        # Apply updates one by one with validation
+        updates_applied = 0
+        for unique_id, theme in theme_updates.items():
+            mask = full_df['unique_id'] == unique_id
+            if mask.any():
+                full_df.loc[mask, 'theme_1_level_1'] = theme
+                updates_applied += 1
+
+        logging.info(f"Applied {updates_applied} theme updates to full dataset (out of {len(theme_updates)} available)")
+        return updates_applied
+
     def _merge_with_full_dataset(
         self,
         df: pd.DataFrame,
@@ -383,28 +602,9 @@ class ThemeEnrichmentManager:
         """
         if start_date or end_date:
             # We filtered the dataset, so we need to update only the filtered records
-            # Load the full dataset again and update only the records we processed
-            full_dataset = self.dataset_manager._load_existing_dataset()
-            full_df = full_dataset.to_pandas()
-
-            # Add theme_1_level_1 column if it doesn't exist
-            if 'theme_1_level_1' not in full_df.columns:
-                full_df['theme_1_level_1'] = None
-
-            # Update only the records that were processed - use safe individual updates
-            # Create a mapping from unique_id to theme for safe updates
-            theme_updates = df.dropna(subset=['theme_1_level_1']).set_index('unique_id')['theme_1_level_1'].to_dict()
-
-            # Apply updates one by one with validation
-            updates_applied = 0
-            for unique_id, theme in theme_updates.items():
-                mask = full_df['unique_id'] == unique_id
-                if mask.any():
-                    full_df.loc[mask, 'theme_1_level_1'] = theme
-                    updates_applied += 1
-
-            logging.info(f"Applied {updates_applied} theme updates to full dataset (out of {len(theme_updates)} available)")
-
+            full_df = self._load_full_dataset()
+            full_df = self._ensure_theme_column_exists(full_df)
+            self._apply_theme_updates_to_full_dataset(full_df, df)
             return full_df
         else:
             # We processed the entire dataset
@@ -428,8 +628,7 @@ class ThemeEnrichmentManager:
         self,
         start_date: Optional[Union[str, datetime]] = None,
         end_date: Optional[Union[str, datetime]] = None,
-        force_update: bool = False,
-        chunk_size: int = 5000
+        force_update: bool = False
     ) -> None:
         """
         Main method to enrich the HuggingFace dataset with theme information from Cogfy.
@@ -438,7 +637,6 @@ class ThemeEnrichmentManager:
             start_date: Start date for filtering records (inclusive)
             end_date: End date for filtering records (inclusive)
             force_update: If True, update even records that already have theme_1_level_1
-            chunk_size: Number of records to process before uploading to HuggingFace
         """
         logging.info("Starting theme enrichment process...")
 
@@ -461,54 +659,43 @@ class ThemeEnrichmentManager:
 
 
 
-        # Process records in chunks to prevent data loss
-        logging.info(f"Starting chunked processing of {len(records_to_process)} records (chunk size: {chunk_size})...")
-        total_start_time = time()
-        total_successful_updates = 0
-        total_failed_updates = 0
+        # Use bulk query approach for much better performance
+        logging.info(f"Starting bulk theme enrichment for {len(records_to_process)} records...")
+        start_time = time()
 
-        # Split records into chunks
-        num_chunks = (len(records_to_process) + chunk_size - 1) // chunk_size
-        logging.info(f"Processing in {num_chunks} chunks of up to {chunk_size} records each")
+        # Query Cogfy for all records in the date range
+        logging.info("Querying Cogfy for all records in date range...")
+        try:
+            cogfy_records = self._query_cogfy_bulk(start_date, end_date)
+        except Exception as e:
+            logging.error(f"Failed to retrieve data from Cogfy: {str(e)}")
+            logging.error("Theme enrichment process terminated due to Cogfy API failure")
+            raise Exception(f"Cogfy API failure: {str(e)}")
 
-        for chunk_idx in range(num_chunks):
-            start_idx = chunk_idx * chunk_size
-            end_idx = min((chunk_idx + 1) * chunk_size, len(records_to_process))
-            chunk_records = records_to_process.iloc[start_idx:end_idx]
+        if not cogfy_records:
+            logging.warning("No records found in Cogfy for the specified date range")
+            return
 
-            logging.info(f"Processing chunk {chunk_idx + 1}/{num_chunks} ({len(chunk_records)} records)...")
-            chunk_start_time = time()
+        # Process the bulk results and update the dataset
+        logging.info(f"Processing {len(cogfy_records)} records from Cogfy...")
+        successful_updates, failed_updates = self._process_bulk_cogfy_results(cogfy_records, df, force_update)
 
-            # Process this chunk
-            successful_updates, failed_updates = self._process_records_for_themes(df, chunk_records)
-            chunk_time = time() - chunk_start_time
+        total_time = time() - start_time
 
-            total_successful_updates += successful_updates
-            total_failed_updates += failed_updates
-
-            if successful_updates > 0:
-                avg_time_per_record = chunk_time / successful_updates
-                records_per_min = (successful_updates / chunk_time) * 60 if chunk_time > 0 else 0
-                logging.info(f"Chunk {chunk_idx + 1} completed in {chunk_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
-
-            # Upload after each chunk to prevent data loss
-            if successful_updates > 0:
-                logging.info(f"Uploading chunk {chunk_idx + 1} results to HuggingFace...")
-                chunk_df = self._merge_with_full_dataset(df, start_date, end_date)
-                self._upload_enriched_dataset(chunk_df)
-                logging.info(f"Chunk {chunk_idx + 1} uploaded successfully")
-            else:
-                logging.info(f"No updates in chunk {chunk_idx + 1}, skipping upload")
-
-        total_time = time() - total_start_time
-
-        if total_successful_updates > 0:
-            avg_time_per_record = total_time / total_successful_updates
-            records_per_min = (total_successful_updates / total_time) * 60 if total_time > 0 else 0
-            logging.info(f"All chunks completed in {total_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
+        if successful_updates > 0:
+            avg_time_per_record = total_time / successful_updates
+            records_per_min = (successful_updates / total_time) * 60 if total_time > 0 else 0
+            logging.info(f"Bulk processing completed in {total_time:.1f}s - Average: {avg_time_per_record:.1f}s per record ({records_per_min:.1f} records/min)")
 
         # Report final statistics
-        self._report_enrichment_statistics(df, total_successful_updates, total_failed_updates)
+        self._report_enrichment_statistics(df, successful_updates, failed_updates)
+
+        # Upload the enriched dataset
+        if successful_updates > 0:
+            logging.info("Uploading enriched dataset to HuggingFace...")
+            final_df = self._merge_with_full_dataset(df, start_date, end_date)
+            self._upload_enriched_dataset(final_df)
+            logging.info("Dataset uploaded successfully")
 
         logging.info("Theme enrichment completed successfully!")
 
@@ -541,12 +728,6 @@ def main():
         action='store_true',
         help='Force update existing theme values (default: skip records that already have themes)'
     )
-    parser.add_argument(
-        '--chunk-size',
-        type=int,
-        default=5000,
-        help='Number of records to process before uploading to HuggingFace (default: 5000)'
-    )
 
     args = parser.parse_args()
 
@@ -559,8 +740,7 @@ def main():
         enrichment_manager.enrich_dataset_with_themes(
             start_date=args.start_date,
             end_date=args.end_date,
-            force_update=args.force,
-            chunk_size=args.chunk_size
+            force_update=args.force
         )
 
     except Exception as e:
