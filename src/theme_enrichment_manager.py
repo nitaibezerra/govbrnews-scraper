@@ -225,6 +225,9 @@ class ThemeEnrichmentManager:
 
         Returns:
             List of records from Cogfy for that day
+
+        Raises:
+            Exception: If the query fails for any reason
         """
         filters = self._build_single_day_filters(target_date)
         filter_criteria = self._build_filter_criteria(filters)
@@ -248,12 +251,14 @@ class ThemeEnrichmentManager:
         except Exception as e:
             error_msg = str(e)
             if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
-                logging.warning(f"Cogfy server timeout/gateway error for day {date_str}: {error_msg}")
+                logging.error(f"Cogfy server timeout/gateway error for day {date_str}: {error_msg}")
+                raise Exception(f"Server timeout/gateway error for day {date_str}: {error_msg}")
             elif "400" in error_msg:
-                logging.warning(f"Cogfy bad request for day {date_str}: {error_msg}")
+                logging.error(f"Cogfy bad request for day {date_str}: {error_msg}")
+                raise Exception(f"Bad request for day {date_str}: {error_msg}")
             else:
                 logging.error(f"Error querying Cogfy for day {date_str}: {error_msg}")
-            return []
+                raise Exception(f"Query failed for day {date_str}: {error_msg}")
 
     @retry(
         exceptions=(requests.exceptions.RequestException, requests.exceptions.HTTPError),
@@ -302,13 +307,13 @@ class ThemeEnrichmentManager:
 
             except Exception as e:
                 logging.error(f"Failed to query day {date_str}: {str(e)}")
-                failed_days += 1
-                continue
+                logging.error(f"Stopping processing due to failure. Processed {successful_days}/{len(date_range)} days successfully.")
+                raise Exception(f"Day-by-day query failed on day {date_str} ({i}/{len(date_range)}): {str(e)}")
 
-        logging.info(f"Day-by-day query completed:")
+        logging.info(f"Day-by-day query completed successfully:")
         logging.info(f"  - Total days processed: {len(date_range)}")
         logging.info(f"  - Successful days: {successful_days}")
-        logging.info(f"  - Failed days: {failed_days}")
+        logging.info(f"  - Failed days: 0")
         logging.info(f"  - Total records retrieved: {len(all_records)}")
 
         return all_records
@@ -660,7 +665,12 @@ class ThemeEnrichmentManager:
 
         # Query Cogfy for all records in the date range
         logging.info("Querying Cogfy for all records in date range...")
-        cogfy_records = self._query_cogfy_bulk(start_date, end_date)
+        try:
+            cogfy_records = self._query_cogfy_bulk(start_date, end_date)
+        except Exception as e:
+            logging.error(f"Failed to retrieve data from Cogfy: {str(e)}")
+            logging.error("Theme enrichment process terminated due to Cogfy API failure")
+            raise Exception(f"Cogfy API failure: {str(e)}")
 
         if not cogfy_records:
             logging.warning("No records found in Cogfy for the specified date range")

@@ -221,13 +221,40 @@ class TestThemeEnrichmentManager:
         assert len(result) == 1
         assert result[0]["id"] == "record1"
 
-        # Test no records found
+        # Test no records found (should still succeed)
         enrichment_manager.collection_manager.query_records.return_value = {
             "data": [],
             "totalSize": 0
         }
         result = enrichment_manager._query_single_day("2025-01-15")
         assert len(result) == 0
+
+        # Test API failure (should raise exception)
+        enrichment_manager.collection_manager.query_records.side_effect = Exception("API Error")
+        with pytest.raises(Exception, match="Query failed for day 2025-01-15"):
+            enrichment_manager._query_single_day("2025-01-15")
+
+    def test_query_cogfy_bulk_fail_fast(self, enrichment_manager):
+        """Test _query_cogfy_bulk fail-fast behavior."""
+        enrichment_manager._field_map = {"published_at": "pub_field_id"}
+
+        # Mock first day success, second day failure
+        def mock_query_records(*args, **kwargs):
+            # First call succeeds, second call fails
+            if not hasattr(mock_query_records, 'call_count'):
+                mock_query_records.call_count = 0
+            mock_query_records.call_count += 1
+
+            if mock_query_records.call_count == 1:
+                return {"data": [{"id": "record1"}], "totalSize": 1}
+            else:
+                raise Exception("API Error")
+
+        enrichment_manager.collection_manager.query_records.side_effect = mock_query_records
+
+        # Should fail on the second day
+        with pytest.raises(Exception, match="Day-by-day query failed on day 2025-01-16"):
+            enrichment_manager._query_cogfy_bulk("2025-01-15", "2025-01-16")
 
     def test_extract_unique_id_from_record(self, enrichment_manager):
         """Test _extract_unique_id_from_record method."""
