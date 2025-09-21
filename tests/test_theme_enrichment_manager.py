@@ -60,7 +60,12 @@ class TestThemeEnrichmentManager:
             }
         }
 
-        mock_manager.list_columns.return_value = [mock_field1, mock_field2]
+        mock_field3 = Mock()
+        mock_field3.id = 'field3'
+        mock_field3.name = 'published_at'
+        mock_field3.type = 'date'
+
+        mock_manager.list_columns.return_value = [mock_field1, mock_field2, mock_field3]
         return mock_manager
 
     @pytest.fixture
@@ -157,51 +162,217 @@ class TestThemeEnrichmentManager:
         # Test None input
         assert enrichment_manager._map_theme_id_to_label(None) is None
 
-    def test_query_cogfy_single(self, enrichment_manager):
-        """Test _query_cogfy_single method."""
-        enrichment_manager._unique_id_field_id = 'field1'
+    def test_build_single_day_filters(self, enrichment_manager):
+        """Test _build_single_day_filters method."""
+        enrichment_manager._field_map = {"published_at": "pub_field_id"}
+
+        # Test with a single date
+        filters = enrichment_manager._build_single_day_filters("2025-01-15")
+        assert len(filters) == 2
+        assert filters[0]["type"] == "greaterThanOrEquals"
+        assert filters[1]["type"] == "lessThanOrEquals"
+        assert "2025-01-15T00:00:00" in filters[0]["greaterThanOrEquals"]["value"]
+        assert "2025-01-15T23:59:59" in filters[1]["lessThanOrEquals"]["value"]
+
+        # Test missing published_at field
+        enrichment_manager._field_map = {}
+        with pytest.raises(ValueError, match="Required field 'published_at' not found"):
+            enrichment_manager._build_single_day_filters("2025-01-15")
+
+    def test_generate_date_range(self, enrichment_manager):
+        """Test _generate_date_range method."""
+        # Test with string dates
+        date_range = enrichment_manager._generate_date_range("2025-01-15", "2025-01-17")
+        assert len(date_range) == 3
+        assert date_range[0].strftime("%Y-%m-%d") == "2025-01-15"
+        assert date_range[1].strftime("%Y-%m-%d") == "2025-01-16"
+        assert date_range[2].strftime("%Y-%m-%d") == "2025-01-17"
+
+        # Test with datetime objects
+        start_dt = pd.to_datetime("2025-01-15")
+        end_dt = pd.to_datetime("2025-01-15")
+        date_range = enrichment_manager._generate_date_range(start_dt, end_dt)
+        assert len(date_range) == 1
+        assert date_range[0].strftime("%Y-%m-%d") == "2025-01-15"
+
+    def test_build_filter_criteria(self, enrichment_manager):
+        """Test _build_filter_criteria method."""
+        # Test with filters
+        filters = [{"type": "equals", "equals": {"fieldId": "test", "value": "test"}}]
+        criteria = enrichment_manager._build_filter_criteria(filters)
+        assert criteria["type"] == "and"
+        assert "filters" in criteria["and"]
+
+        # Test with no filters
+        criteria = enrichment_manager._build_filter_criteria([])
+        assert criteria is None
+
+    def test_query_single_day(self, enrichment_manager):
+        """Test _query_single_day method."""
+        enrichment_manager._field_map = {"published_at": "pub_field_id"}
 
         # Mock successful query
         enrichment_manager.collection_manager.query_records.return_value = {
-            "data": [{"id": "record1", "properties": {}}]
+            "data": [{"id": "record1", "properties": {}}],
+            "totalSize": 1
         }
 
-        result = enrichment_manager._query_cogfy_single("test_id")
-        assert result == {"id": "record1", "properties": {}}
+        result = enrichment_manager._query_single_day("2025-01-15")
+        assert len(result) == 1
+        assert result[0]["id"] == "record1"
 
         # Test no records found
-        enrichment_manager.collection_manager.query_records.return_value = {"data": []}
-        result = enrichment_manager._query_cogfy_single("test_id")
+        enrichment_manager.collection_manager.query_records.return_value = {
+            "data": [],
+            "totalSize": 0
+        }
+        result = enrichment_manager._query_single_day("2025-01-15")
+        assert len(result) == 0
+
+    def test_extract_unique_id_from_record(self, enrichment_manager):
+        """Test _extract_unique_id_from_record method."""
+        enrichment_manager._unique_id_field_id = 'field1'
+
+        # Test successful extraction
+        record = {
+            "properties": {
+                "field1": {
+                    "text": {"value": "test_id"}
+                }
+            }
+        }
+        result = enrichment_manager._extract_unique_id_from_record(record)
+        assert result == "test_id"
+
+        # Test missing field
+        record_no_field = {"properties": {}}
+        result = enrichment_manager._extract_unique_id_from_record(record_no_field)
         assert result is None
 
-        # Test empty unique_id
-        result = enrichment_manager._query_cogfy_single("")
+        # Test empty value
+        record_empty = {
+            "properties": {
+                "field1": {"text": {"value": ""}}
+            }
+        }
+        result = enrichment_manager._extract_unique_id_from_record(record_empty)
         assert result is None
 
-    def test_get_theme_for_unique_id(self, enrichment_manager):
-        """Test _get_theme_for_unique_id method."""
-        # Setup mocks
+    def test_create_theme_mapping(self, enrichment_manager):
+        """Test _create_theme_mapping method."""
+        enrichment_manager._unique_id_field_id = 'field1'
         enrichment_manager._theme_field_id = 'theme_field'
         enrichment_manager._theme_options = [
             {'id': 'theme1', 'label': 'Education'}
         ]
 
-        mock_record = {
-            "properties": {
-                "theme_field": {
-                    "select": {"value": [{"id": "theme1"}]}
+        cogfy_records = [
+            {
+                "properties": {
+                    "field1": {"text": {"value": "id1"}},
+                    "theme_field": {"select": {"value": [{"id": "theme1"}]}}
+                }
+            },
+            {
+                "properties": {
+                    "field1": {"text": {"value": "id2"}},
+                    "theme_field": {"select": {"value": []}}
                 }
             }
-        }
+        ]
 
-        with patch.object(enrichment_manager, '_query_cogfy_single', return_value=mock_record):
-            result = enrichment_manager._get_theme_for_unique_id("test_id")
-            assert result == "Education"
+        mapping = enrichment_manager._create_theme_mapping(cogfy_records)
+        assert len(mapping) == 1
+        assert mapping["id1"] == "Education"
 
-        # Test no record found
-        with patch.object(enrichment_manager, '_query_cogfy_single', return_value=None):
-            result = enrichment_manager._get_theme_for_unique_id("test_id")
-            assert result is None
+    def test_update_dataframe_with_themes(self, enrichment_manager):
+        """Test _update_dataframe_with_themes method."""
+        df = pd.DataFrame({
+            'unique_id': ['id1', 'id2', 'id3'],
+            'theme_1_level_1': [None, 'Existing', None]
+        })
+
+        theme_map = {'id1': 'Education', 'id3': 'Health'}
+
+        # Test without force update
+        successful, failed = enrichment_manager._update_dataframe_with_themes(df, theme_map, False)
+        assert successful == 2  # id1 and id3 (id2 skipped due to existing theme)
+        assert failed == 0
+        assert df.iloc[0]['theme_1_level_1'] == 'Education'
+        assert df.iloc[1]['theme_1_level_1'] == 'Existing'  # Unchanged
+        assert df.iloc[2]['theme_1_level_1'] == 'Health'
+
+        # Test with force update
+        df2 = pd.DataFrame({
+            'unique_id': ['id1', 'id2', 'id3'],
+            'theme_1_level_1': [None, None, None]  # All None for force update test
+        })
+        successful, failed = enrichment_manager._update_dataframe_with_themes(df2, theme_map, True)
+        assert successful == 2  # Only id1 and id3 have themes in the map
+        assert failed == 1  # id2 not in theme map
+
+    def test_load_dataset_from_huggingface(self, enrichment_manager):
+        """Test _load_dataset_from_huggingface method."""
+        df = enrichment_manager._load_dataset_from_huggingface()
+        assert len(df) == 3
+        assert list(df['unique_id']) == ['id1', 'id2', 'id3']
+
+    def test_apply_date_filtering(self, enrichment_manager):
+        """Test _apply_date_filtering method."""
+        df = pd.DataFrame({
+            'unique_id': ['id1', 'id2', 'id3'],
+            'published_at': ['2025-09-11', '2025-09-12', '2025-09-13']
+        })
+
+        # Test with date range
+        filtered_df = enrichment_manager._apply_date_filtering(df, "2025-09-12", "2025-09-12")
+        assert len(filtered_df) == 1
+        assert filtered_df.iloc[0]['unique_id'] == 'id2'
+
+        # Test without dates
+        no_filter_df = enrichment_manager._apply_date_filtering(df)
+        assert len(no_filter_df) == 3
+
+    def test_load_full_dataset(self, enrichment_manager):
+        """Test _load_full_dataset method."""
+        df = enrichment_manager._load_full_dataset()
+        assert len(df) == 3
+
+    def test_ensure_theme_column_exists(self, enrichment_manager):
+        """Test _ensure_theme_column_exists method."""
+        df = pd.DataFrame({'unique_id': ['id1', 'id2']})
+
+        # Test adding column
+        result = enrichment_manager._ensure_theme_column_exists(df)
+        assert 'theme_1_level_1' in result.columns
+        assert result['theme_1_level_1'].isna().all()
+
+        # Test existing column
+        df_with_theme = pd.DataFrame({
+            'unique_id': ['id1', 'id2'],
+            'theme_1_level_1': ['Education', 'Health']
+        })
+        result = enrichment_manager._ensure_theme_column_exists(df_with_theme)
+        assert result.equals(df_with_theme)
+
+    def test_apply_theme_updates_to_full_dataset(self, enrichment_manager):
+        """Test _apply_theme_updates_to_full_dataset method."""
+        full_df = pd.DataFrame({
+            'unique_id': ['id1', 'id2', 'id3'],
+            'theme_1_level_1': [None, None, None]
+        })
+
+        enriched_df = pd.DataFrame({
+            'unique_id': ['id1', 'id3'],
+            'theme_1_level_1': ['Education', 'Health']
+        })
+
+        updates_applied = enrichment_manager._apply_theme_updates_to_full_dataset(full_df, enriched_df)
+        assert updates_applied == 2
+        assert full_df.iloc[0]['theme_1_level_1'] == 'Education'
+        assert full_df.iloc[1]['theme_1_level_1'] is None
+        assert full_df.iloc[2]['theme_1_level_1'] == 'Health'
+
 
     def test_load_and_filter_dataset(self, enrichment_manager):
         """Test _load_and_filter_dataset method."""
@@ -235,25 +406,33 @@ class TestThemeEnrichmentManager:
         assert len(result_force) == 3  # All except None
         assert list(result_force['unique_id']) == ['id1', 'id2', 'id3']
 
-    def test_process_records_for_themes(self, enrichment_manager):
-        """Test _process_records_for_themes method."""
+    def test_process_bulk_cogfy_results(self, enrichment_manager):
+        """Test _process_bulk_cogfy_results method."""
+        enrichment_manager._unique_id_field_id = 'field1'
+        enrichment_manager._theme_field_id = 'theme_field'
+        enrichment_manager._theme_options = [
+            {'id': 'theme1', 'label': 'Education'}
+        ]
+
         df = pd.DataFrame({
             'unique_id': ['id1', 'id2'],
             'theme_1_level_1': [None, None]
         })
-        records_to_process = df.copy()
 
-        # Mock theme retrieval
-        with patch.object(enrichment_manager, '_get_theme_for_unique_id') as mock_get_theme:
-            with patch('time.sleep'):  # Skip sleep in tests
-                mock_get_theme.side_effect = ['Education', None]  # First succeeds, second fails
+        cogfy_records = [
+            {
+                "properties": {
+                    "field1": {"text": {"value": "id1"}},
+                    "theme_field": {"select": {"value": [{"id": "theme1"}]}}
+                }
+            }
+        ]
 
-                successful, failed = enrichment_manager._process_records_for_themes(df, records_to_process)
-
-                assert successful == 1
-                assert failed == 1
-                assert df.iloc[0]['theme_1_level_1'] == 'Education'
-                assert pd.isna(df.iloc[1]['theme_1_level_1'])
+        successful, failed = enrichment_manager._process_bulk_cogfy_results(cogfy_records, df, False)
+        assert successful == 1
+        assert failed == 1
+        assert df.iloc[0]['theme_1_level_1'] == 'Education'
+        assert pd.isna(df.iloc[1]['theme_1_level_1'])
 
     def test_merge_with_full_dataset(self, enrichment_manager):
         """Test _merge_with_full_dataset method."""
@@ -322,22 +501,24 @@ class TestThemeEnrichmentManager:
         with patch.object(enrichment_manager, '_setup_cogfy_mappings'):
             with patch.object(enrichment_manager, '_load_and_filter_dataset', return_value=mock_df):
                 with patch.object(enrichment_manager, '_prepare_dataset_for_enrichment', return_value=mock_df):
-                    with patch.object(enrichment_manager, '_process_records_for_themes', return_value=(2, 0)):
-                        with patch.object(enrichment_manager, '_report_enrichment_statistics'):
-                            with patch.object(enrichment_manager, '_merge_with_full_dataset', return_value=mock_df):
-                                with patch.object(enrichment_manager, '_upload_enriched_dataset'):
+                    with patch.object(enrichment_manager, '_query_cogfy_bulk', return_value=[{"id": "test", "properties": {}}]):
+                        with patch.object(enrichment_manager, '_process_bulk_cogfy_results', return_value=(2, 0)):
+                            with patch.object(enrichment_manager, '_report_enrichment_statistics'):
+                                with patch.object(enrichment_manager, '_merge_with_full_dataset', return_value=mock_df):
+                                    with patch.object(enrichment_manager, '_upload_enriched_dataset'):
 
-                                    enrichment_manager.enrich_dataset_with_themes(
-                                        start_date="2025-09-11",
-                                        end_date="2025-09-12",
-                                        force_update=True
-                                    )
+                                        enrichment_manager.enrich_dataset_with_themes(
+                                            start_date="2025-09-11",
+                                            end_date="2025-09-12",
+                                            force_update=True
+                                        )
 
-                                    # Verify all methods were called
-                                    enrichment_manager._setup_cogfy_mappings.assert_called_once()
-                                    enrichment_manager._load_and_filter_dataset.assert_called_once_with("2025-09-11", "2025-09-12")
-                                    enrichment_manager._prepare_dataset_for_enrichment.assert_called_once_with(mock_df, True)
-                                    enrichment_manager._process_records_for_themes.assert_called_once()
-                                    enrichment_manager._report_enrichment_statistics.assert_called_once()
-                                    enrichment_manager._merge_with_full_dataset.assert_called_once()
-                                    enrichment_manager._upload_enriched_dataset.assert_called_once()
+                                        # Verify all methods were called
+                                        enrichment_manager._setup_cogfy_mappings.assert_called_once()
+                                        enrichment_manager._load_and_filter_dataset.assert_called_once_with("2025-09-11", "2025-09-12")
+                                        enrichment_manager._prepare_dataset_for_enrichment.assert_called_once_with(mock_df, True)
+                                        enrichment_manager._query_cogfy_bulk.assert_called_once_with("2025-09-11", "2025-09-12")
+                                        enrichment_manager._process_bulk_cogfy_results.assert_called_once()
+                                        enrichment_manager._report_enrichment_statistics.assert_called_once()
+                                        enrichment_manager._merge_with_full_dataset.assert_called_once()
+                                        enrichment_manager._upload_enriched_dataset.assert_called_once()
