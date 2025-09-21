@@ -17,7 +17,6 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-SLEEP_TIME_INTERVAL = (1.0, 2.0)  # More conservative than gov.br scraping
 
 
 class EBCWebScraper:
