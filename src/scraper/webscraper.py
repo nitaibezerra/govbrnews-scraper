@@ -201,7 +201,7 @@ class WebScraper:
             url
         )  # Now returns (content, image)
 
-        logging.info(f"Retrieved news: {news_date} - {url} - Image: {image_url}")
+        logging.info(f"Retrieved article: {news_date} - {url}\n")
 
         self.news_data.append(
             {
