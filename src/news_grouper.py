@@ -142,7 +142,7 @@ class NewsGrouper:
         Raises:
             ValueError: If any required field is not found
         """
-        required_fields = ["agency", "title", "category", "content", "theme_1_level_1"]
+        required_fields = ["agency", "title", "category", "content", "theme_1_level_1", "url"]
         field_ids = {}
         for field_name in required_fields:
             field_id = self._source_field_map.get(field_name)
@@ -183,6 +183,7 @@ class NewsGrouper:
             "title": record["properties"].get(field_ids["title"])["text"]["value"],
             "category": record["properties"].get(field_ids["category"])["text"]["value"],
             "content": record["properties"].get(field_ids["content"])["text"]["value"],
+            "url": record["properties"].get(field_ids["url"])["text"]["value"],
             "theme_1_level_1": theme_label
         }
 
