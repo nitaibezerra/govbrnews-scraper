@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GovBR News Search - Typesense</title>
+
+    <!-- InstantSearch CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .header p {
+            margin: 0.5rem 0 0 0;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .search-panel {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .facets {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .facets h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .results {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        #searchbox {
+            margin-bottom: 1.5rem;
+        }
+
+        .ais-SearchBox {
+            margin-bottom: 0;
+        }
+
+        .ais-SearchBox-input {
+            font-size: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            border: 2px solid #e0e0e0;
+            transition: border-color 0.2s;
+        }
+
+        .ais-SearchBox-input:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        .ais-Hits-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .ais-Hits-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .hit-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+
+        .hit-title a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .hit-title a:hover {
+            text-decoration: underline;
+        }
+
+        .hit-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .hit-meta span {
+            background: #f0f0f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .hit-content {
+            color: #555;
+            line-height: 1.6;
+            margin-top: 0.75rem;
+        }
+
+        .hit-image {
+            max-width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .ais-RefinementList-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .ais-RefinementList-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+
+        .ais-RefinementList-label:hover {
+            background-color: #f5f5f5;
+        }
+
+        .ais-RefinementList-count {
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.75rem;
+            margin-left: auto;
+        }
+
+        .stats-and-sort {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .ais-Stats {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .ais-Pagination {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .ais-Pagination-item {
+            display: inline-block;
+            margin: 0 0.25rem;
+        }
+
+        .ais-Pagination-link {
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .ais-Pagination-link:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .ais-Pagination-item--selected .ais-Pagination-link {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        mark {
+            background-color: #fff59d;
+            padding: 0.1rem 0.2rem;
+            border-radius: 2px;
+        }
+
+        .facet-section {
+            margin-bottom: 2rem;
+        }
+
+        .clear-filters {
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .search-panel {
+                grid-template-columns: 1fr;
+            }
+
+            .facets {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔍 GovBR News Search</h1>
+        <p>Busca inteligente em 30.346 notícias do governo brasileiro</p>
+    </div>
+
+    <div class="container">
+        <div id="searchbox"></div>
+
+        <div class="search-panel">
+            <aside class="facets">
+                <div class="clear-filters">
+                    <div id="clear-refinements"></div>
+                </div>
+
+                <div class="facet-section">
+                    <h3>📅 Ano de Publicação</h3>
+                    <div id="published-year-list"></div>
+                </div>
+
+                <div class="facet-section">
+                    <h3>🏛️ Órgão</h3>
+                    <div id="agency-list"></div>
+                </div>
+
+                <div class="facet-section">
+                    <h3>📂 Categoria</h3>
+                    <div id="category-list"></div>
+                </div>
+
+                <div class="facet-section">
+                    <h3>🏷️ Tags</h3>
+                    <div id="tags-list"></div>
+                </div>
+
+                <div class="facet-section">
+                    <h3>📊 Tema</h3>
+                    <div id="theme-list"></div>
+                </div>
+            </aside>
+
+            <main class="results">
+                <div class="stats-and-sort">
+                    <div id="stats"></div>
+                    <div id="sort-by"></div>
+                </div>
+
+                <div id="hits"></div>
+                <div id="pagination"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- InstantSearch.js (local copy) -->
+    <script src="instantsearch.min.js"></script>
+
+    <!-- Typesense Adapter (local copy) -->
+    <script src="typesense-adapter.min.js"></script>
+
+    <script>
+        // Check if libraries loaded
+        if (typeof instantsearch === 'undefined') {
+            document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>❌ Erro ao carregar InstantSearch.js</h1><p>Verifique sua conexão com a internet.</p></div>';
+            throw new Error('InstantSearch.js failed to load');
+        }
+        if (typeof TypesenseInstantSearchAdapter === 'undefined') {
+            document.body.innerHTML = '<div style="padding: 2rem; text-align: center;"><h1>❌ Erro ao carregar Typesense Adapter</h1><p>Verifique sua conexão com a internet.</p></div>';
+            throw new Error('TypesenseInstantSearchAdapter failed to load');
+        }
+
+        // Configure Typesense client
+        const typesenseInstantsearchAdapter = new TypesenseInstantSearchAdapter({
+            server: {
+                apiKey: 'govbrnews_api_key_change_in_production',
+                nodes: [{
+                    host: 'localhost',
+                    port: '8108',
+                    protocol: 'http'
+                }]
+            },
+            additionalSearchParameters: {
+                query_by: 'title,content',
+                num_typos: 2,
+                typo_tokens_threshold: 1
+            }
+        });
+
+        const searchClient = typesenseInstantsearchAdapter.searchClient;
+
+        // Initialize InstantSearch
+        const search = instantsearch({
+            indexName: 'news',
+            searchClient,
+            routing: true
+        });
+
+        // Add widgets
+        search.addWidgets([
+            // Search box
+            instantsearch.widgets.searchBox({
+                container: '#searchbox',
+                placeholder: 'Buscar notícias... (ex: educação, saúde, meio ambiente)',
+                showSubmit: false,
+                showReset: true
+            }),
+
+            // Stats
+            instantsearch.widgets.stats({
+                container: '#stats',
+                templates: {
+                    text: '{{#hasNoResults}}Nenhum resultado{{/hasNoResults}}{{#hasOneResult}}1 resultado{{/hasOneResult}}{{#hasManyResults}}{{#helpers.formatNumber}}{{nbHits}}{{/helpers.formatNumber}} resultados{{/hasManyResults}} encontrados em {{processingTimeMS}}ms'
+                }
+            }),
+
+            // Sort by
+            instantsearch.widgets.sortBy({
+                container: '#sort-by',
+                items: [
+                    { label: 'Mais recentes primeiro', value: 'news' },
+                    { label: 'Mais antigos primeiro', value: 'news/sort/published_at:asc' }
+                ]
+            }),
+
+            // Hits (results)
+            instantsearch.widgets.hits({
+                container: '#hits',
+                templates: {
+                    item: (hit, { html, components }) => {
+                        const date = hit.published_at ? new Date(hit.published_at * 1000).toLocaleDateString('pt-BR') : 'Data não disponível';
+                        const agency = hit.agency || 'N/A';
+                        const category = hit.category || 'Sem categoria';
+                        const content = hit.content ? hit.content.substring(0, 300) + '...' : '';
+                        const image = hit.image || '';
+
+                        return html`
+                            <article>
+                                ${image ? html`<img src="${image}" alt="${hit.title}" class="hit-image" onerror="this.style.display='none'">` : ''}
+                                <div class="hit-title">
+                                    <a href="${hit.url}" target="_blank" rel="noopener">
+                                        ${components.Highlight({ attribute: 'title', hit })}
+                                    </a>
+                                </div>
+                                <div class="hit-meta">
+                                    <span>📅 ${date}</span>
+                                    <span>🏛️ ${agency}</span>
+                                    <span>📂 ${category}</span>
+                                </div>
+                                <div class="hit-content">
+                                    ${components.Snippet({ attribute: 'content', hit })}
+                                </div>
+                            </article>
+                        `;
+                    },
+                    empty: 'Nenhum resultado encontrado para <q>{{query}}</q>'
+                }
+            }),
+
+            // Published Year facet
+            instantsearch.widgets.refinementList({
+                container: '#published-year-list',
+                attribute: 'published_year',
+                limit: 10,
+                showMore: true,
+                showMoreLimit: 20,
+                sortBy: ['name:desc']
+            }),
+
+            // Agency facet
+            instantsearch.widgets.refinementList({
+                container: '#agency-list',
+                attribute: 'agency',
+                limit: 8,
+                showMore: true,
+                showMoreLimit: 30,
+                searchable: true,
+                searchablePlaceholder: 'Buscar órgão...'
+            }),
+
+            // Category facet
+            instantsearch.widgets.refinementList({
+                container: '#category-list',
+                attribute: 'category',
+                limit: 8,
+                showMore: true,
+                showMoreLimit: 30
+            }),
+
+            // Tags facet
+            instantsearch.widgets.refinementList({
+                container: '#tags-list',
+                attribute: 'tags',
+                limit: 8,
+                showMore: true,
+                showMoreLimit: 30,
+                searchable: true,
+                searchablePlaceholder: 'Buscar tag...'
+            }),
+
+            // Theme facet
+            instantsearch.widgets.refinementList({
+                container: '#theme-list',
+                attribute: 'theme_1_level_1',
+                limit: 8,
+                showMore: true,
+                showMoreLimit: 30
+            }),
+
+            // Clear refinements
+            instantsearch.widgets.clearRefinements({
+                container: '#clear-refinements',
+                templates: {
+                    resetLabel: '🗑️ Limpar filtros'
+                }
+            }),
+
+            // Pagination
+            instantsearch.widgets.pagination({
+                container: '#pagination',
+                padding: 2,
+                showFirst: true,
+                showLast: true,
+                translations: {
+                    first: '««',
+                    previous: '‹',
+                    next: '›',
+                    last: '»»',
+                }
+            })
+        ]);
+
+        // Start the search
+        search.start();
+    </script>
+</body>
+</html>
