@@ -201,7 +201,7 @@ class WebScraper:
             url
         )  # Now returns (content, image)
 
-        logging.info(f"Retrieved news: {news_date} - {url} - Image: {image_url}")
+        logging.info(f"Retrieved article: {news_date} - {url}\n")
 
         self.news_data.append(
             {
@@ -341,7 +341,7 @@ class WebScraper:
         """
         Get the content of a news article from its URL, converting the HTML to Markdown
         to preserve formatting, links, and media references. Extracts the first image
-        and removes introductory clutter before the main article title.
+        and removes introductory clutter, sharing links, metadata, and other junk content.
 
         :param url: The URL of the article.
         :return: A tuple containing the article content in Markdown format and the first image URL (or None).
@@ -357,21 +357,254 @@ class WebScraper:
             if not article_body:
                 return "No content found", None
 
-            # Convert the HTML content to Markdown
-            content = md(str(article_body))
-
-            # Extract the first image
+            # Extract the first image before cleaning
             first_img = article_body.find("img")
             image_url = first_img["src"] if first_img else None
 
-            # Clean the content: remove lines before the first title (defined by "=====" or "#")
-            cleaned_content = self._remove_intro_lines(content)
+            # Clean the HTML content by removing junk elements
+            cleaned_html = self._clean_html_content(article_body)
+
+            # Convert the cleaned HTML content to Markdown
+            content = md(str(cleaned_html))
+
+            # Apply additional text-based cleaning
+            cleaned_content = self._clean_markdown_content(content)
 
             return cleaned_content, image_url
 
         except Exception as e:
             logging.error(f"Error retrieving content from {url}: {str(e)}")
             return "Error retrieving content", None
+
+    def _clean_html_content(self, article_body):
+        """
+        Clean HTML content by removing junk elements like sharing buttons,
+        metadata, social media links, and other non-content elements.
+
+        :param article_body: BeautifulSoup element representing the article content
+        :return: Cleaned BeautifulSoup element
+        """
+        # Make a copy to avoid modifying the original
+        cleaned_body = BeautifulSoup(str(article_body), 'html.parser')
+
+        # Remove title (H1) as it's already extracted separately
+        h1_tags = cleaned_body.find_all('h1')
+        for h1 in h1_tags:
+            h1.decompose()
+
+        # Remove sharing elements
+        self._remove_sharing_elements(cleaned_body)
+
+        # Remove metadata elements
+        self._remove_metadata_elements(cleaned_body)
+
+        # Remove social media links and contact info
+        self._remove_contact_elements(cleaned_body)
+
+        # Remove script tags
+        scripts = cleaned_body.find_all('script')
+        for script in scripts:
+            script.decompose()
+
+        return cleaned_body
+
+    def _remove_sharing_elements(self, soup):
+        """
+        Remove sharing buttons and related elements.
+
+        :param soup: BeautifulSoup object to clean
+        """
+        # Remove elements containing "Compartilhe"
+        share_elements = soup.find_all(string=lambda text: text and "Compartilhe" in text)
+        for elem in share_elements:
+            if elem.parent:
+                elem.parent.decompose()
+
+        # Remove social media links by domain
+        social_domains = ["facebook.com", "twitter.com", "linkedin.com", "whatsapp.com", "api.whatsapp.com"]
+        for domain in social_domains:
+            links = soup.find_all("a", href=lambda href: href and domain in href)
+            for link in links:
+                link.decompose()
+
+        # Remove elements with social-related classes
+        social_classes = ["social-links", "share", "sharing", "social-media"]
+        for class_name in social_classes:
+            elements = soup.find_all(class_=lambda c: c and any(social in str(c).lower() for social in [class_name]))
+            for elem in elements:
+                elem.decompose()
+
+    def _remove_metadata_elements(self, soup):
+        """
+        Remove metadata elements like publication date, category info, etc.
+
+        :param soup: BeautifulSoup object to clean
+        """
+        # Remove publication date elements
+        date_keywords = ["Publicado em", "Atualizado em", "publicado em", "atualizado em"]
+        for keyword in date_keywords:
+            elements = soup.find_all(string=lambda text: text and keyword in text)
+            for elem in elements:
+                if elem.parent and elem.parent.name in ['p', 'div', 'span']:
+                    elem.parent.decompose()
+
+        # Remove elements with date-related classes
+        date_classes = ["documentByLine", "publishedDate", "updatedDate", "date-info"]
+        for class_name in date_classes:
+            elements = soup.find_all(class_=lambda c: c and class_name in str(c) if c else False)
+            for elem in elements:
+                elem.decompose()
+
+        # Remove category/tag elements that appear at the end
+        category_keywords = ["Categoria", "Tags:", "categoria", "tags:"]
+        for keyword in category_keywords:
+            elements = soup.find_all(string=lambda text: text and keyword in text)
+            for elem in elements:
+                if elem.parent:
+                    # Remove the parent and its siblings (usually the category content)
+                    parent = elem.parent
+                    while parent and parent.find_next_sibling():
+                        sibling = parent.find_next_sibling()
+                        sibling.decompose()
+                    parent.decompose()
+
+    def _remove_contact_elements(self, soup):
+        """
+        Remove contact information and press/communications elements.
+
+        :param soup: BeautifulSoup object to clean
+        """
+        # Remove assessoria/communication elements
+        contact_keywords = [
+            "Assessoria de Comunicação", "Assessoria de Imprensa",
+            "assessoria de comunicação", "assessoria de imprensa",
+            "ascom@", "comunicacao@", "imprensa@"
+        ]
+
+        for keyword in contact_keywords:
+            elements = soup.find_all(string=lambda text: text and keyword in text)
+            for elem in elements:
+                if elem.parent:
+                    elem.parent.decompose()
+
+        # Remove phone numbers (pattern: (XX) XXXX-XXXX)
+        phone_elements = soup.find_all(string=lambda text: text and re.search(r'\(\d{2}\)\s*\d{4}[-\s]?\d{4}', text) if text else False)
+        for elem in phone_elements:
+            if elem.parent:
+                elem.parent.decompose()
+
+        # Remove social media handles (like @minaseenergia, facebook.com/xxx)
+        social_handles = soup.find_all(string=lambda text: text and any(
+            pattern in text.lower() for pattern in [
+                "facebook.com/", "twitter.com/", "instagram.com/",
+                "linkedin.com/", "youtube.com/", "flickr.com/"
+            ]
+        ) if text else False)
+
+        for elem in social_handles:
+            if elem.parent:
+                elem.parent.decompose()
+
+    def _clean_markdown_content(self, content: str) -> str:
+        """
+        Apply additional cleaning to the markdown content.
+
+        :param content: Raw markdown content
+        :return: Cleaned markdown content
+        """
+        if not content:
+            return content
+
+        lines = content.split('\n')
+        cleaned_lines = []
+
+        # Track if we've found the main content start
+        content_started = False
+
+        for line in lines:
+            line_stripped = line.strip()
+
+            # Skip empty lines at the beginning
+            if not content_started and not line_stripped:
+                continue
+
+            # Skip lines that are obviously junk
+            if self._is_junk_line(line_stripped):
+                continue
+
+            # Remove title lines with "===" patterns (markdown headers from HTML conversion)
+            if re.match(r'^=+$', line_stripped):
+                continue
+
+            # Start including content after we find a meaningful line
+            if not content_started and line_stripped and not self._is_junk_line(line_stripped):
+                content_started = True
+
+            if content_started:
+                cleaned_lines.append(line)
+
+        # Join lines and clean up excessive whitespace
+        cleaned_content = '\n'.join(cleaned_lines)
+
+        # Remove multiple consecutive empty lines
+        cleaned_content = re.sub(r'\n\s*\n\s*\n', '\n\n', cleaned_content)
+
+        # Remove leading/trailing whitespace
+        cleaned_content = cleaned_content.strip()
+
+        return cleaned_content
+
+    def _is_junk_line(self, line: str) -> bool:
+        """
+        Check if a line contains junk content that should be removed.
+
+        :param line: Line to check
+        :return: True if the line is junk, False otherwise
+        """
+        if not line:
+            return False
+
+        line_lower = line.lower()
+
+        # Junk patterns
+        junk_patterns = [
+            # Navigation/breadcrumb
+            r'^notícias?$',
+            r'^home\s*$',
+            r'^voltar\s*$',
+
+            # Social media text
+            r'compartilhe',
+            r'facebook\.com',
+            r'twitter\.com',
+            r'linkedin\.com',
+            r'whatsapp\.com',
+            r'instagram\.com',
+            r'youtube\.com',
+
+            # Metadata
+            r'^publicado em',
+            r'^atualizado em',
+            r'^categoria',
+            r'^tags?:',
+
+            # Contact info
+            r'assessoria',
+            r'comunicação',
+            r'imprensa',
+            r'ascom@',
+            r'\(\d{2}\)\s*\d{4}[-\s]?\d{4}',  # Phone numbers
+
+            # Copy link text
+            r'copiar para área de transferência',
+            r'copiar link',
+        ]
+
+        for pattern in junk_patterns:
+            if re.search(pattern, line_lower):
+                return True
+
+        return False
 
     def _remove_intro_lines(self, content: str) -> str:
         """
