@@ -357,6 +357,10 @@ class WebScraper:
             if not article_body:
                 return "No content found", None
 
+            # Count content BEFORE cleaning for validation
+            original_p_count = len(article_body.find_all('p'))
+            original_length = len(str(article_body))
+
             # Extract the first image before cleaning
             first_img = article_body.find("img")
             image_url = first_img["src"] if first_img else None
@@ -364,11 +368,34 @@ class WebScraper:
             # Clean the HTML content by removing junk elements
             cleaned_html = self._clean_html_content(article_body)
 
+            # Validate that cleaning didn't remove too much content
+            cleaned_p_count = len(cleaned_html.find_all('p'))
+            cleaned_length = len(str(cleaned_html))
+
+            # If we removed >80% of paragraphs or >90% of content, use minimal cleaning instead
+            if cleaned_p_count < original_p_count * 0.2 or cleaned_length < original_length * 0.1:
+                logging.warning(
+                    f"Content cleaning removed too much! "
+                    f"Original: {original_p_count}p/{original_length}chars, "
+                    f"Cleaned: {cleaned_p_count}p/{cleaned_length}chars. "
+                    f"Using minimal cleaning fallback for {url}"
+                )
+                # Use minimal cleaning as fallback
+                cleaned_html = self._minimal_clean_html_content(article_body)
+
             # Convert the cleaned HTML content to Markdown
             content = md(str(cleaned_html))
 
             # Apply additional text-based cleaning
             cleaned_content = self._clean_markdown_content(content)
+
+            # Final validation: ensure we have enough content
+            if len(cleaned_content.strip()) < 100:
+                logging.error(
+                    f"Content too short after cleaning ({len(cleaned_content)} chars) for {url}. "
+                    f"This may indicate a problem with the cleaning algorithm."
+                )
+                return "Error retrieving content", None
 
             return cleaned_content, image_url
 
@@ -408,6 +435,32 @@ class WebScraper:
 
         return cleaned_body
 
+    def _minimal_clean_html_content(self, article_body):
+        """
+        Minimal cleaning - only remove obviously bad elements.
+        Use this as fallback when aggressive cleaning removes too much content.
+
+        :param article_body: BeautifulSoup element representing the article content
+        :return: Minimally cleaned BeautifulSoup element
+        """
+        # Make a copy to avoid modifying the original
+        cleaned_body = BeautifulSoup(str(article_body), 'html.parser')
+
+        # Remove only the most obvious junk
+        # Remove title (H1) as it's already extracted separately
+        for h1 in cleaned_body.find_all('h1'):
+            h1.decompose()
+
+        # Remove script tags
+        for script in cleaned_body.find_all('script'):
+            script.decompose()
+
+        # Remove sharing buttons (this is safe and important)
+        self._remove_sharing_elements(cleaned_body)
+
+        # That's it - keep everything else to preserve content
+        return cleaned_body
+
     def _remove_sharing_elements(self, soup):
         """
         Remove sharing buttons and related elements.
@@ -417,22 +470,32 @@ class WebScraper:
         # Remove elements containing "Compartilhe"
         share_elements = soup.find_all(string=lambda text: text and "Compartilhe" in text)
         for elem in share_elements:
-            if elem.parent:
-                elem.parent.decompose()
+            try:
+                if elem.parent:
+                    elem.parent.decompose()
+            except AttributeError:
+                # Element already decomposed or is a NavigableString
+                pass
 
         # Remove social media links by domain
         social_domains = ["facebook.com", "twitter.com", "linkedin.com", "whatsapp.com", "api.whatsapp.com"]
         for domain in social_domains:
             links = soup.find_all("a", href=lambda href: href and domain in href)
             for link in links:
-                link.decompose()
+                try:
+                    link.decompose()
+                except AttributeError:
+                    pass
 
         # Remove elements with social-related classes
         social_classes = ["social-links", "share", "sharing", "social-media"]
         for class_name in social_classes:
             elements = soup.find_all(class_=lambda c: c and any(social in str(c).lower() for social in [class_name]))
             for elem in elements:
-                elem.decompose()
+                try:
+                    elem.decompose()
+                except AttributeError:
+                    pass
 
     def _remove_metadata_elements(self, soup):
         """
@@ -445,28 +508,57 @@ class WebScraper:
         for keyword in date_keywords:
             elements = soup.find_all(string=lambda text: text and keyword in text)
             for elem in elements:
-                if elem.parent and elem.parent.name in ['p', 'div', 'span']:
-                    elem.parent.decompose()
+                try:
+                    if elem.parent and elem.parent.name in ['p', 'div', 'span']:
+                        elem.parent.decompose()
+                except AttributeError:
+                    pass
 
         # Remove elements with date-related classes
         date_classes = ["documentByLine", "publishedDate", "updatedDate", "date-info"]
         for class_name in date_classes:
             elements = soup.find_all(class_=lambda c: c and class_name in str(c) if c else False)
             for elem in elements:
+                try:
+                    elem.decompose()
+                except AttributeError:
+                    pass
+
+        # Remove category/tag metadata - IMPROVED: Be more specific to avoid removing content
+        # Only remove if it's actually a metadata label, not part of article content
+
+        # Remove elements with metadata-specific classes
+        metadata_classes = ["keywords", "category", "tags", "metadata", "article-tags",
+                           "article-category", "post-tags", "post-category", "documentTags"]
+        for class_name in metadata_classes:
+            elements = soup.find_all(class_=lambda c: c and class_name in str(c).lower() if c else False)
+            for elem in elements:
                 elem.decompose()
 
-        # Remove category/tag elements that appear at the end
-        category_keywords = ["Categoria", "Tags:", "categoria", "tags:"]
-        for keyword in category_keywords:
-            elements = soup.find_all(string=lambda text: text and keyword in text)
-            for elem in elements:
-                if elem.parent:
-                    # Remove the parent and its siblings (usually the category content)
-                    parent = elem.parent
-                    while parent and parent.find_next_sibling():
-                        sibling = parent.find_next_sibling()
-                        sibling.decompose()
-                    parent.decompose()
+        # Look for specific label elements (safer than searching all text)
+        for label in soup.find_all('label'):
+            label_text = label.get_text().strip()
+            # Only match if the ENTIRE text is the keyword (not part of a sentence)
+            if label_text.lower() in ['categoria', 'categoria:', 'tags', 'tags:', 'palavras-chave', 'palavras-chave:']:
+                # Remove the label and its immediate parent if it's a small container
+                parent = label.parent
+                if parent:
+                    parent_text_length = len(parent.get_text().strip())
+                    # Only remove if parent is small (likely just metadata, not content)
+                    if parent_text_length < 200:
+                        parent.decompose()
+                    else:
+                        # Just remove the label itself if parent is large
+                        label.decompose()
+
+        # Look for "Categoria:" or "Tags:" at the start of small paragraphs/divs
+        # This is safer than searching all text
+        for elem in soup.find_all(['p', 'div', 'span']):
+            elem_text = elem.get_text().strip()
+            # Match only if it starts with the keyword and is short (likely metadata)
+            if elem_text and len(elem_text) < 150:
+                if elem_text.lower().startswith(('categoria:', 'tags:', 'palavras-chave:')):
+                    elem.decompose()
 
     def _remove_contact_elements(self, soup):
         """
@@ -484,14 +576,20 @@ class WebScraper:
         for keyword in contact_keywords:
             elements = soup.find_all(string=lambda text: text and keyword in text)
             for elem in elements:
-                if elem.parent:
-                    elem.parent.decompose()
+                try:
+                    if elem.parent:
+                        elem.parent.decompose()
+                except AttributeError:
+                    pass
 
         # Remove phone numbers (pattern: (XX) XXXX-XXXX)
         phone_elements = soup.find_all(string=lambda text: text and re.search(r'\(\d{2}\)\s*\d{4}[-\s]?\d{4}', text) if text else False)
         for elem in phone_elements:
-            if elem.parent:
-                elem.parent.decompose()
+            try:
+                if elem.parent:
+                    elem.parent.decompose()
+            except AttributeError:
+                pass
 
         # Remove social media handles (like @minaseenergia, facebook.com/xxx)
         social_handles = soup.find_all(string=lambda text: text and any(
@@ -502,8 +600,11 @@ class WebScraper:
         ) if text else False)
 
         for elem in social_handles:
-            if elem.parent:
-                elem.parent.decompose()
+            try:
+                if elem.parent:
+                    elem.parent.decompose()
+            except AttributeError:
+                pass
 
     def _clean_markdown_content(self, content: str) -> str:
         """
