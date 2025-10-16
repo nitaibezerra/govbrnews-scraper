@@ -347,54 +347,22 @@ class WebScraper:
         :return: A tuple containing the article content in Markdown format and the first image URL (or None).
         """
         try:
-            response = self.fetch_page(url)
-            if not response:
+            article_body = self._fetch_article_body(url)
+            if article_body is None:
                 return "Error retrieving content", None
 
-            soup = BeautifulSoup(response.content, "html.parser")
-            article_body = soup.find("div", id="content")
+            # Extract image before cleaning
+            image_url = self._extract_image_url(article_body)
 
-            if not article_body:
-                return "No content found", None
+            # Clean HTML with validation
+            cleaned_html = self._clean_html_with_validation(article_body, url)
 
-            # Count content BEFORE cleaning for validation
-            original_p_count = len(article_body.find_all('p'))
-            original_length = len(str(article_body))
-
-            # Extract the first image before cleaning
-            first_img = article_body.find("img")
-            image_url = first_img["src"] if first_img else None
-
-            # Clean the HTML content by removing junk elements
-            cleaned_html = self._clean_html_content(article_body)
-
-            # Validate that cleaning didn't remove too much content
-            cleaned_p_count = len(cleaned_html.find_all('p'))
-            cleaned_length = len(str(cleaned_html))
-
-            # If we removed >80% of paragraphs or >90% of content, use minimal cleaning instead
-            if cleaned_p_count < original_p_count * 0.2 or cleaned_length < original_length * 0.1:
-                logging.warning(
-                    f"Content cleaning removed too much! "
-                    f"Original: {original_p_count}p/{original_length}chars, "
-                    f"Cleaned: {cleaned_p_count}p/{cleaned_length}chars. "
-                    f"Using minimal cleaning fallback for {url}"
-                )
-                # Use minimal cleaning as fallback
-                cleaned_html = self._minimal_clean_html_content(article_body)
-
-            # Convert the cleaned HTML content to Markdown
+            # Convert to markdown and clean
             content = md(str(cleaned_html))
-
-            # Apply additional text-based cleaning
             cleaned_content = self._clean_markdown_content(content)
 
-            # Final validation: ensure we have enough content
-            if len(cleaned_content.strip()) < 100:
-                logging.error(
-                    f"Content too short after cleaning ({len(cleaned_content)} chars) for {url}. "
-                    f"This may indicate a problem with the cleaning algorithm."
-                )
+            # Final validation
+            if not self._validate_final_content(cleaned_content, url):
                 return "Error retrieving content", None
 
             return cleaned_content, image_url
@@ -402,6 +370,112 @@ class WebScraper:
         except Exception as e:
             logging.error(f"Error retrieving content from {url}: {str(e)}")
             return "Error retrieving content", None
+
+    def _fetch_article_body(self, url: str):
+        """
+        Fetch and parse the article body from URL.
+
+        :param url: The URL to fetch
+        :return: BeautifulSoup element or None if not found
+        """
+        response = self.fetch_page(url)
+        if not response:
+            return None
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        article_body = soup.find("div", id="content")
+
+        if not article_body:
+            logging.warning(f"No content div found for {url}")
+            return None
+
+        return article_body
+
+    def _extract_image_url(self, article_body) -> Optional[str]:
+        """
+        Extract the first image URL from article body.
+
+        :param article_body: BeautifulSoup element
+        :return: Image URL or None
+        """
+        first_img = article_body.find("img")
+        return first_img["src"] if first_img else None
+
+    def _clean_html_with_validation(self, article_body, url: str):
+        """
+        Clean HTML content with validation and fallback mechanism.
+
+        :param article_body: Original BeautifulSoup element
+        :param url: URL for logging purposes
+        :return: Cleaned BeautifulSoup element
+        """
+        # Count content before cleaning
+        original_stats = self._count_content_stats(article_body)
+
+        # Clean the HTML content
+        cleaned_html = self._clean_html_content(article_body)
+
+        # Validate cleaning didn't remove too much
+        cleaned_stats = self._count_content_stats(cleaned_html)
+
+        # Check if we removed too much content
+        if self._is_over_cleaned(original_stats, cleaned_stats):
+            logging.warning(
+                f"Content cleaning removed too much! "
+                f"Original: {original_stats['paragraphs']}p/{original_stats['length']}chars, "
+                f"Cleaned: {cleaned_stats['paragraphs']}p/{cleaned_stats['length']}chars. "
+                f"Using minimal cleaning fallback for {url}"
+            )
+            return self._minimal_clean_html_content(article_body)
+
+        return cleaned_html
+
+    def _count_content_stats(self, html_element) -> dict:
+        """
+        Count content statistics for an HTML element.
+
+        :param html_element: BeautifulSoup element
+        :return: Dictionary with 'paragraphs' and 'length' keys
+        """
+        return {
+            'paragraphs': len(html_element.find_all('p')),
+            'length': len(str(html_element))
+        }
+
+    def _is_over_cleaned(self, original_stats: dict, cleaned_stats: dict) -> bool:
+        """
+        Check if cleaning removed too much content.
+
+        :param original_stats: Statistics before cleaning
+        :param cleaned_stats: Statistics after cleaning
+        :return: True if over-cleaned, False otherwise
+        """
+        paragraph_threshold = 0.2  # Keep at least 20% of paragraphs
+        length_threshold = 0.1     # Keep at least 10% of content length
+
+        paragraphs_ok = cleaned_stats['paragraphs'] >= original_stats['paragraphs'] * paragraph_threshold
+        length_ok = cleaned_stats['length'] >= original_stats['length'] * length_threshold
+
+        return not (paragraphs_ok and length_ok)
+
+    def _validate_final_content(self, content: str, url: str) -> bool:
+        """
+        Validate that final content meets minimum requirements.
+
+        :param content: The cleaned content string
+        :param url: URL for logging purposes
+        :return: True if valid, False otherwise
+        """
+        min_content_length = 100
+
+        if len(content.strip()) < min_content_length:
+            logging.error(
+                f"Content too short after cleaning ({len(content)} chars) for {url}. "
+                f"This may indicate a problem with the cleaning algorithm."
+            )
+            return False
+
+        return True
 
     def _clean_html_content(self, article_body):
         """
