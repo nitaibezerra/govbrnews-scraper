@@ -331,7 +331,8 @@
             additionalSearchParameters: {
                 query_by: 'title,content',
                 num_typos: 2,
-                typo_tokens_threshold: 1
+                typo_tokens_threshold: 1,
+                sort_by: '_text_match(buckets: 10):desc,published_at:desc'
             }
         });
 
