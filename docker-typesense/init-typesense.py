@@ -85,7 +85,7 @@ def create_collection(client):
         schema = {
             'name': COLLECTION_NAME,
             'fields': [
-                {'name': 'unique_id', 'type': 'string', 'facet': False},
+                {'name': 'unique_id', 'type': 'string', 'facet': True, 'sort': True},
                 {'name': 'agency', 'type': 'string', 'facet': True, 'optional': True},
                 {'name': 'published_at', 'type': 'int64', 'facet': False},  # Unix timestamp - required for sorting
                 {'name': 'title', 'type': 'string', 'facet': False, 'optional': True},
