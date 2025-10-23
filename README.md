@@ -88,3 +88,19 @@ Essa configuração assegura que os dados permaneçam atualizados e acessíveis 
 Contribuições para melhorar o **GovBR News Scraper** são muito bem-vindas! Caso encontre bugs, tenha sugestões de melhorias ou queira adicionar novas funcionalidades, sinta-se à vontade para abrir uma *issue* ou enviar um *pull request*.
 
 Estamos sempre abertos a contribuições que possam melhorar o projeto!
+
+---
+
+## Licença
+
+Este projeto está licenciado sob a **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+Isso significa que:
+- ✅ Você pode usar, modificar e distribuir este software
+- ✅ Você pode usar comercialmente
+- ⚠️ Se você modificar e disponibilizar via rede (web service, API, etc), deve tornar o código fonte disponível
+- ⚠️ Modificações devem usar a mesma licença AGPL-3.0
+
+A escolha da AGPL-3.0 garante que melhorias e modificações deste projeto de dados públicos governamentais continuem abertas e disponíveis para toda a comunidade.
+
+Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
