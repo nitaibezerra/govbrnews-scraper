@@ -97,6 +97,7 @@ def create_collection(client):
                 {'name': 'theme_1_level_1', 'type': 'string', 'facet': True, 'optional': True},
                 {'name': 'published_year', 'type': 'int32', 'facet': True, 'optional': True},
                 {'name': 'published_month', 'type': 'int32', 'facet': True, 'optional': True},
+                {'name': 'published_week', 'type': 'int32', 'facet': True, 'optional': True, 'index': True},
             ],
             'default_sorting_field': 'published_at'
         }
@@ -108,6 +109,35 @@ def create_collection(client):
     except Exception as e:
         logger.error(f"Error creating collection: {e}")
         raise
+
+def calculate_published_week(timestamp):
+    """
+    Calculate ISO 8601 week in format YYYYWW from Unix timestamp.
+
+    Args:
+        timestamp: Unix timestamp in seconds
+
+    Returns:
+        int in format YYYYWW (e.g., 202543 for week 43 of 2025)
+        Returns None if timestamp is invalid
+
+    Examples:
+        >>> calculate_published_week(1704110400)  # 2024-01-01
+        202401  # Week 1 of 2024
+
+        >>> calculate_published_week(1729641600)  # 2025-10-23
+        202543  # Week 43 of 2025
+    """
+    if pd.isna(timestamp) or timestamp <= 0:
+        return None
+
+    try:
+        dt = pd.to_datetime(timestamp, unit='s')
+        iso_year, iso_week, _ = dt.isocalendar()
+        return iso_year * 100 + iso_week
+    except Exception:
+        return None
+
 
 def download_and_process_dataset():
     """Download the HuggingFace dataset and convert to pandas DataFrame."""
@@ -130,6 +160,14 @@ def download_and_process_dataset():
         # Convert datetime to Unix timestamp (seconds) for Typesense
         df['published_at_ts'] = df['published_at'].astype('int64') // 10**9
         df['extracted_at_ts'] = df['extracted_at'].astype('int64') // 10**9
+
+        # Calculate ISO 8601 week (YYYYWW format) for temporal analysis
+        logger.info("Calculating ISO 8601 weeks for temporal optimization...")
+        df['published_week'] = df['published_at_ts'].apply(calculate_published_week)
+
+        # Log some statistics
+        valid_weeks = df['published_week'].notna().sum()
+        logger.info(f"Published week calculated for {valid_weeks}/{len(df)} records")
 
         # Tags field removed to simplify processing
 
@@ -194,6 +232,9 @@ def prepare_document(row: pd.Series) -> Dict[str, Any]:
 
     if pd.notna(row.get('published_month')) and row['published_month'] > 0:
         doc['published_month'] = int(row['published_month'])
+
+    if pd.notna(row.get('published_week')) and row['published_week'] > 0:
+        doc['published_week'] = int(row['published_week'])
 
     return doc
 
