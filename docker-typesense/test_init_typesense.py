@@ -8,7 +8,17 @@ Run with: python -m pytest test_init_typesense.py -v
 import pytest
 import pandas as pd
 from datetime import datetime
-from init_typesense import calculate_published_week
+import sys
+import importlib.util
+
+# Load init-typesense.py as a module (handles hyphenated filename)
+spec = importlib.util.spec_from_file_location("init_typesense", "init-typesense.py")
+init_typesense = importlib.util.module_from_spec(spec)
+sys.modules["init_typesense"] = init_typesense
+spec.loader.exec_module(init_typesense)
+
+calculate_published_week = init_typesense.calculate_published_week
+parse_theme_field = init_typesense.parse_theme_field
 
 
 class TestCalculatePublishedWeek:
@@ -130,6 +140,131 @@ class TestCalculatePublishedWeek:
         # Check valid ranges
         assert 2000 <= year <= 2999
         assert 1 <= week <= 53
+
+
+class TestParseThemeField:
+    """Tests for parse_theme_field function."""
+
+    def test_valid_theme_format(self):
+        """Test parsing valid theme format 'XX - Label'."""
+        code, label = parse_theme_field("01 - Economia e Finanças")
+        assert code == "01"
+        assert label == "Economia e Finanças"
+
+    def test_all_valid_themes(self):
+        """Test parsing all 25 valid theme formats."""
+        test_cases = [
+            ("01 - Economia e Finanças", "01", "Economia e Finanças"),
+            ("02 - Educação", "02", "Educação"),
+            ("03 - Saúde", "03", "Saúde"),
+            ("04 - Segurança Pública", "04", "Segurança Pública"),
+            ("05 - Meio Ambiente e Sustentabilidade", "05", "Meio Ambiente e Sustentabilidade"),
+            ("10 - Agricultura, Pecuária e Abastecimento", "10", "Agricultura, Pecuária e Abastecimento"),
+            ("25 - Habitação e Urbanismo", "25", "Habitação e Urbanismo"),
+        ]
+
+        for theme_str, expected_code, expected_label in test_cases:
+            code, label = parse_theme_field(theme_str)
+            assert code == expected_code, f"Failed code for {theme_str}"
+            assert label == expected_label, f"Failed label for {theme_str}"
+
+    def test_theme_with_extra_spaces(self):
+        """Test parsing theme with extra spaces."""
+        code, label = parse_theme_field("  02 - Educação  ")
+        assert code == "02"
+        assert label == "Educação"
+
+    def test_invalid_no_separator(self):
+        """Test parsing theme without separator."""
+        code, label = parse_theme_field("02 Educação")
+        assert code is None
+        assert label is None
+
+    def test_invalid_wrong_separator(self):
+        """Test parsing theme with wrong separator."""
+        code, label = parse_theme_field("02 Educação")
+        assert code is None
+        assert label is None
+
+    def test_invalid_non_numeric_code(self):
+        """Test parsing theme with non-numeric code."""
+        code, label = parse_theme_field("AB - Educação")
+        assert code is None
+        assert label is None
+
+    def test_invalid_short_code(self):
+        """Test parsing theme with single digit code."""
+        code, label = parse_theme_field("2 - Educação")
+        assert code is None
+        assert label is None
+
+    def test_invalid_empty_label(self):
+        """Test parsing theme with empty label."""
+        code, label = parse_theme_field("02 - ")
+        assert code is None
+        assert label is None
+
+    def test_invalid_empty_string(self):
+        """Test parsing empty string."""
+        code, label = parse_theme_field("")
+        assert code is None
+        assert label is None
+
+    def test_invalid_none(self):
+        """Test parsing None."""
+        code, label = parse_theme_field(None)
+        assert code is None
+        assert label is None
+
+    def test_invalid_non_string(self):
+        """Test parsing non-string input."""
+        code, label = parse_theme_field(123)
+        assert code is None
+        assert label is None
+
+    def test_invalid_too_short(self):
+        """Test parsing string too short to be valid."""
+        code, label = parse_theme_field("01-E")
+        assert code is None
+        assert label is None
+
+    def test_label_with_special_characters(self):
+        """Test parsing theme with special characters in label."""
+        code, label = parse_theme_field("05 - Meio Ambiente & Sustentabilidade")
+        assert code == "05"
+        assert label == "Meio Ambiente & Sustentabilidade"
+
+    def test_label_with_commas(self):
+        """Test parsing theme with commas in label."""
+        code, label = parse_theme_field("10 - Agricultura, Pecuária e Abastecimento")
+        assert code == "10"
+        assert label == "Agricultura, Pecuária e Abastecimento"
+
+    def test_pandas_series_application(self):
+        """Test that function works with pandas Series.apply()."""
+        # Create a series of theme values
+        themes = pd.Series([
+            "01 - Economia e Finanças",
+            "02 - Educação",
+            "Invalid format",
+            None
+        ])
+
+        # Apply function to extract codes
+        codes = themes.apply(lambda x: parse_theme_field(x)[0])
+        labels = themes.apply(lambda x: parse_theme_field(x)[1])
+
+        # Check codes
+        assert codes.iloc[0] == "01"
+        assert codes.iloc[1] == "02"
+        assert pd.isna(codes.iloc[2])
+        assert pd.isna(codes.iloc[3])
+
+        # Check labels
+        assert labels.iloc[0] == "Economia e Finanças"
+        assert labels.iloc[1] == "Educação"
+        assert pd.isna(labels.iloc[2])
+        assert pd.isna(labels.iloc[3])
 
 
 if __name__ == "__main__":
