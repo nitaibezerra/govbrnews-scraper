@@ -95,6 +95,7 @@ def create_collection(client):
                 {'name': 'content', 'type': 'string', 'facet': False, 'optional': True},
                 {'name': 'extracted_at', 'type': 'int64', 'facet': False, 'optional': True},
                 {'name': 'theme_1_level_1', 'type': 'string', 'facet': True, 'optional': True},
+                {'name': 'theme_1_code', 'type': 'string', 'facet': True, 'optional': True},
                 {'name': 'published_year', 'type': 'int32', 'facet': True, 'optional': True},
                 {'name': 'published_month', 'type': 'int32', 'facet': True, 'optional': True},
                 {'name': 'published_week', 'type': 'int32', 'facet': True, 'optional': True, 'index': True},
@@ -137,6 +138,49 @@ def calculate_published_week(timestamp):
         return iso_year * 100 + iso_week
     except Exception:
         return None
+
+
+def parse_theme_field(theme_value: str) -> tuple:
+    """
+    Parse theme field in format "XX - Label" to extract code and label separately.
+
+    Args:
+        theme_value: Theme string in format "XX - Label" (e.g., "01 - Economia e Finanças")
+
+    Returns:
+        Tuple of (theme_code, theme_label)
+        - theme_code: Two-digit code (e.g., "01")
+        - theme_label: Clean label without code (e.g., "Economia e Finanças")
+        Returns (None, None) if parsing fails
+
+    Examples:
+        >>> parse_theme_field("01 - Economia e Finanças")
+        ("01", "Economia e Finanças")
+
+        >>> parse_theme_field("25 - Habitação e Urbanismo")
+        ("25", "Habitação e Urbanismo")
+
+        >>> parse_theme_field("Invalid format")
+        (None, None)
+    """
+    if not theme_value or not isinstance(theme_value, str):
+        return None, None
+
+    theme_value = theme_value.strip()
+
+    # Check if format matches "XX - Label" where XX is 2 digits
+    if len(theme_value) < 5 or theme_value[2:5] != ' - ':
+        return None, None
+
+    code_part = theme_value[:2]
+    if not code_part.isdigit():
+        return None, None
+
+    label_part = theme_value[5:].strip()
+    if not label_part:
+        return None, None
+
+    return code_part, label_part
 
 
 def download_and_process_dataset():
@@ -225,7 +269,16 @@ def prepare_document(row: pd.Series) -> Dict[str, Any]:
     if pd.notna(row.get('theme_1_level_1')):
         val = str(row['theme_1_level_1']).strip()
         if val:
-            doc['theme_1_level_1'] = val
+            # Parse theme field to extract code and clean label
+            theme_code, theme_label = parse_theme_field(val)
+
+            # Store clean label in theme_1_level_1 (e.g., "Educação" instead of "02 - Educação")
+            if theme_label:
+                doc['theme_1_level_1'] = theme_label
+
+            # Store code in theme_1_code (e.g., "02")
+            if theme_code:
+                doc['theme_1_code'] = theme_code
 
     if pd.notna(row.get('published_year')) and row['published_year'] > 0:
         doc['published_year'] = int(row['published_year'])
