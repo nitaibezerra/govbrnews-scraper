@@ -180,7 +180,7 @@ class CalculateRecordsManager:
         # Query records with pagination
         record_ids = []
         page_number = 0
-        page_size = 100
+        page_size = 500
 
         while True:
             result = self.client.query_records(
@@ -200,7 +200,7 @@ class CalculateRecordsManager:
                 break
 
             page_number += 1
-            time.sleep(1)  # Sleep between pagination requests
+            # time.sleep(1)  # Sleep between pagination requests
 
         if verbose:
             print(f"found {len(record_ids)} records")
@@ -264,8 +264,8 @@ class CalculateRecordsManager:
                     print(f"✗ Error: {e}")
 
             # Sleep between batches (except after the last batch)
-            if batch_num < len(batches):
-                time.sleep(1)
+            # if batch_num < len(batches):
+            #     time.sleep(1)
 
         return {
             "field_name": field_name,
