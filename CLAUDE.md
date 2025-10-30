@@ -86,6 +86,37 @@ The **GovBR News Scraper** is an experimental tool developed by the Ministry of 
 | `tags` | list | Associated tags (if available) |
 | `content` | string | Full content in Markdown |
 | `extracted_at` | datetime | Extraction timestamp |
+| `theme_1_level_1` | string | Full level 1 theme (e.g., "01 - Economia e Finanças") |
+| `theme_1_level_1_code` | string | Level 1 theme code (e.g., "01") |
+| `theme_1_level_1_label` | string | Level 1 theme label (e.g., "Economia e Finanças") |
+| `theme_1_level_2_code` | string | Level 2 theme code (e.g., "01.01") derived from themes_tree.yaml |
+| `theme_1_level_2_label` | string | Level 2 theme label (e.g., "Política Econômica") |
+| `theme_1_level_3_code` | string | Level 3 theme code (e.g., "01.01.01") from Cogfy |
+| `theme_1_level_3_label` | string | Level 3 theme label (e.g., "Política Fiscal") |
+| `most_specific_theme_code` | string | Most specific theme code available (level 3 if exists, otherwise level 1) |
+| `most_specific_theme_label` | string | Most specific theme label available |
+
+### Theme Hierarchy
+
+The dataset uses a 3-level theme taxonomy defined in [themes_tree.yaml](src/enrichment/themes_tree.yaml):
+
+- **Level 1**: Broad categories (e.g., "01 - Economia e Finanças")
+- **Level 2**: Subcategories (e.g., "01.01 - Política Econômica")
+- **Level 3**: Specific topics (e.g., "01.01.01 - Política Fiscal")
+
+**How themes are assigned:**
+
+1. **theme_1_level_1** and **theme_1_level_3** are fetched from Cogfy (AI-classified)
+2. **theme_1_level_2** is derived from themes_tree.yaml:
+   - If level 3 exists: extract first 5 characters (e.g., "01.01.01" → "01.01")
+   - If only level 1 exists: use first level 2 entry under that level 1
+3. **most_specific_theme** contains the most granular theme available:
+   - If level 3 exists, use level 3
+   - Otherwise, use level 1
+
+**Example:**
+- News with level 3: `most_specific_theme_code = "01.01.01"` (Política Fiscal)
+- News without level 3: `most_specific_theme_code = "01"` (Economia e Finanças)
 
 ## CLI Commands
 
@@ -421,7 +452,10 @@ The project uses GitHub Actions for automated daily news processing ([.github/wo
 5. **enrich-themes** - Enrich dataset with theme information
    - Waits 20 minutes after Cogfy upload (allows processing time for vector embeddings and indexing)
    - Script: [theme_enrichment_manager.py](src/theme_enrichment_manager.py)
-   - Writes theme data back to Hugging Face dataset
+   - Fetches theme_1_level_1 and theme_1_level_3 from Cogfy
+   - Derives theme_1_level_2 from [themes_tree.yaml](src/enrichment/themes_tree.yaml)
+   - Determines most specific theme (level 3 if available, otherwise level 1)
+   - Writes all theme data back to Hugging Face dataset
 
 6. **pipeline-summary** - Summary and status check
    - Runs always (even if previous steps fail)
