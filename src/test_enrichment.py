@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Quick test of the updated theme enrichment manager.
+Quick test of the enrichment manager.
 Tests with a single recent date to verify themes + summary extraction works correctly.
 """
 
@@ -11,14 +11,14 @@ from dotenv import load_dotenv
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from theme_enrichment_manager import ThemeEnrichmentManager
+from enrichment_manager import EnrichmentManager
 
 
 def main():
     load_dotenv()
 
     print("="*60)
-    print("TESTING UPDATED THEME ENRICHMENT MANAGER")
+    print("TESTING ENRICHMENT MANAGER")
     print("="*60)
 
     # Test with a single recent date
@@ -27,12 +27,12 @@ def main():
     print(f"\nTesting with date: {test_date}")
     print("This will:")
     print("  1. Query Cogfy for records on this date")
-    print("  2. Extract all 3 theme levels (L1, L2, L3)")
+    print("  2. Extract all 3 theme levels (L1, L2, L3) + summary")
     print("  3. Show mapping results")
     print("\nNOTE: This is a dry run - won't update HuggingFace")
 
     try:
-        manager = ThemeEnrichmentManager()
+        manager = EnrichmentManager()
 
         # Setup mappings
         print("\n--- Setting up Cogfy mappings ---")

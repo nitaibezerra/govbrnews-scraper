@@ -36,7 +36,7 @@ The **GovBR News Scraper** is an experimental tool developed by the Ministry of 
 
 5. **Pipeline Scripts** (used by GitHub Actions)
    - [upload_to_cogfy_manager.py](src/upload_to_cogfy_manager.py) - Uploads scraped news to Cogfy collection
-   - [theme_enrichment_manager.py](src/theme_enrichment_manager.py) - Enriches dataset with theme data from Cogfy
+   - [enrichment_manager.py](src/enrichment_manager.py) - Enriches dataset with AI-generated data from Cogfy (themes + summary)
 
 6. **Main Entry Point**
    - [main.py](src/main.py) - CLI interface with subcommands for scraping and augmentation
@@ -89,12 +89,13 @@ The **GovBR News Scraper** is an experimental tool developed by the Ministry of 
 | `theme_1_level_1` | string | Full level 1 theme (e.g., "01 - Economia e Finanças") |
 | `theme_1_level_1_code` | string | Level 1 theme code (e.g., "01") |
 | `theme_1_level_1_label` | string | Level 1 theme label (e.g., "Economia e Finanças") |
-| `theme_1_level_2_code` | string | Level 2 theme code (e.g., "01.01") derived from themes_tree.yaml |
-| `theme_1_level_2_label` | string | Level 2 theme label (e.g., "Política Econômica") |
-| `theme_1_level_3_code` | string | Level 3 theme code (e.g., "01.01.01") from Cogfy |
-| `theme_1_level_3_label` | string | Level 3 theme label (e.g., "Política Fiscal") |
-| `most_specific_theme_code` | string | Most specific theme code available (level 3 if exists, otherwise level 1) |
+| `theme_1_level_2_code` | string | Level 2 theme code (e.g., "01.01") from Cogfy AI inference |
+| `theme_1_level_2_label` | string | Level 2 theme label (e.g., "Política Econômica") from Cogfy AI |
+| `theme_1_level_3_code` | string | Level 3 theme code (e.g., "01.01.01") from Cogfy AI inference |
+| `theme_1_level_3_label` | string | Level 3 theme label (e.g., "Política Fiscal") from Cogfy AI |
+| `most_specific_theme_code` | string | Most specific theme code available (priority: L3 > L2 > L1) |
 | `most_specific_theme_label` | string | Most specific theme label available |
+| `summary` | string | AI-generated summary of the news article (from Cogfy) |
 
 ### Theme Hierarchy
 
@@ -457,15 +458,16 @@ The project uses GitHub Actions for automated daily news processing ([.github/wo
    - Script: [upload_to_cogfy_manager.py](src/upload_to_cogfy_manager.py)
    - Requires: `COGFY_API_KEY` secret
 
-5. **enrich-themes** - Enrich dataset with theme information
+5. **enrich-themes** - Enrich dataset with AI-generated data
    - Waits 20 minutes after Cogfy upload (allows processing time for AI inference)
-   - Script: [theme_enrichment_manager.py](src/theme_enrichment_manager.py)
-   - Fetches all 3 theme levels from Cogfy (AI-classified):
-     * theme_1_level_1 (select field with ID mapping)
-     * theme_1_level_2 (text field from AI inference)
-     * theme_1_level_3 (text field from AI inference)
+   - Script: [enrichment_manager.py](src/enrichment_manager.py)
+   - Fetches AI-generated enrichment data from Cogfy:
+     * **theme_1_level_1** - select field with ID→label mapping (broad category)
+     * **theme_1_level_2** - text field from AI inference (subcategory)
+     * **theme_1_level_3** - text field from AI inference (specific topic)
+     * **summary** - text field from AI inference (article summary)
    - Determines most specific theme with priority: L3 > L2 > L1
-   - Writes all theme data back to Hugging Face dataset
+   - Writes all enrichment data (themes + summary) back to Hugging Face dataset
 
 6. **pipeline-summary** - Summary and status check
    - Runs always (even if previous steps fail)

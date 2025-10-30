@@ -27,21 +27,21 @@ logging.basicConfig(
 load_dotenv()
 
 
-class ThemeEnrichmentManager:
+class EnrichmentManager:
     """
-    Manager class for enriching HuggingFace dataset with theme data from Cogfy.
+    Manager class for enriching HuggingFace dataset with AI-generated data from Cogfy.
 
     This class handles the process of:
     1. Loading the HuggingFace dataset
-    2. Querying Cogfy for theme data (all 3 levels from AI inference)
+    2. Querying Cogfy for enrichment data (themes L1/L2/L3 and summary from AI inference)
     3. Determining the most specific theme available
-    4. Updating the dataset with enriched theme information
+    4. Updating the dataset with enriched information
     5. Pushing the updated dataset back to HuggingFace
     """
 
     def __init__(self, server_url: str = "https://api.cogfy.com/", collection_name: str = "noticiasgovbr-all-news"):
         """
-        Initialize the ThemeEnrichmentManager.
+        Initialize the EnrichmentManager.
 
         Args:
             server_url: Cogfy server URL
@@ -870,9 +870,9 @@ class ThemeEnrichmentManager:
 
 
 def main():
-    """Main entry point for the theme enrichment script."""
+    """Main entry point for the dataset enrichment script."""
     parser = argparse.ArgumentParser(
-        description='Enrich HuggingFace dataset with theme data from Cogfy'
+        description='Enrich HuggingFace dataset with AI-generated data from Cogfy (themes + summary)'
     )
     parser.add_argument(
         '--start-date',
@@ -895,13 +895,13 @@ def main():
     parser.add_argument(
         '-f', '--force',
         action='store_true',
-        help='Force update existing theme values (default: skip records that already have themes)'
+        help='Force update existing enrichment values (default: skip records that already have themes)'
     )
 
     args = parser.parse_args()
 
     try:
-        enrichment_manager = ThemeEnrichmentManager(
+        enrichment_manager = EnrichmentManager(
             server_url=args.server_url,
             collection_name=args.collection
         )
@@ -913,7 +913,7 @@ def main():
         )
 
     except Exception as e:
-        logging.error(f"Error during theme enrichment: {str(e)}")
+        logging.error(f"Error during dataset enrichment: {str(e)}")
         raise
 
 
