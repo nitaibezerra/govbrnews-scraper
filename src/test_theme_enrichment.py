@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Quick test of the updated theme enrichment manager.
-Tests with a single recent date to verify the new logic works correctly.
+Tests with a single recent date to verify themes + summary extraction works correctly.
 """
 
 import os
@@ -59,18 +59,25 @@ def main():
             print(f"  Level 1: {themes.get('theme_1_level_1') or 'None'}")
             print(f"  Level 2: {themes.get('theme_1_level_2') or 'None'}")
             print(f"  Level 3: {themes.get('theme_1_level_3') or 'None'}")
+            summary = themes.get('summary')
+            if summary:
+                print(f"  Summary: {summary[:100]}...")
+            else:
+                print(f"  Summary: None")
 
         # Count completeness
         print("\n--- Statistics ---")
         has_l1 = sum(1 for t in theme_map.values() if t.get('theme_1_level_1'))
         has_l2 = sum(1 for t in theme_map.values() if t.get('theme_1_level_2'))
         has_l3 = sum(1 for t in theme_map.values() if t.get('theme_1_level_3'))
+        has_summary = sum(1 for t in theme_map.values() if t.get('summary'))
         total = len(theme_map)
 
         print(f"Total mapped: {total}")
         print(f"With Level 1: {has_l1} ({has_l1/total*100:.1f}%)")
         print(f"With Level 2: {has_l2} ({has_l2/total*100:.1f}%)")
         print(f"With Level 3: {has_l3} ({has_l3/total*100:.1f}%)")
+        print(f"With Summary: {has_summary} ({has_summary/total*100:.1f}%)")
 
         print("\n" + "="*60)
         print("✅ TEST COMPLETED SUCCESSFULLY")
@@ -79,6 +86,7 @@ def main():
         print("- Level 1 extracted from select field")
         print("- Level 2 extracted from text field (AI inference)")
         print("- Level 3 extracted from text field (AI inference)")
+        print("- Summary extracted from text field (AI inference)")
 
         return 0
 
