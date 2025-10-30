@@ -107,9 +107,10 @@ The dataset uses a 3-level theme taxonomy defined in [themes_tree.yaml](src/enri
 **How themes are assigned:**
 
 1. **theme_1_level_1** and **theme_1_level_3** are fetched from Cogfy (AI-classified)
-2. **theme_1_level_2** is derived from themes_tree.yaml:
-   - If level 3 exists: extract first 5 characters (e.g., "01.01.01" → "01.01")
-   - If only level 1 exists: use first level 2 entry under that level 1
+2. **theme_1_level_2** is derived from themes_tree.yaml **only when level 3 exists**:
+   - Extract first 5 characters from level 3 code (e.g., "01.01.01" → "01.01")
+   - Lookup full label in themes_tree.yaml
+   - If level 3 doesn't exist, level 2 remains None
 3. **most_specific_theme** contains the most granular theme available:
    - If level 3 exists, use level 3
    - Otherwise, use level 1

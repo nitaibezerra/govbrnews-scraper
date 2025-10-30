@@ -103,34 +103,6 @@ class ThemeEnrichmentManager:
         # Level 2 format: XX.XX
         return level_3_code[:5]  # Take first 5 characters (e.g., "01.01")
 
-    def _derive_level_2_from_level_1(self, level_1_label: str) -> Optional[str]:
-        """
-        Derive theme_1_level_2 code from theme_1_level_1 label using the theme tree.
-        This is a fallback when level 3 is not available.
-
-        Args:
-            level_1_label: Level 1 theme label (e.g., "01 - Economia e Finanças")
-
-        Returns:
-            First level 2 code under this level 1 (e.g., "01.01") or None if not found
-        """
-        if not level_1_label or not self._theme_tree:
-            return None
-
-        # Find the level 1 entry in the tree
-        level_1_entry = self._theme_tree.get(level_1_label)
-        if not level_1_entry or not isinstance(level_1_entry, dict):
-            return None
-
-        # Get the first level 2 key
-        level_2_keys = [k for k in level_1_entry.keys() if isinstance(k, str) and k.count('.') == 1]
-        if level_2_keys:
-            # Return the code part (e.g., "01.01" from "01.01 - Description")
-            first_key = level_2_keys[0]
-            return first_key.split(' - ')[0].strip() if ' - ' in first_key else first_key
-
-        return None
-
     def _get_theme_label_from_tree(self, theme_code: str) -> Optional[str]:
         """
         Get the full theme label from the tree given a code.
@@ -563,7 +535,7 @@ class ThemeEnrichmentManager:
                     df.at[idx, 'theme_1_level_3_code'] = level_3_code
                     df.at[idx, 'theme_1_level_3_label'] = level_3_label
 
-                    # Derive level 2 from level 3
+                    # Derive level 2 from level 3 (only when level 3 exists)
                     if level_3_code:
                         level_2_code = self._derive_level_2_from_level_3(level_3_code)
                         if level_2_code:
@@ -578,15 +550,7 @@ class ThemeEnrichmentManager:
                     df.at[idx, 'most_specific_theme_label'] = level_3_label
 
                 elif theme_1_level_1:
-                    # No level 3, try to derive level 2 from level 1 as fallback
-                    level_2_code = self._derive_level_2_from_level_1(theme_1_level_1)
-                    if level_2_code:
-                        level_2_full = self._get_theme_label_from_tree(level_2_code)
-                        if level_2_full:
-                            df.at[idx, 'theme_1_level_2_code'] = level_2_code
-                            _, level_2_label = self._split_theme_code_and_label(level_2_full)
-                            df.at[idx, 'theme_1_level_2_label'] = level_2_label
-
+                    # No level 3, so level 2 remains None
                     # Most specific is level 1
                     df.at[idx, 'most_specific_theme_code'] = level_1_code
                     df.at[idx, 'most_specific_theme_label'] = level_1_label
