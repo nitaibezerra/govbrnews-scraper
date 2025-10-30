@@ -98,7 +98,7 @@ jobs:
           echo "Upload to Cogfy completed successfully"
 
   enrich-themes:
-    name: Enrich Dataset with Themes
+    name: Enrich Dataset with AI Data
     runs-on: ubuntu-latest
     needs: [setup-dates, upload-to-cogfy]
     container:
@@ -111,17 +111,17 @@ jobs:
           echo "This allows time for Cogfy to complete vector embeddings and indexing"
           sleep 1200
 
-      - name: Enrich dataset with themes
+      - name: Enrich dataset with AI-generated data
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
         run: |
-          echo "Starting theme enrichment for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          echo "Starting dataset enrichment (themes + summary) for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
           cd /app
-          python src/theme_enrichment_manager.py \
+          python src/enrichment_manager.py \
             --start-date ${{ needs.setup-dates.outputs.start_date }} \
             --end-date ${{ needs.setup-dates.outputs.end_date }}
-          echo "Theme enrichment completed successfully"
+          echo "Dataset enrichment completed successfully"
 
   pipeline-summary:
     name: Pipeline Summary
@@ -136,7 +136,7 @@ jobs:
           echo "Scraper status: ${{ needs.scraper.result }}"
           echo "EBC Scraper status: ${{ needs.ebc-scraper.result }}"
           echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
-          echo "Theme enrichment status: ${{ needs.enrich-themes.result }}"
+          echo "Dataset enrichment status: ${{ needs.enrich-themes.result }}"
           echo "============================================"
 
           if [ "${{ needs.scraper.result }}" = "success" ] && \
