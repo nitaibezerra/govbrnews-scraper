@@ -27,21 +27,21 @@ logging.basicConfig(
 load_dotenv()
 
 
-class ThemeEnrichmentManager:
+class EnrichmentManager:
     """
-    Manager class for enriching HuggingFace dataset with theme data from Cogfy.
+    Manager class for enriching HuggingFace dataset with AI-generated data from Cogfy.
 
     This class handles the process of:
     1. Loading the HuggingFace dataset
-    2. Querying Cogfy for theme data (all 3 levels from AI inference)
+    2. Querying Cogfy for enrichment data (themes L1/L2/L3 and summary from AI inference)
     3. Determining the most specific theme available
-    4. Updating the dataset with enriched theme information
+    4. Updating the dataset with enriched information
     5. Pushing the updated dataset back to HuggingFace
     """
 
     def __init__(self, server_url: str = "https://api.cogfy.com/", collection_name: str = "noticiasgovbr-all-news"):
         """
-        Initialize the ThemeEnrichmentManager.
+        Initialize the EnrichmentManager.
 
         Args:
             server_url: Cogfy server URL
@@ -58,6 +58,7 @@ class ThemeEnrichmentManager:
         self._theme_1_level_1_field_id = None
         self._theme_1_level_2_field_id = None
         self._theme_1_level_3_field_id = None
+        self._summary_field_id = None
 
         self._initialize_cogfy_interface()
 
@@ -106,6 +107,13 @@ class ThemeEnrichmentManager:
             logging.info("Found theme_1_level_3 field in Cogfy collection (text field)")
         else:
             logging.warning("theme_1_level_3 field not found in Cogfy collection")
+
+        # Check if summary exists (text field - AI-generated)
+        if "summary" in self._field_map:
+            self._summary_field_id = self._field_map["summary"]
+            logging.info("Found summary field in Cogfy collection (text field - AI-generated)")
+        else:
+            logging.warning("summary field not found in Cogfy collection")
 
         # Get theme_1_level_1 options for ID→label mapping (select field)
         theme_1_level_1_field = next(
@@ -404,10 +412,16 @@ class ThemeEnrichmentManager:
                 if self._theme_1_level_3_field_id:
                     theme_1_level_3_label = self._extract_text_from_record(record, self._theme_1_level_3_field_id)
 
+                # Extract summary (text field - AI-generated) if available
+                summary = None
+                if self._summary_field_id:
+                    summary = self._extract_text_from_record(record, self._summary_field_id)
+
                 cogfy_theme_map[unique_id] = {
                     "theme_1_level_1": theme_1_level_1_label,
                     "theme_1_level_2": theme_1_level_2_label,
-                    "theme_1_level_3": theme_1_level_3_label
+                    "theme_1_level_3": theme_1_level_3_label,
+                    "summary": summary
                 }
 
             except Exception as e:
@@ -448,14 +462,15 @@ class ThemeEnrichmentManager:
         successful_updates = 0
         failed_updates = 0
 
-        # Ensure all theme columns exist
-        theme_columns = [
+        # Ensure all enrichment columns exist (themes + summary)
+        enrichment_columns = [
             'theme_1_level_1', 'theme_1_level_1_code', 'theme_1_level_1_label',
             'theme_1_level_2_code', 'theme_1_level_2_label',
             'theme_1_level_3_code', 'theme_1_level_3_label',
-            'most_specific_theme_code', 'most_specific_theme_label'
+            'most_specific_theme_code', 'most_specific_theme_label',
+            'summary'
         ]
-        for col in theme_columns:
+        for col in enrichment_columns:
             if col not in df.columns:
                 df[col] = None
 
@@ -508,6 +523,11 @@ class ThemeEnrichmentManager:
                 elif level_1_code:
                     df.at[idx, 'most_specific_theme_code'] = level_1_code
                     df.at[idx, 'most_specific_theme_label'] = level_1_label
+
+                # Summary (AI-generated from Cogfy)
+                summary = theme_data.get("summary")
+                if summary:
+                    df.at[idx, 'summary'] = summary
 
                 successful_updates += 1
 
@@ -612,14 +632,15 @@ class ThemeEnrichmentManager:
         Returns:
             DataFrame with records that need processing
         """
-        # Add theme columns if they don't exist
-        theme_columns = [
+        # Add enrichment columns if they don't exist (themes + summary)
+        enrichment_columns = [
             'theme_1_level_1', 'theme_1_level_1_code', 'theme_1_level_1_label',
             'theme_1_level_2_code', 'theme_1_level_2_label',
             'theme_1_level_3_code', 'theme_1_level_3_label',
-            'most_specific_theme_code', 'most_specific_theme_label'
+            'most_specific_theme_code', 'most_specific_theme_label',
+            'summary'
         ]
-        for col in theme_columns:
+        for col in enrichment_columns:
             if col not in df.columns:
                 df[col] = None
 
@@ -647,6 +668,7 @@ class ThemeEnrichmentManager:
         total_missing = df['theme_1_level_1'].isna().sum()
         total_level_2 = df['theme_1_level_2_code'].notna().sum()
         total_level_3 = df['theme_1_level_3_code'].notna().sum()
+        total_with_summary = df['summary'].notna().sum()
 
         logging.info("Enrichment completed:")
         logging.info(f"  - Successfully updated: {successful_updates} records")
@@ -654,6 +676,7 @@ class ThemeEnrichmentManager:
         logging.info(f"  - Total enriched in dataset: {total_enriched} records")
         logging.info(f"  - Total with level 2: {total_level_2} records ({total_level_2/len(df)*100:.1f}%)")
         logging.info(f"  - Total with level 3: {total_level_3} records ({total_level_3/len(df)*100:.1f}%)")
+        logging.info(f"  - Total with summary: {total_with_summary} records ({total_with_summary/len(df)*100:.1f}%)")
         logging.info(f"  - Total missing themes: {total_missing} records")
         logging.info(f"  - Overall enrichment rate: {total_enriched/len(df)*100:.1f}%")
 
@@ -673,58 +696,60 @@ class ThemeEnrichmentManager:
 
     def _ensure_theme_columns_exist(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Ensure all theme columns exist in DataFrame.
+        Ensure all enrichment columns exist in DataFrame (themes + summary).
 
         Args:
             df: Input DataFrame
 
         Returns:
-            DataFrame with theme columns added if needed
+            DataFrame with enrichment columns added if needed
         """
-        theme_columns = [
+        enrichment_columns = [
             'theme_1_level_1', 'theme_1_level_1_code', 'theme_1_level_1_label',
             'theme_1_level_2_code', 'theme_1_level_2_label',
             'theme_1_level_3_code', 'theme_1_level_3_label',
-            'most_specific_theme_code', 'most_specific_theme_label'
+            'most_specific_theme_code', 'most_specific_theme_label',
+            'summary'
         ]
-        for col in theme_columns:
+        for col in enrichment_columns:
             if col not in df.columns:
                 df[col] = None
         return df
 
     def _apply_theme_updates_to_full_dataset(self, full_df: pd.DataFrame, enriched_df: pd.DataFrame) -> int:
         """
-        Apply theme updates from enriched DataFrame to full dataset.
+        Apply enrichment updates from enriched DataFrame to full dataset (themes + summary).
 
         Args:
             full_df: Full dataset DataFrame
-            enriched_df: Enriched DataFrame with theme updates
+            enriched_df: Enriched DataFrame with updates
 
         Returns:
             Number of updates applied
         """
-        # Get all theme columns
-        theme_columns = [
+        # Get all enrichment columns (themes + summary)
+        enrichment_columns = [
             'theme_1_level_1', 'theme_1_level_1_code', 'theme_1_level_1_label',
             'theme_1_level_2_code', 'theme_1_level_2_label',
             'theme_1_level_3_code', 'theme_1_level_3_label',
-            'most_specific_theme_code', 'most_specific_theme_label'
+            'most_specific_theme_code', 'most_specific_theme_label',
+            'summary'
         ]
 
-        # Create a mapping from unique_id to theme data
+        # Create a mapping from unique_id to enrichment data
         enriched_with_themes = enriched_df[enriched_df['theme_1_level_1'].notna()].copy()
-        theme_updates = enriched_with_themes.set_index('unique_id')[theme_columns].to_dict('index')
+        enrichment_updates = enriched_with_themes.set_index('unique_id')[enrichment_columns].to_dict('index')
 
         # Apply updates one by one with validation
         updates_applied = 0
-        for unique_id, theme_data in theme_updates.items():
+        for unique_id, enrichment_data in enrichment_updates.items():
             mask = full_df['unique_id'] == unique_id
             if mask.any():
-                for col in theme_columns:
-                    full_df.loc[mask, col] = theme_data[col]
+                for col in enrichment_columns:
+                    full_df.loc[mask, col] = enrichment_data[col]
                 updates_applied += 1
 
-        logging.info(f"Applied {updates_applied} theme updates to full dataset (out of {len(theme_updates)} available)")
+        logging.info(f"Applied {updates_applied} enrichment updates to full dataset (out of {len(enrichment_updates)} available)")
         return updates_applied
 
     def _merge_with_full_dataset(
@@ -845,9 +870,9 @@ class ThemeEnrichmentManager:
 
 
 def main():
-    """Main entry point for the theme enrichment script."""
+    """Main entry point for the dataset enrichment script."""
     parser = argparse.ArgumentParser(
-        description='Enrich HuggingFace dataset with theme data from Cogfy'
+        description='Enrich HuggingFace dataset with AI-generated data from Cogfy (themes + summary)'
     )
     parser.add_argument(
         '--start-date',
@@ -870,13 +895,13 @@ def main():
     parser.add_argument(
         '-f', '--force',
         action='store_true',
-        help='Force update existing theme values (default: skip records that already have themes)'
+        help='Force update existing enrichment values (default: skip records that already have themes)'
     )
 
     args = parser.parse_args()
 
     try:
-        enrichment_manager = ThemeEnrichmentManager(
+        enrichment_manager = EnrichmentManager(
             server_url=args.server_url,
             collection_name=args.collection
         )
@@ -888,7 +913,7 @@ def main():
         )
 
     except Exception as e:
-        logging.error(f"Error during theme enrichment: {str(e)}")
+        logging.error(f"Error during dataset enrichment: {str(e)}")
         raise
 
 

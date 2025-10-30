@@ -25,7 +25,7 @@ def analyze_field_structure(collection_manager):
 
     fields = collection_manager.list_columns()
 
-    theme_fields = ['theme_1_level_1', 'theme_1_level_2', 'theme_1_level_3']
+    theme_fields = ['theme_1_level_1', 'theme_1_level_2', 'theme_1_level_3', 'summary']
 
     for field in fields:
         if field.name in theme_fields:
@@ -101,11 +101,12 @@ def query_and_analyze_records(collection_manager, target_date="2025-10-28"):
         print("⚠️  No records found for this date!")
         return
 
-    # Analyze theme fields in each record
+    # Analyze theme fields and summary in each record
     theme_field_ids = {
         'theme_1_level_1': field_map.get('theme_1_level_1'),
         'theme_1_level_2': field_map.get('theme_1_level_2'),
-        'theme_1_level_3': field_map.get('theme_1_level_3')
+        'theme_1_level_3': field_map.get('theme_1_level_3'),
+        'summary': field_map.get('summary')
     }
 
     for idx, record in enumerate(records[:3], 1):  # Show first 3

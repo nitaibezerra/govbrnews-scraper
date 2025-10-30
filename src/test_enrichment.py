@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Quick test of the updated theme enrichment manager.
-Tests with a single recent date to verify the new logic works correctly.
+Quick test of the enrichment manager.
+Tests with a single recent date to verify themes + summary extraction works correctly.
 """
 
 import os
@@ -11,14 +11,14 @@ from dotenv import load_dotenv
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from theme_enrichment_manager import ThemeEnrichmentManager
+from enrichment_manager import EnrichmentManager
 
 
 def main():
     load_dotenv()
 
     print("="*60)
-    print("TESTING UPDATED THEME ENRICHMENT MANAGER")
+    print("TESTING ENRICHMENT MANAGER")
     print("="*60)
 
     # Test with a single recent date
@@ -27,12 +27,12 @@ def main():
     print(f"\nTesting with date: {test_date}")
     print("This will:")
     print("  1. Query Cogfy for records on this date")
-    print("  2. Extract all 3 theme levels (L1, L2, L3)")
+    print("  2. Extract all 3 theme levels (L1, L2, L3) + summary")
     print("  3. Show mapping results")
     print("\nNOTE: This is a dry run - won't update HuggingFace")
 
     try:
-        manager = ThemeEnrichmentManager()
+        manager = EnrichmentManager()
 
         # Setup mappings
         print("\n--- Setting up Cogfy mappings ---")
@@ -59,18 +59,25 @@ def main():
             print(f"  Level 1: {themes.get('theme_1_level_1') or 'None'}")
             print(f"  Level 2: {themes.get('theme_1_level_2') or 'None'}")
             print(f"  Level 3: {themes.get('theme_1_level_3') or 'None'}")
+            summary = themes.get('summary')
+            if summary:
+                print(f"  Summary: {summary[:100]}...")
+            else:
+                print(f"  Summary: None")
 
         # Count completeness
         print("\n--- Statistics ---")
         has_l1 = sum(1 for t in theme_map.values() if t.get('theme_1_level_1'))
         has_l2 = sum(1 for t in theme_map.values() if t.get('theme_1_level_2'))
         has_l3 = sum(1 for t in theme_map.values() if t.get('theme_1_level_3'))
+        has_summary = sum(1 for t in theme_map.values() if t.get('summary'))
         total = len(theme_map)
 
         print(f"Total mapped: {total}")
         print(f"With Level 1: {has_l1} ({has_l1/total*100:.1f}%)")
         print(f"With Level 2: {has_l2} ({has_l2/total*100:.1f}%)")
         print(f"With Level 3: {has_l3} ({has_l3/total*100:.1f}%)")
+        print(f"With Summary: {has_summary} ({has_summary/total*100:.1f}%)")
 
         print("\n" + "="*60)
         print("✅ TEST COMPLETED SUCCESSFULLY")
@@ -79,6 +86,7 @@ def main():
         print("- Level 1 extracted from select field")
         print("- Level 2 extracted from text field (AI inference)")
         print("- Level 3 extracted from text field (AI inference)")
+        print("- Summary extracted from text field (AI inference)")
 
         return 0
 
