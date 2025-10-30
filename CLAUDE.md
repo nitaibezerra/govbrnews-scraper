@@ -36,7 +36,6 @@ The **GovBR News Scraper** is an experimental tool developed by the Ministry of 
 
 5. **Pipeline Scripts** (used by GitHub Actions)
    - [upload_to_cogfy_manager.py](src/upload_to_cogfy_manager.py) - Uploads scraped news to Cogfy collection
-   - [news_grouper.py](src/news_grouper.py) - Groups related news articles by theme using Cogfy
    - [theme_enrichment_manager.py](src/theme_enrichment_manager.py) - Enriches dataset with theme data from Cogfy
 
 6. **Main Entry Point**
@@ -419,16 +418,12 @@ The project uses GitHub Actions for automated daily news processing ([.github/wo
    - Script: [upload_to_cogfy_manager.py](src/upload_to_cogfy_manager.py)
    - Requires: `COGFY_API_KEY` secret
 
-5. **group-news** - Group news by theme
-   - Waits 30 minutes after Cogfy upload (allows processing time)
-   - Script: [news_grouper.py](src/news_grouper.py)
-   - Uses Cogfy API to group related articles
-
-6. **enrich-themes** - Enrich dataset with theme information
+5. **enrich-themes** - Enrich dataset with theme information
+   - Runs after Cogfy upload completes
    - Script: [theme_enrichment_manager.py](src/theme_enrichment_manager.py)
    - Writes theme data back to Hugging Face dataset
 
-7. **pipeline-summary** - Summary and status check
+6. **pipeline-summary** - Summary and status check
    - Runs always (even if previous steps fail)
    - Reports status of all pipeline stages
    - Exits with error if any stage failed
@@ -443,8 +438,6 @@ scraper ──────────────┐
 ebc-scraper          │
     ↓                 │
 upload-to-cogfy      │
-    ↓                 │
-group-news (wait 30m)│
     ↓                 │
 enrich-themes        │
     ↓                 │
@@ -471,9 +464,6 @@ inputs:
 The [cogfy_manager.py](src/cogfy_manager.py) module provides integration with Cogfy (internal knowledge management system):
 - `CogfyClient` - API client for Cogfy
 - `CollectionManager` - High-level collection operations
-
-### News Grouping
-[news_grouper.py](src/news_grouper.py) - Groups related news articles (imported from user selection shows usage with CogfyManager)
 
 ## Additional Resources
 

@@ -97,35 +97,10 @@ jobs:
             --end-date ${{ needs.setup-dates.outputs.end_date }}
           echo "Upload to Cogfy completed successfully"
 
-  group-news:
-    name: Group News by Theme
-    runs-on: ubuntu-latest
-    needs: [setup-dates, upload-to-cogfy]
-    container:
-      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
-      options: --workdir /app
-    steps:
-      - name: Wait before grouping
-        run: |
-          echo "Waiting 30 minutes before running news grouper..."
-          echo "This allows time for Cogfy to process uploaded data"
-          sleep 1800
-
-      - name: Group news by theme
-        env:
-          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
-        run: |
-          echo "Starting news grouping for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
-          cd /app
-          python src/news_grouper.py \
-            --start-date ${{ needs.setup-dates.outputs.start_date }} \
-            --end-date ${{ needs.setup-dates.outputs.end_date }}
-          echo "News grouping completed successfully"
-
   enrich-themes:
     name: Enrich Dataset with Themes
     runs-on: ubuntu-latest
-    needs: [setup-dates, group-news]
+    needs: [setup-dates, upload-to-cogfy]
     container:
       image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
@@ -146,7 +121,7 @@ jobs:
   pipeline-summary:
     name: Pipeline Summary
     runs-on: ubuntu-latest
-    needs: [setup-dates, scraper, ebc-scraper, upload-to-cogfy, group-news, enrich-themes]
+    needs: [setup-dates, scraper, ebc-scraper, upload-to-cogfy, enrich-themes]
     if: always()
     steps:
       - name: Pipeline completion summary
@@ -156,14 +131,12 @@ jobs:
           echo "Scraper status: ${{ needs.scraper.result }}"
           echo "EBC Scraper status: ${{ needs.ebc-scraper.result }}"
           echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
-          echo "Grouper status: ${{ needs.group-news.result }}"
           echo "Theme enrichment status: ${{ needs.enrich-themes.result }}"
           echo "============================================"
 
           if [ "${{ needs.scraper.result }}" = "success" ] && \
              [ "${{ needs.ebc-scraper.result }}" = "success" ] && \
              [ "${{ needs.upload-to-cogfy.result }}" = "success" ] && \
-             [ "${{ needs.group-news.result }}" = "success" ] && \
              [ "${{ needs.enrich-themes.result }}" = "success" ]; then
             echo "✅ All pipeline stages completed successfully!"
             exit 0
