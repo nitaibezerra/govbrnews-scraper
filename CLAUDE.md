@@ -419,7 +419,7 @@ The project uses GitHub Actions for automated daily news processing ([.github/wo
    - Requires: `COGFY_API_KEY` secret
 
 5. **enrich-themes** - Enrich dataset with theme information
-   - Runs after Cogfy upload completes
+   - Waits 20 minutes after Cogfy upload (allows processing time for vector embeddings and indexing)
    - Script: [theme_enrichment_manager.py](src/theme_enrichment_manager.py)
    - Writes theme data back to Hugging Face dataset
 

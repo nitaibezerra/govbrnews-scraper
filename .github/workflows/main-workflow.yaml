@@ -105,6 +105,11 @@ jobs:
       image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
       options: --workdir /app
     steps:
+      - name: Wait for Cogfy processing
+        run: |
+          echo "Waiting 20 minutes for Cogfy to process uploaded data..."
+          echo "This allows time for Cogfy to complete vector embeddings and indexing"
+          sleep 1200
 
       - name: Enrich dataset with themes
         env:
