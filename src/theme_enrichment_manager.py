@@ -1,7 +1,6 @@
 import os
 import logging
 import argparse
-import yaml
 from datetime import datetime
 from typing import Dict, Optional, Union, Tuple, List
 from time import time, sleep
@@ -34,11 +33,10 @@ class ThemeEnrichmentManager:
 
     This class handles the process of:
     1. Loading the HuggingFace dataset
-    2. Querying Cogfy for theme data (level 1 and level 3)
-    3. Deriving theme_1_level_2 from themes_tree.yaml
-    4. Determining the most specific theme available
-    5. Updating the dataset with enriched theme information
-    6. Pushing the updated dataset back to HuggingFace
+    2. Querying Cogfy for theme data (all 3 levels from AI inference)
+    3. Determining the most specific theme available
+    4. Updating the dataset with enriched theme information
+    5. Pushing the updated dataset back to HuggingFace
     """
 
     def __init__(self, server_url: str = "https://api.cogfy.com/", collection_name: str = "noticiasgovbr-all-news"):
@@ -56,14 +54,12 @@ class ThemeEnrichmentManager:
         self.collection_manager = None
         self._field_map = None
         self._theme_1_level_1_options = None
-        self._theme_1_level_3_options = None
         self._unique_id_field_id = None
         self._theme_1_level_1_field_id = None
+        self._theme_1_level_2_field_id = None
         self._theme_1_level_3_field_id = None
-        self._theme_tree = None
 
         self._initialize_cogfy_interface()
-        self._load_theme_tree()
 
     def _initialize_cogfy_interface(self) -> None:
         """Initialize Cogfy client and collection manager."""
@@ -75,68 +71,6 @@ class ThemeEnrichmentManager:
         self.collection_manager = CollectionManager(self.cogfy_client, self.collection_name)
 
         logging.info(f"Initialized Cogfy interface for collection: {self.collection_name}")
-
-    def _load_theme_tree(self) -> None:
-        """Load the theme tree from themes_tree.yaml."""
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        theme_tree_path = os.path.join(script_dir, "enrichment", "themes_tree.yaml")
-
-        with open(theme_tree_path, 'r', encoding='utf-8') as f:
-            self._theme_tree = yaml.safe_load(f)
-
-        logging.info("Loaded theme tree from themes_tree.yaml")
-
-    def _derive_level_2_from_level_3(self, level_3_code: str) -> Optional[str]:
-        """
-        Derive theme_1_level_2 code from theme_1_level_3 code using the theme tree.
-
-        Args:
-            level_3_code: Level 3 theme code (e.g., "01.01.01")
-
-        Returns:
-            Level 2 theme code (e.g., "01.01") or None if not found
-        """
-        if not level_3_code or len(level_3_code) < 5:
-            return None
-
-        # Level 3 format: XX.XX.XX
-        # Level 2 format: XX.XX
-        return level_3_code[:5]  # Take first 5 characters (e.g., "01.01")
-
-    def _get_theme_label_from_tree(self, theme_code: str) -> Optional[str]:
-        """
-        Get the full theme label from the tree given a code.
-
-        Args:
-            theme_code: Theme code (e.g., "01.01" or "01.01.01")
-
-        Returns:
-            Full theme label (e.g., "01.01 - Política Econômica") or None if not found
-        """
-        if not theme_code or not self._theme_tree:
-            return None
-
-        parts = theme_code.split('.')
-
-        if len(parts) == 2:  # Level 2: "01.01"
-            # Search in level 1 entries
-            for level_1_key, level_1_value in self._theme_tree.items():
-                if isinstance(level_1_value, dict):
-                    for level_2_key in level_1_value.keys():
-                        if level_2_key.startswith(theme_code):
-                            return level_2_key
-
-        elif len(parts) == 3:  # Level 3: "01.01.01"
-            # Search in level 2 entries
-            for level_1_key, level_1_value in self._theme_tree.items():
-                if isinstance(level_1_value, dict):
-                    for level_2_key, level_2_value in level_1_value.items():
-                        if isinstance(level_2_value, list):
-                            for level_3_item in level_2_value:
-                                if level_3_item.startswith(theme_code):
-                                    return level_3_item
-
-        return None
 
     def _setup_cogfy_mappings(self) -> None:
         """
@@ -159,14 +93,21 @@ class ThemeEnrichmentManager:
         self._unique_id_field_id = self._field_map["unique_id"]
         self._theme_1_level_1_field_id = self._field_map["theme_1_level_1"]
 
-        # Check if theme_1_level_3 exists
+        # Check if theme_1_level_2 exists (text field)
+        if "theme_1_level_2" in self._field_map:
+            self._theme_1_level_2_field_id = self._field_map["theme_1_level_2"]
+            logging.info("Found theme_1_level_2 field in Cogfy collection (text field)")
+        else:
+            logging.warning("theme_1_level_2 field not found in Cogfy collection")
+
+        # Check if theme_1_level_3 exists (text field)
         if "theme_1_level_3" in self._field_map:
             self._theme_1_level_3_field_id = self._field_map["theme_1_level_3"]
-            logging.info("Found theme_1_level_3 field in Cogfy collection")
+            logging.info("Found theme_1_level_3 field in Cogfy collection (text field)")
         else:
             logging.warning("theme_1_level_3 field not found in Cogfy collection")
 
-        # Get theme_1_level_1 options for ID→label mapping
+        # Get theme_1_level_1 options for ID→label mapping (select field)
         theme_1_level_1_field = next(
             (f for f in fields if f.type == "select" and f.name == "theme_1_level_1"),
             None
@@ -178,19 +119,9 @@ class ThemeEnrichmentManager:
         self._theme_1_level_1_options = theme_1_level_1_field.data.get("select", {}).get("options", [])
         logging.info(f"Loaded {len(self._theme_1_level_1_options)} theme_1_level_1 options for mapping")
 
-        # Get theme_1_level_3 options if available
-        if self._theme_1_level_3_field_id:
-            theme_1_level_3_field = next(
-                (f for f in fields if f.type == "select" and f.name == "theme_1_level_3"),
-                None
-            )
-            if theme_1_level_3_field and theme_1_level_3_field.data:
-                self._theme_1_level_3_options = theme_1_level_3_field.data.get("select", {}).get("options", [])
-                logging.info(f"Loaded {len(self._theme_1_level_3_options)} theme_1_level_3 options for mapping")
-
     def _extract_theme_from_record(self, record: Dict, field_id: str) -> Optional[str]:
         """
-        Extract theme ID from a Cogfy record.
+        Extract theme ID from a Cogfy record (for select fields like level 1).
 
         Args:
             record: Cogfy record with properties
@@ -208,6 +139,23 @@ class ThemeEnrichmentManager:
             return None
 
         return values[0]["id"]
+
+    def _extract_text_from_record(self, record: Dict, field_id: str) -> Optional[str]:
+        """
+        Extract text value from a Cogfy record (for text fields like level 2 and 3).
+
+        Args:
+            record: Cogfy record with properties
+            field_id: Field ID to extract from
+
+        Returns:
+            Text value string or None if not found
+        """
+        text_property = record["properties"].get(field_id)
+        if not text_property or not text_property.get("text", {}).get("value"):
+            return None
+
+        return text_property["text"]["value"]
 
     def _map_theme_id_to_label(self, theme_id: Optional[str], options: List[Dict]) -> Optional[str]:
         """
@@ -432,7 +380,7 @@ class ThemeEnrichmentManager:
             cogfy_records: List of records from Cogfy bulk query
 
         Returns:
-            Dictionary mapping unique_id to dict with level 1 and level 3 labels
+            Dictionary mapping unique_id to dict with all 3 levels (level 1, 2, and 3)
         """
         cogfy_theme_map = {}
 
@@ -442,18 +390,23 @@ class ThemeEnrichmentManager:
                 if not unique_id:
                     continue
 
-                # Extract level 1
+                # Extract level 1 (select field with ID mapping)
                 theme_1_level_1_id = self._extract_theme_from_record(record, self._theme_1_level_1_field_id)
                 theme_1_level_1_label = self._map_theme_id_to_label(theme_1_level_1_id, self._theme_1_level_1_options)
 
-                # Extract level 3 if available
+                # Extract level 2 (text field - direct label) if available
+                theme_1_level_2_label = None
+                if self._theme_1_level_2_field_id:
+                    theme_1_level_2_label = self._extract_text_from_record(record, self._theme_1_level_2_field_id)
+
+                # Extract level 3 (text field - direct label) if available
                 theme_1_level_3_label = None
-                if self._theme_1_level_3_field_id and self._theme_1_level_3_options:
-                    theme_1_level_3_id = self._extract_theme_from_record(record, self._theme_1_level_3_field_id)
-                    theme_1_level_3_label = self._map_theme_id_to_label(theme_1_level_3_id, self._theme_1_level_3_options)
+                if self._theme_1_level_3_field_id:
+                    theme_1_level_3_label = self._extract_text_from_record(record, self._theme_1_level_3_field_id)
 
                 cogfy_theme_map[unique_id] = {
                     "theme_1_level_1": theme_1_level_1_label,
+                    "theme_1_level_2": theme_1_level_2_label,
                     "theme_1_level_3": theme_1_level_3_label
                 }
 
@@ -520,38 +473,39 @@ class ThemeEnrichmentManager:
             if unique_id in cogfy_theme_map:
                 theme_data = cogfy_theme_map[unique_id]
 
-                # Level 1
+                # Level 1 (always from Cogfy)
                 theme_1_level_1 = theme_data.get("theme_1_level_1")
+                level_1_code, level_1_label = None, None
                 if theme_1_level_1:
                     df.at[idx, 'theme_1_level_1'] = theme_1_level_1
                     level_1_code, level_1_label = self._split_theme_code_and_label(theme_1_level_1)
                     df.at[idx, 'theme_1_level_1_code'] = level_1_code
                     df.at[idx, 'theme_1_level_1_label'] = level_1_label
 
-                # Level 3
+                # Level 2 (from Cogfy AI inference)
+                theme_1_level_2 = theme_data.get("theme_1_level_2")
+                level_2_code, level_2_label = None, None
+                if theme_1_level_2:
+                    level_2_code, level_2_label = self._split_theme_code_and_label(theme_1_level_2)
+                    df.at[idx, 'theme_1_level_2_code'] = level_2_code
+                    df.at[idx, 'theme_1_level_2_label'] = level_2_label
+
+                # Level 3 (from Cogfy AI inference)
                 theme_1_level_3 = theme_data.get("theme_1_level_3")
+                level_3_code, level_3_label = None, None
                 if theme_1_level_3:
                     level_3_code, level_3_label = self._split_theme_code_and_label(theme_1_level_3)
                     df.at[idx, 'theme_1_level_3_code'] = level_3_code
                     df.at[idx, 'theme_1_level_3_label'] = level_3_label
 
-                    # Derive level 2 from level 3 (only when level 3 exists)
-                    if level_3_code:
-                        level_2_code = self._derive_level_2_from_level_3(level_3_code)
-                        if level_2_code:
-                            level_2_full = self._get_theme_label_from_tree(level_2_code)
-                            if level_2_full:
-                                df.at[idx, 'theme_1_level_2_code'] = level_2_code
-                                _, level_2_label = self._split_theme_code_and_label(level_2_full)
-                                df.at[idx, 'theme_1_level_2_label'] = level_2_label
-
-                    # Most specific is level 3
+                # Determine most specific theme (priority: L3 > L2 > L1)
+                if level_3_code:
                     df.at[idx, 'most_specific_theme_code'] = level_3_code
                     df.at[idx, 'most_specific_theme_label'] = level_3_label
-
-                elif theme_1_level_1:
-                    # No level 3, so level 2 remains None
-                    # Most specific is level 1
+                elif level_2_code:
+                    df.at[idx, 'most_specific_theme_code'] = level_2_code
+                    df.at[idx, 'most_specific_theme_label'] = level_2_label
+                elif level_1_code:
                     df.at[idx, 'most_specific_theme_code'] = level_1_code
                     df.at[idx, 'most_specific_theme_label'] = level_1_label
 
@@ -691,13 +645,15 @@ class ThemeEnrichmentManager:
         """
         total_enriched = df['theme_1_level_1'].notna().sum()
         total_missing = df['theme_1_level_1'].isna().sum()
+        total_level_2 = df['theme_1_level_2_code'].notna().sum()
         total_level_3 = df['theme_1_level_3_code'].notna().sum()
 
         logging.info("Enrichment completed:")
         logging.info(f"  - Successfully updated: {successful_updates} records")
         logging.info(f"  - Failed updates: {failed_updates} records")
         logging.info(f"  - Total enriched in dataset: {total_enriched} records")
-        logging.info(f"  - Total with level 3: {total_level_3} records")
+        logging.info(f"  - Total with level 2: {total_level_2} records ({total_level_2/len(df)*100:.1f}%)")
+        logging.info(f"  - Total with level 3: {total_level_3} records ({total_level_3/len(df)*100:.1f}%)")
         logging.info(f"  - Total missing themes: {total_missing} records")
         logging.info(f"  - Overall enrichment rate: {total_enriched/len(df)*100:.1f}%")
 

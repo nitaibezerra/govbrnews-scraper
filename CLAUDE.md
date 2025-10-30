@@ -98,7 +98,7 @@ The **GovBR News Scraper** is an experimental tool developed by the Ministry of 
 
 ### Theme Hierarchy
 
-The dataset uses a 3-level theme taxonomy defined in [themes_tree.yaml](src/enrichment/themes_tree.yaml):
+The dataset uses a 3-level theme taxonomy, all classified by AI inference in Cogfy:
 
 - **Level 1**: Broad categories (e.g., "01 - Economia e Finanças")
 - **Level 2**: Subcategories (e.g., "01.01 - Política Econômica")
@@ -106,18 +106,25 @@ The dataset uses a 3-level theme taxonomy defined in [themes_tree.yaml](src/enri
 
 **How themes are assigned:**
 
-1. **theme_1_level_1** and **theme_1_level_3** are fetched from Cogfy (AI-classified)
-2. **theme_1_level_2** is derived from themes_tree.yaml **only when level 3 exists**:
-   - Extract first 5 characters from level 3 code (e.g., "01.01.01" → "01.01")
-   - Lookup full label in themes_tree.yaml
-   - If level 3 doesn't exist, level 2 remains None
-3. **most_specific_theme** contains the most granular theme available:
-   - If level 3 exists, use level 3
-   - Otherwise, use level 1
+All 3 levels are **AI-classified in Cogfy** and fetched directly from the API:
+1. **theme_1_level_1** - From Cogfy (select field, ID→label mapping)
+2. **theme_1_level_2** - From Cogfy AI inference (text field, direct label)
+3. **theme_1_level_3** - From Cogfy AI inference (text field, direct label)
 
-**Example:**
-- News with level 3: `most_specific_theme_code = "01.01.01"` (Política Fiscal)
-- News without level 3: `most_specific_theme_code = "01"` (Economia e Finanças)
+**Possible scenarios:**
+- ✅ L1 + L2 + L3 (full classification)
+- ✅ L1 + L2 (no level 3)
+- ✅ L1 only (no level 2 or 3)
+
+**most_specific_theme** contains the most granular theme available (priority: L3 > L2 > L1):
+- If level 3 exists → use level 3
+- Else if level 2 exists → use level 2
+- Else → use level 1
+
+**Examples:**
+- News with L1+L2+L3: `most_specific_theme_code = "01.01.01"` (Política Fiscal)
+- News with L1+L2: `most_specific_theme_code = "01.01"` (Política Econômica)
+- News with L1 only: `most_specific_theme_code = "01"` (Economia e Finanças)
 
 ## CLI Commands
 
@@ -451,11 +458,13 @@ The project uses GitHub Actions for automated daily news processing ([.github/wo
    - Requires: `COGFY_API_KEY` secret
 
 5. **enrich-themes** - Enrich dataset with theme information
-   - Waits 20 minutes after Cogfy upload (allows processing time for vector embeddings and indexing)
+   - Waits 20 minutes after Cogfy upload (allows processing time for AI inference)
    - Script: [theme_enrichment_manager.py](src/theme_enrichment_manager.py)
-   - Fetches theme_1_level_1 and theme_1_level_3 from Cogfy
-   - Derives theme_1_level_2 from [themes_tree.yaml](src/enrichment/themes_tree.yaml)
-   - Determines most specific theme (level 3 if available, otherwise level 1)
+   - Fetches all 3 theme levels from Cogfy (AI-classified):
+     * theme_1_level_1 (select field with ID mapping)
+     * theme_1_level_2 (text field from AI inference)
+     * theme_1_level_3 (text field from AI inference)
+   - Determines most specific theme with priority: L3 > L2 > L1
    - Writes all theme data back to Hugging Face dataset
 
 6. **pipeline-summary** - Summary and status check
