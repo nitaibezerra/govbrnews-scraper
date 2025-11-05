@@ -1,0 +1,130 @@
+name: Reusable Pipeline Steps
+
+on:
+  workflow_call:
+    inputs:
+      start_date:
+        description: 'Start date (YYYY-MM-DD)'
+        required: true
+        type: string
+      end_date:
+        description: 'End date (YYYY-MM-DD)'
+        required: true
+        type: string
+    secrets:
+      HF_TOKEN:
+        required: true
+      COGFY_API_KEY:
+        required: true
+
+jobs:
+  scraper:
+    name: News Scraper
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Run news scraper
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo "Starting news scraper for ${{ inputs.start_date }} to ${{ inputs.end_date }}"
+          cd /app
+          python src/main.py scrape \
+            --start-date ${{ inputs.start_date }} \
+            --end-date ${{ inputs.end_date }}
+          echo "News scraper completed successfully"
+
+  ebc-scraper:
+    name: EBC News Scraper
+    runs-on: ubuntu-latest
+    needs: [scraper]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Run EBC news scraper
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          echo "Starting EBC news scraper for ${{ inputs.start_date }} to ${{ inputs.end_date }}"
+          cd /app
+          python src/main.py scrape-ebc \
+            --start-date ${{ inputs.start_date }} \
+            --end-date ${{ inputs.end_date }} \
+            --allow-update
+          echo "EBC news scraper completed successfully"
+
+  upload-to-cogfy:
+    name: Upload to Cogfy
+    runs-on: ubuntu-latest
+    needs: [scraper, ebc-scraper]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Upload news to Cogfy
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          echo "Starting upload to Cogfy for ${{ inputs.start_date }} to ${{ inputs.end_date }}"
+          cd /app
+          python src/upload_to_cogfy_manager.py \
+            --start-date ${{ inputs.start_date }} \
+            --end-date ${{ inputs.end_date }}
+          echo "Upload to Cogfy completed successfully"
+
+  enrich-themes:
+    name: Enrich Dataset with AI Data
+    runs-on: ubuntu-latest
+    needs: [upload-to-cogfy]
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Wait for Cogfy processing
+        run: |
+          echo "Waiting 20 minutes for Cogfy to process uploaded data..."
+          echo "This allows time for Cogfy to complete vector embeddings and indexing"
+          sleep 1200
+
+      - name: Enrich dataset with AI-generated data
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          echo "Starting dataset enrichment (themes + summary) for ${{ inputs.start_date }} to ${{ inputs.end_date }}"
+          cd /app
+          python src/enrichment_manager.py \
+            --start-date ${{ inputs.start_date }} \
+            --end-date ${{ inputs.end_date }}
+          echo "Dataset enrichment completed successfully"
+
+  pipeline-summary:
+    name: Pipeline Summary
+    runs-on: ubuntu-latest
+    needs: [scraper, ebc-scraper, upload-to-cogfy, enrich-themes]
+    if: always()
+    steps:
+      - name: Pipeline completion summary
+        run: |
+          echo "=== News Processing Pipeline Summary ==="
+          echo "Date range: ${{ inputs.start_date }} to ${{ inputs.end_date }}"
+          echo "Scraper status: ${{ needs.scraper.result }}"
+          echo "EBC Scraper status: ${{ needs.ebc-scraper.result }}"
+          echo "Upload status: ${{ needs.upload-to-cogfy.result }}"
+          echo "Dataset enrichment status: ${{ needs.enrich-themes.result }}"
+          echo "============================================"
+
+          if [ "${{ needs.scraper.result }}" = "success" ] && \
+             [ "${{ needs.ebc-scraper.result }}" = "success" ] && \
+             [ "${{ needs.upload-to-cogfy.result }}" = "success" ] && \
+             [ "${{ needs.enrich-themes.result }}" = "success" ]; then
+            echo "✅ All pipeline stages completed successfully!"
+            exit 0
+          else
+            echo "❌ Pipeline had failures. Check individual job logs."
+            exit 1
+          fi
