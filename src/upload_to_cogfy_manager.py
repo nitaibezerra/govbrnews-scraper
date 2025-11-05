@@ -137,36 +137,44 @@ class UploadToCogfyManager:
 
         return properties
 
-    def _create_record_with_retry(self, properties: dict, max_retries: int = 20) -> bool:
+    def _create_record_with_retry(self, properties: dict) -> bool:
         """
-        Attempts to create a record with exponential backoff retry, capped at 10 minutes.
+        Attempts to create a record with exponential backoff retry and infinite retries.
+        Retries indefinitely until success, with delays capped at 30 minutes.
 
         Args:
             properties: The record properties
-            max_retries: Maximum number of retry attempts
 
         Returns:
-            bool: True if successful, False if all retries failed
+            bool: True when successful (will retry indefinitely on failure)
         """
         base_delay = 0.15  # initial delay in seconds
-        max_delay = 600    # cap delay at 10 minutes (600 seconds)
+        max_delay = 1800   # cap delay at 30 minutes (1800 seconds)
+        attempt = 0
 
-        for attempt in range(max_retries):
+        while True:
             try:
                 self.collection_manager.create_record(properties)
+                if attempt > 0:
+                    logging.info(f"Successfully created record after {attempt + 1} attempts")
                 return True
             except Exception as e:
-                if attempt == max_retries - 1:
-                    logging.error(f"Failed to create record after {max_retries} attempts: {str(e)}")
-                    return False
+                attempt += 1
 
                 # Calculate exponential delay and cap it at max_delay
                 delay = min(base_delay * (2 ** attempt), max_delay)
                 # Add jitter to avoid thundering herd problem
                 delay += random.uniform(0, 0.1)
 
+                # Log with different levels based on severity
+                if attempt == 1:
+                    logging.warning(f"Failed to create record (attempt {attempt}): {str(e)}. Retrying in {delay:.2f}s...")
+                elif attempt % 10 == 0:
+                    logging.error(f"Still failing after {attempt} attempts: {str(e)}. Next retry in {delay:.2f}s (max {max_delay}s)...")
+                else:
+                    logging.debug(f"Retry attempt {attempt} failed: {str(e)}. Waiting {delay:.2f}s...")
+
                 sleep(delay)
-        return False
 
     def _get_unique_id_field_id(self, field_id_map: dict) -> str:
         """
