@@ -194,6 +194,7 @@ class UploadToCogfyManager:
     def _record_exists(self, unique_id: str) -> bool:
         """
         Check if a record with the given unique_id already exists.
+        Retries indefinitely on failures with exponential backoff.
 
         Args:
             unique_id: The unique identifier to check
@@ -216,15 +217,36 @@ class UploadToCogfyManager:
             }
         }
 
-        try:
-            result = self.collection_manager.query_records(
-                filter=filter_criteria,
-                page_size=1
-            )
-            return result["totalSize"] > 0
-        except Exception as e:
-            logging.error(f"Error checking for existing record: {str(e)}")
-            raise e
+        base_delay = 0.15
+        max_delay = 1800  # 30 minutes
+        attempt = 0
+
+        while True:
+            try:
+                result = self.collection_manager.query_records(
+                    filter=filter_criteria,
+                    page_size=1
+                )
+                if attempt > 0:
+                    logging.info(f"Successfully checked record existence after {attempt + 1} attempts")
+                return result["totalSize"] > 0
+            except Exception as e:
+                attempt += 1
+
+                # Calculate exponential delay and cap it at max_delay
+                delay = min(base_delay * (2 ** attempt), max_delay)
+                # Add jitter to avoid thundering herd problem
+                delay += random.uniform(0, 0.1)
+
+                # Log with different levels based on severity
+                if attempt == 1:
+                    logging.warning(f"Failed to check record existence (attempt {attempt}): {str(e)}. Retrying in {delay:.2f}s...")
+                elif attempt % 10 == 0:
+                    logging.error(f"Still failing to check existence after {attempt} attempts: {str(e)}. Next retry in {delay:.2f}s (max {max_delay}s)...")
+                else:
+                    logging.debug(f"Retry attempt {attempt} failed checking existence: {str(e)}. Waiting {delay:.2f}s...")
+
+                sleep(delay)
 
     def upload(self,
               agency: Optional[str] = None,
