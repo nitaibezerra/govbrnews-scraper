@@ -1,0 +1,86 @@
+name: AI Enrichment Pipeline
+
+on:
+  schedule:
+    # Runs every day at 7AM UTC (3AM Brasília)
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: 'Start date (YYYY-MM-DD)'
+        required: false
+        type: string
+      end_date:
+        description: 'End date (YYYY-MM-DD)'
+        required: false
+        type: string
+
+jobs:
+  setup-dates:
+    name: Setup Date Variables
+    runs-on: ubuntu-latest
+    outputs:
+      start_date: ${{ steps.dates.outputs.start_date }}
+      end_date: ${{ steps.dates.outputs.end_date }}
+    steps:
+      - name: Set date variables
+        id: dates
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.start_date }}" ]; then
+            echo "start_date=${{ inputs.start_date }}" >> $GITHUB_OUTPUT
+            echo "end_date=${{ inputs.end_date || inputs.start_date }}" >> $GITHUB_OUTPUT
+          else
+            echo "start_date=$(date -d '1 day ago' +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+            echo "end_date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Print date information
+        run: |
+          echo "AI Enrichment will process from ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}"
+
+  enrich-themes:
+    name: Enrich Dataset with AI Data
+    needs: setup-dates
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      options: --workdir /app
+    steps:
+      - name: Wait for Cogfy processing
+        run: |
+          echo "Waiting 20 minutes for Cogfy to process uploaded data..."
+          echo "This allows time for Cogfy to complete vector embeddings and indexing"
+          sleep 1200
+
+      - name: Enrich dataset with AI-generated data
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          COGFY_API_KEY: ${{ secrets.COGFY_API_KEY }}
+        run: |
+          echo "Starting dataset enrichment (themes + summary) for ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          cd /app
+          python src/enrichment_manager.py \
+            --start-date ${{ needs.setup-dates.outputs.start_date }} \
+            --end-date ${{ needs.setup-dates.outputs.end_date }}
+          echo "Dataset enrichment completed successfully"
+
+  enrichment-summary:
+    name: Enrichment Summary
+    runs-on: ubuntu-latest
+    needs: [enrich-themes]
+    if: always()
+    steps:
+      - name: Enrichment completion summary
+        run: |
+          echo "=== AI Enrichment Pipeline Summary ==="
+          echo "Date range: ${{ needs.setup-dates.outputs.start_date }} to ${{ needs.setup-dates.outputs.end_date }}"
+          echo "Dataset enrichment status: ${{ needs.enrich-themes.result }}"
+          echo "======================================="
+
+          if [ "${{ needs.enrich-themes.result }}" = "success" ]; then
+            echo "✅ AI enrichment completed successfully!"
+            exit 0
+          else
+            echo "❌ AI enrichment had failures. Check job logs."
+            exit 1
+          fi
