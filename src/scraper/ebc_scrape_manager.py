@@ -100,6 +100,10 @@ class EBCScrapeManager:
             # Parse the date from EBC format to date object
             published_at = self._parse_ebc_date(item.get("date", ""))
 
+            # Use the agency from the scraped data (either 'agencia_brasil' or 'tvbrasil')
+            # Fallback to 'ebc' if not specified
+            agency = item.get("agency", "ebc")
+
             converted_item = {
                 "title": item.get("title", "").strip(),
                 "url": item.get("url", "").strip(),
@@ -108,7 +112,7 @@ class EBCScrapeManager:
                 "tags": [],  # EBC doesn't provide tags in the same format
                 "content": item.get("content", "").strip(),
                 "image": item.get("image", "").strip(),
-                "agency": "ebc",  # All EBC articles get this agency
+                "agency": agency,
                 "extracted_at": datetime.now(),
             }
 
