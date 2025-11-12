@@ -4,7 +4,7 @@ import os
 from time import sleep
 import numpy
 import random
-from typing import Optional, Union
+from typing import Optional, Union, Set
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -191,62 +191,80 @@ class UploadToCogfyManager:
                 return field_id
         raise ValueError("unique_id field not found in collection")
 
-    def _record_exists(self, unique_id: str) -> bool:
-        """
-        Check if a record with the given unique_id already exists.
-        Retries indefinitely on failures with exponential backoff.
-
-        Args:
-            unique_id: The unique identifier to check
-
-        Returns:
-            bool: True if record exists, False otherwise
-        """
-        filter_criteria = {
+    def _build_day_filter(self, date_str: str, published_at_field_id: str) -> dict:
+        """Build filter to cover an entire day using published_at field."""
+        return {
             "type": "and",
             "and": {
                 "filters": [
                     {
-                        "type": "equals",
-                        "equals": {
-                            "fieldId": self._unique_id_field_id,
-                            "value": unique_id
+                        "type": "greaterThanOrEquals",
+                        "greaterThanOrEquals": {
+                            "fieldId": published_at_field_id,
+                            "value": f"{date_str}T00:00:00"
+                        }
+                    },
+                    {
+                        "type": "lessThanOrEquals",
+                        "lessThanOrEquals": {
+                            "fieldId": published_at_field_id,
+                            "value": f"{date_str}T23:59:59"
                         }
                     }
                 ]
             }
         }
 
-        base_delay = 0.15
-        max_delay = 1800  # 30 minutes
-        attempt = 0
+    def _extract_unique_id_from_record(self, record: dict) -> Optional[str]:
+        """Extract unique_id value from a Cogfy record."""
+        if not self._unique_id_field_id:
+            return None
 
-        while True:
-            try:
-                result = self.collection_manager.query_records(
-                    filter=filter_criteria,
-                    page_size=1
-                )
-                if attempt > 0:
-                    logging.info(f"Successfully checked record existence after {attempt + 1} attempts")
-                return result["totalSize"] > 0
-            except Exception as e:
-                attempt += 1
+        properties = record.get("properties", {})
+        unique_property = properties.get(self._unique_id_field_id)
+        if not unique_property:
+            return None
 
-                # Calculate exponential delay and cap it at max_delay
-                delay = min(base_delay * (2 ** attempt), max_delay)
-                # Add jitter to avoid thundering herd problem
-                delay += random.uniform(0, 0.1)
+        text_data = unique_property.get("text", {})
+        return text_data.get("value")
 
-                # Log with different levels based on severity
-                if attempt == 1:
-                    logging.warning(f"Failed to check record existence (attempt {attempt}): {str(e)}. Retrying in {delay:.2f}s...")
-                elif attempt % 10 == 0:
-                    logging.error(f"Still failing to check existence after {attempt} attempts: {str(e)}. Next retry in {delay:.2f}s (max {max_delay}s)...")
-                else:
-                    logging.debug(f"Retry attempt {attempt} failed checking existence: {str(e)}. Waiting {delay:.2f}s...")
+    def _fetch_existing_ids_for_day(
+        self,
+        day: pd.Timestamp,
+        published_at_field_id: Optional[str]
+    ) -> Set[str]:
+        """Fetch existing unique_ids from Cogfy for a specific day."""
+        if published_at_field_id is None:
+            return set()
 
-                sleep(delay)
+        date_str = day.strftime("%Y-%m-%d")
+        filter_criteria = self._build_day_filter(date_str, published_at_field_id)
+        order_by = [
+            {
+                "fieldId": published_at_field_id,
+                "direction": "asc"
+            }
+        ]
+
+        result = self.collection_manager.query_records(
+            filter=filter_criteria,
+            order_by=order_by,
+            page_number=0,
+            page_size=1000
+        )
+
+        existing_ids: Set[str] = set()
+        for record in result.get("data", []):
+            unique_value = self._extract_unique_id_from_record(record)
+            if unique_value:
+                existing_ids.add(unique_value)
+
+        logging.info(
+            f"Prefetch for {date_str}: retrieved {len(result.get('data', []))} records, "
+            f"cached {len(existing_ids)} unique_id(s)"
+        )
+
+        return existing_ids
 
     def upload(self,
               agency: Optional[str] = None,
@@ -296,31 +314,42 @@ class UploadToCogfyManager:
             for field_name, field_type in features.items()
         }
 
+        existing_ids: Set[str] = set()
+        published_at_field_id = field_id_map.get('published_at')
+        if published_at_field_id is None:
+            logging.warning("'published_at' field not found in Cogfy collection. Prefetch skipped.")
+        else:
+            unique_days = sorted(df['published_at'].dt.normalize().unique())
+            logging.info(f"Prefetching existing IDs for {len(unique_days)} day(s)...")
+            for day in unique_days:
+                existing_ids.update(self._fetch_existing_ids_for_day(day, published_at_field_id))
+
         # Process records
         total_rows = len(df)
         logging.info(f"Starting migration of {total_rows} records...")
 
         skipped = 0
-        for index, row in df.iterrows():
-            # Check if record already exists
+        for _, row in df.iterrows():
+            unique_id = row.get('unique_id')
+            if not unique_id:
+                logging.warning("Skipping row without unique_id")
+                continue
+
             published_at = row['published_at'].strftime("%Y-%m-%d")
-            if self._record_exists(row['unique_id']):
-                logging.info(f"Skipping existing record published at: {published_at} "
-                             f"Unique ID: {row['unique_id']}")
+
+            if unique_id in existing_ids:
+                logging.info(f"Skipping existing record published at: {published_at} Unique ID: {unique_id}")
                 skipped += 1
                 continue
 
             properties = self._create_record_properties(row, field_id_map, field_mapping)
             if self._create_record_with_retry(properties):
-                logging.info(f"Created record. Agency: {row['agency']} | "
-                             f"Published at: {published_at}")
+                logging.info(f"Created record. Agency: {row['agency']} | Published at: {published_at}")
+                existing_ids.add(unique_id)
             else:
-                logging.error(f"Failed to create record. Unique ID: {row['unique_id']}")
+                logging.error(f"Failed to create record. Unique ID: {unique_id}")
 
-            sleep(0.15)
-
-        logging.info(f"Migration completed! Created {total_rows - skipped} "
-                     f"records, skipped {skipped} existing records.")
+            sleep(1)
 
 def main():
     """Main entry point for the script."""
