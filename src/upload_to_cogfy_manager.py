@@ -246,12 +246,20 @@ class UploadToCogfyManager:
             }
         ]
 
-        result = self.collection_manager.query_records(
-            filter=filter_criteria,
-            order_by=order_by,
-            page_number=0,
-            page_size=1000
-        )
+        try:
+            result = self.collection_manager.query_records(
+                filter=filter_criteria,
+                order_by=order_by,
+                page_number=0,
+                page_size=1000
+            )
+        except Exception as e:
+            error_msg = str(e)
+            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
+                logging.error(f"Server timeout/gateway error for day {date_str}: {error_msg}")
+            else:
+                logging.error(f"Error prefetching for day {date_str}: {error_msg}")
+            return set()  # Return empty set on error to allow upload to proceed
 
         existing_ids: Set[str] = set()
         for record in result.get("data", []):
