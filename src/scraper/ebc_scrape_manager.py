@@ -112,6 +112,7 @@ class EBCScrapeManager:
                 "tags": [],  # EBC doesn't provide tags in the same format
                 "content": item.get("content", "").strip(),
                 "image": item.get("image", "").strip(),
+                "video_url": item.get("video_url", "").strip(),
                 "agency": agency,
                 "extracted_at": datetime.now(),
             }
@@ -179,7 +180,7 @@ class EBCScrapeManager:
             ordered_column_data["published_at"] = column_data.pop("published_at")
 
         # Add remaining columns in order
-        for key in ["title", "url", "category", "tags", "content", "image", "extracted_at"]:
+        for key in ["title", "url", "category", "tags", "content", "image", "video_url", "extracted_at"]:
             if key in column_data:
                 ordered_column_data[key] = column_data.pop(key)
 

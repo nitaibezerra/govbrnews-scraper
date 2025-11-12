@@ -198,6 +198,7 @@ class EBCWebScraper:
                     'date': '',
                     'content': '',
                     'image': '',
+                    'video_url': '',
                     'agency': '',
                     'error': 'Failed to fetch page'
                 }
@@ -212,6 +213,7 @@ class EBCWebScraper:
                 'date': '',
                 'content': '',
                 'image': '',
+                'video_url': '',
                 'agency': '',
                 'error': '',
             }
@@ -243,6 +245,7 @@ class EBCWebScraper:
                 'date': '',
                 'content': '',
                 'image': '',
+                'video_url': '',
                 'agency': '',
                 'error': str(e)
             }
@@ -293,6 +296,9 @@ class EBCWebScraper:
                         content_parts.append(text)
 
             news_data['content'] = '\n\n'.join(content_parts)
+
+        # Extract video URL
+        news_data['video_url'] = self._extract_video_url(soup)
 
     def _scrape_agencia_brasil_content(self, soup: BeautifulSoup, news_data: Dict[str, str]):
         """Scrape content from Agência Brasil pages."""
@@ -364,6 +370,36 @@ class EBCWebScraper:
                     image_url = base_url + image_url
 
                 news_data['image'] = image_url or ''
+
+        # Extract video URL
+        news_data['video_url'] = self._extract_video_url(soup)
+
+    def _extract_video_url(self, soup: BeautifulSoup) -> str:
+        """
+        Extract video URL from EBC page.
+
+        :param soup: BeautifulSoup object of the page.
+        :return: Video URL string or empty string if not found.
+        """
+        try:
+            # Find video element
+            video_elem = soup.find('video')
+            if video_elem:
+                # Find source tag with MP4 type
+                source_elem = video_elem.find('source', {'type': 'video/mp4'})
+                if source_elem and source_elem.get('src'):
+                    video_url = source_elem.get('src')
+
+                    # Handle relative URLs
+                    if video_url.startswith('/'):
+                        video_url = 'https://tvbrasil.ebc.com.br' + video_url
+
+                    logging.info(f"Found video URL: {video_url}")
+                    return video_url
+        except Exception as e:
+            logging.warning(f"Error extracting video URL: {e}")
+
+        return ''
 
     def parse_date(self, date_str: str) -> Optional[date]:
         """
