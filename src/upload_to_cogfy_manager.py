@@ -320,8 +320,12 @@ class UploadToCogfyManager:
             logging.warning("'published_at' field not found in Cogfy collection. Prefetch skipped.")
         else:
             unique_days = sorted(df['published_at'].dt.normalize().unique())
-            logging.info(f"Prefetching existing IDs for {len(unique_days)} day(s)...")
-            for day in unique_days:
+            days_with_buffer = sorted({option for day in unique_days for option in (day, day - pd.Timedelta(days=1))})
+            logging.info(
+                f"Prefetching existing IDs for {len(days_with_buffer)} day(s) "
+                "(including 1-day safety buffer)."
+            )
+            for day in days_with_buffer:
                 existing_ids.update(self._fetch_existing_ids_for_day(day, published_at_field_id))
 
         # Process records
