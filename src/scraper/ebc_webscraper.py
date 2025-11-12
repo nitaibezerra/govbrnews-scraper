@@ -34,7 +34,6 @@ class EBCWebScraper:
         else:
             self.max_date = None
         self.news_data = []
-        self.agency = "ebc"
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
@@ -187,7 +186,7 @@ class EBCWebScraper:
         Scrape a single news page from EBC and return structured data.
 
         :param url: URL of the news article.
-        :return: Dictionary with keys ['title', 'url', 'source', 'date', 'content', 'image', 'error']
+        :return: Dictionary with keys ['title', 'url', 'source', 'date', 'content', 'image', 'agency', 'error']
         """
         try:
             response = self.fetch_page(url)
@@ -199,6 +198,7 @@ class EBCWebScraper:
                     'date': '',
                     'content': '',
                     'image': '',
+                    'agency': '',
                     'error': 'Failed to fetch page'
                 }
 
@@ -212,6 +212,7 @@ class EBCWebScraper:
                 'date': '',
                 'content': '',
                 'image': '',
+                'agency': '',
                 'error': '',
             }
 
@@ -220,9 +221,11 @@ class EBCWebScraper:
 
             if is_tvbrasil:
                 # TV Brasil scraping strategy
+                news_data['agency'] = 'tvbrasil'
                 self._scrape_tvbrasil_content(soup, news_data)
             else:
                 # Original Agência Brasil scraping strategy
+                news_data['agency'] = 'agencia_brasil'
                 self._scrape_agencia_brasil_content(soup, news_data)
 
             # Clean up the content - remove excessive whitespace
@@ -240,6 +243,7 @@ class EBCWebScraper:
                 'date': '',
                 'content': '',
                 'image': '',
+                'agency': '',
                 'error': str(e)
             }
 
