@@ -322,42 +322,67 @@ class UploadToCogfyManager:
             for field_name, field_type in features.items()
         }
 
-        existing_ids: Set[str] = set()
+        # Get published_at field ID for querying
         published_at_field_id = field_id_map.get('published_at')
         if published_at_field_id is None:
             logging.warning("'published_at' field not found in Cogfy collection. Prefetch skipped.")
-        else:
-            unique_days = sorted(df['published_at'].dt.normalize().unique())
-            logging.info(f"Prefetching existing IDs for {len(unique_days)} day(s)...")
-            for day in unique_days:
-                existing_ids.update(self._fetch_existing_ids_for_day(day, published_at_field_id))
 
-        # Process records
+        # Group records by day and process day by day
+        df['published_date'] = df['published_at'].dt.normalize()
+        unique_days = sorted(df['published_date'].unique())
+
         total_rows = len(df)
-        logging.info(f"Starting migration of {total_rows} records...")
+        logging.info(f"Starting migration of {total_rows} records across {len(unique_days)} day(s)...")
 
-        skipped = 0
-        for _, row in df.iterrows():
-            unique_id = row.get('unique_id')
-            if not unique_id:
-                logging.warning("Skipping row without unique_id")
-                continue
+        total_created = 0
+        total_skipped = 0
 
-            published_at = row['published_at'].strftime("%Y-%m-%d")
+        for day_index, day in enumerate(unique_days, 1):
+            date_str = day.strftime("%Y-%m-%d")
+            logging.info(f"Processing day {day_index}/{len(unique_days)}: {date_str}")
 
-            if unique_id in existing_ids:
-                logging.info(f"Skipping existing record published at: {published_at} Unique ID: {unique_id}")
-                skipped += 1
-                continue
+            # Fetch existing IDs for this specific day
+            existing_ids_for_day: Set[str] = set()
+            if published_at_field_id is not None:
+                existing_ids_for_day = self._fetch_existing_ids_for_day(day, published_at_field_id)
 
-            properties = self._create_record_properties(row, field_id_map, field_mapping)
-            if self._create_record_with_retry(properties):
-                logging.info(f"Created record. Agency: {row['agency']} | Published at: {published_at}")
-                existing_ids.add(unique_id)
-            else:
-                logging.error(f"Failed to create record. Unique ID: {unique_id}")
+            # Get records for this day
+            day_df = df[df['published_date'] == day]
+            logging.info(f"Found {len(day_df)} record(s) to process for {date_str}")
 
-            sleep(1)
+            # Process records for this day
+            day_created = 0
+            day_skipped = 0
+
+            for _, row in day_df.iterrows():
+                unique_id = row.get('unique_id')
+                if not unique_id:
+                    logging.warning("Skipping row without unique_id")
+                    continue
+
+                if unique_id in existing_ids_for_day:
+                    logging.info(f"Skipping existing record. Unique ID: {unique_id}")
+                    day_skipped += 1
+                    continue
+
+                properties = self._create_record_properties(row, field_id_map, field_mapping)
+                if self._create_record_with_retry(properties):
+                    logging.info(f"Created record. Agency: {row['agency']} | Unique ID: {unique_id}")
+                    existing_ids_for_day.add(unique_id)
+                    day_created += 1
+                else:
+                    logging.error(f"Failed to create record. Unique ID: {unique_id}")
+
+                sleep(1)
+
+            total_created += day_created
+            total_skipped += day_skipped
+            logging.info(f"Day {date_str} completed: {day_created} created, {day_skipped} skipped")
+
+        logging.info(f"Migration completed! Total: {total_created} created, {total_skipped} skipped")
+
+        # Clean up temporary column
+        df.drop(columns=['published_date'], inplace=True)
 
 def main():
     """Main entry point for the script."""
