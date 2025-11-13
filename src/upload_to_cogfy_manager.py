@@ -137,44 +137,67 @@ class UploadToCogfyManager:
 
         return properties
 
-    def _create_record_with_retry(self, properties: dict) -> bool:
+    def _create_record_with_retry(self, properties: dict, max_retries: int = 3) -> bool:
         """
-        Attempts to create a record with exponential backoff retry and infinite retries.
-        Retries indefinitely until success, with delays capped at 30 minutes.
+        Attempts to create a record with exponential backoff retry.
 
         Args:
             properties: The record properties
+            max_retries: Maximum number of retry attempts (default: 3)
 
         Returns:
-            bool: True when successful (will retry indefinitely on failure)
+            bool: True if successful, False if all retries failed
         """
-        base_delay = 0.15  # initial delay in seconds
-        max_delay = 1800   # cap delay at 30 minutes (1800 seconds)
-        attempt = 0
+        base_delay = 1.0  # 1 second initial delay
+        max_delay = 60    # cap delay at 60 seconds
 
-        while True:
+        # Exceptions that should NOT be retried (permanent errors)
+        NON_RETRYABLE_ERRORS = (
+            ValueError,           # Data validation errors
+            KeyError,            # Missing fields
+            TypeError,           # Wrong data type
+        )
+
+        for attempt in range(max_retries + 1):
             try:
                 self.collection_manager.create_record(properties)
                 if attempt > 0:
                     logging.info(f"Successfully created record after {attempt + 1} attempts")
                 return True
+
+            except NON_RETRYABLE_ERRORS as e:
+                # Permanent errors: do not retry
+                logging.error(f"Non-retryable error creating record: {str(e)}")
+                return False
+
             except Exception as e:
-                attempt += 1
+                # Potentially transient errors
+                error_msg = str(e)
 
-                # Calculate exponential delay and cap it at max_delay
-                delay = min(base_delay * (2 ** attempt), max_delay)
-                # Add jitter to avoid thundering herd problem
-                delay += random.uniform(0, 0.1)
+                # Check for authentication/permission errors (also should not retry)
+                if any(keyword in error_msg.lower() for keyword in ['unauthorized', 'forbidden', 'authentication', 'permission']):
+                    logging.error(f"Authentication/permission error: {error_msg}")
+                    return False
 
-                # Log with different levels based on severity
-                if attempt == 1:
-                    logging.warning(f"Failed to create record (attempt {attempt}): {str(e)}. Retrying in {delay:.2f}s...")
-                elif attempt % 10 == 0:
-                    logging.error(f"Still failing after {attempt} attempts: {str(e)}. Next retry in {delay:.2f}s (max {max_delay}s)...")
+                if attempt < max_retries:
+                    # Calculate delay with exponential backoff
+                    delay = min(base_delay * (2 ** attempt), max_delay)
+                    delay += random.uniform(0, 0.5)  # add jitter
+
+                    logging.warning(
+                        f"Failed to create record (attempt {attempt + 1}/{max_retries + 1}): {error_msg}. "
+                        f"Retrying in {delay:.2f}s..."
+                    )
+                    sleep(delay)
                 else:
-                    logging.debug(f"Retry attempt {attempt} failed: {str(e)}. Waiting {delay:.2f}s...")
+                    # All retries exhausted - log and continue
+                    logging.error(
+                        f"Failed to create record after {max_retries + 1} attempts: {error_msg}. "
+                        f"Skipping record and continuing..."
+                    )
+                    return False
 
-                sleep(delay)
+        return False
 
     def _get_unique_id_field_id(self, field_id_map: dict) -> str:
         """
@@ -231,9 +254,20 @@ class UploadToCogfyManager:
     def _fetch_existing_ids_for_day(
         self,
         day: pd.Timestamp,
-        published_at_field_id: Optional[str]
+        published_at_field_id: Optional[str],
+        max_retries: int = 2
     ) -> Set[str]:
-        """Fetch existing unique_ids from Cogfy for a specific day."""
+        """
+        Fetch existing unique_ids from Cogfy for a specific day with retry logic.
+
+        Args:
+            day: The day to fetch records for
+            published_at_field_id: Field ID for published_at
+            max_retries: Maximum number of retry attempts (default: 2)
+
+        Returns:
+            Set[str]: Set of existing unique_ids (empty set on persistent failure)
+        """
         if published_at_field_id is None:
             return set()
 
@@ -246,33 +280,54 @@ class UploadToCogfyManager:
             }
         ]
 
-        try:
-            result = self.collection_manager.query_records(
-                filter=filter_criteria,
-                order_by=order_by,
-                page_number=0,
-                page_size=1000
-            )
-        except Exception as e:
-            error_msg = str(e)
-            if "504" in error_msg or "502" in error_msg or "Gateway" in error_msg:
-                logging.error(f"Server timeout/gateway error for day {date_str}: {error_msg}")
-            else:
-                logging.error(f"Error prefetching for day {date_str}: {error_msg}")
-            return set()  # Return empty set on error to allow upload to proceed
+        base_delay = 2.0  # 2 seconds initial delay
 
-        existing_ids: Set[str] = set()
-        for record in result.get("data", []):
-            unique_value = self._extract_unique_id_from_record(record)
-            if unique_value:
-                existing_ids.add(unique_value)
+        for attempt in range(max_retries + 1):
+            try:
+                result = self.collection_manager.query_records(
+                    filter=filter_criteria,
+                    order_by=order_by,
+                    page_number=0,
+                    page_size=1000
+                )
 
-        logging.info(
-            f"Prefetch for {date_str}: retrieved {len(result.get('data', []))} records, "
-            f"cached {len(existing_ids)} unique_id(s)"
-        )
+                # Success - process results
+                existing_ids: Set[str] = set()
+                for record in result.get("data", []):
+                    unique_value = self._extract_unique_id_from_record(record)
+                    if unique_value:
+                        existing_ids.add(unique_value)
 
-        return existing_ids
+                logging.info(
+                    f"Prefetch for {date_str}: retrieved {len(result.get('data', []))} records, "
+                    f"cached {len(existing_ids)} unique_id(s)"
+                )
+
+                return existing_ids
+
+            except Exception as e:
+                error_msg = str(e)
+                is_timeout = any(code in error_msg for code in ["504", "502", "timeout", "Gateway"])
+
+                if attempt < max_retries and is_timeout:
+                    # Retry only for timeouts/gateway errors
+                    delay = base_delay * (2 ** attempt)
+                    logging.warning(
+                        f"Timeout fetching day {date_str} (attempt {attempt + 1}/{max_retries + 1}): "
+                        f"{error_msg}. Retrying in {delay:.1f}s..."
+                    )
+                    sleep(delay)
+                else:
+                    # Permanent failure or last attempt
+                    if is_timeout:
+                        logging.error(f"Server timeout for day {date_str} after {attempt + 1} attempts: {error_msg}")
+                    else:
+                        logging.error(f"Error prefetching day {date_str}: {error_msg}")
+
+                    logging.warning(f"Proceeding without prefetch for {date_str} - may re-upload existing records")
+                    return set()
+
+        return set()
 
     def upload(self,
               agency: Optional[str] = None,
@@ -336,6 +391,7 @@ class UploadToCogfyManager:
 
         total_created = 0
         total_skipped = 0
+        total_failed = 0
 
         for day_index, day in enumerate(unique_days, 1):
             date_str = day.strftime("%Y-%m-%d")
@@ -353,6 +409,7 @@ class UploadToCogfyManager:
             # Process records for this day
             day_created = 0
             day_skipped = 0
+            day_failed = 0
 
             for _, row in day_df.iterrows():
                 unique_id = row.get('unique_id')
@@ -371,15 +428,24 @@ class UploadToCogfyManager:
                     existing_ids_for_day.add(unique_id)
                     day_created += 1
                 else:
-                    logging.error(f"Failed to create record. Unique ID: {unique_id}")
+                    logging.error(f"Failed to create record after retries. Unique ID: {unique_id}")
+                    day_failed += 1
 
                 sleep(1)
 
             total_created += day_created
             total_skipped += day_skipped
-            logging.info(f"Day {date_str} completed: {day_created} created, {day_skipped} skipped")
+            total_failed += day_failed
 
-        logging.info(f"Migration completed! Total: {total_created} created, {total_skipped} skipped")
+            logging.info(
+                f"Day {date_str} completed: {day_created} created, {day_skipped} skipped, "
+                f"{day_failed} failed"
+            )
+
+        logging.info(
+            f"Migration completed! Total: {total_created} created, {total_skipped} skipped, "
+            f"{total_failed} failed"
+        )
 
         # Clean up temporary column
         df.drop(columns=['published_date'], inplace=True)
