@@ -33,7 +33,9 @@ Para carregar o dataset diretamente no Python utilizando a biblioteca `datasets`
    O dataset inclui os seguintes campos:
    - `unique_id`: Identificador único de cada notícia.
    - `agency`: Agência governamental que publicou a notícia.
-   - `published_at`: Data de publicação da notícia.
+   - `published_at`: Data de publicação da notícia (apenas data, mantido por compatibilidade).
+   - `published_datetime`: Data e hora completa de publicação da notícia (ISO 8601 com timezone UTC-3).
+   - `updated_datetime`: Data e hora de atualização da notícia, quando disponível (ISO 8601 com timezone UTC-3).
    - `title`: Título da notícia.
    - `url`: URL da notícia original.
    - `image`: Link para a imagem principal da notícia.
@@ -41,6 +43,8 @@ Para carregar o dataset diretamente no Python utilizando a biblioteca `datasets`
    - `tags`: Lista de tags associadas à notícia (se disponíveis).
    - `content`: Conteúdo completo da notícia em formato Markdown.
    - `extracted_at`: Data e hora em que a notícia foi extraída.
+
+   **Nota sobre timestamps:** A partir de novembro de 2025, o dataset inclui `published_datetime` e `updated_datetime` com informações completas de data e hora (timezone UTC-3). A coluna `published_at` (apenas data) é mantida para compatibilidade com sistemas existentes. Notícias coletadas antes desta atualização terão `None` nestes novos campos.
 
 ---
 
