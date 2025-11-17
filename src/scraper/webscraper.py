@@ -1,8 +1,9 @@
+import json
 import logging
 import random
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Dict, List, Optional, Tuple
 
 import requests
@@ -197,9 +198,7 @@ class WebScraper:
                 return True  # Skip this item
 
         tags = self.extract_tags(item)
-        content, image_url = self.get_article_content(
-            url
-        )  # Now returns (content, image)
+        content, image_url, published_dt, updated_dt = self.get_article_content(url)
 
         logging.info(f"Retrieved article: {news_date} - {url}\n")
 
@@ -208,6 +207,8 @@ class WebScraper:
                 "title": title,
                 "url": url,
                 "published_at": news_date if news_date else None,
+                "published_datetime": published_dt,
+                "updated_datetime": updated_dt,
                 "category": category,
                 "tags": tags,
                 "content": content,
@@ -337,22 +338,214 @@ class WebScraper:
 
         return []
 
-    def get_article_content(self, url: str) -> Tuple[str, Optional[str]]:
+    def _extract_datetime_from_jsonld(self, soup) -> Optional[datetime]:
         """
-        Get the content of a news article from its URL, converting the HTML to Markdown
-        to preserve formatting, links, and media references. Extracts the first image
-        and removes introductory clutter, sharing links, metadata, and other junk content.
+        Extract datetime from JSON-LD NewsArticle schema.
+        This is the most reliable method as JSON-LD is structured and standardized.
+
+        :param soup: BeautifulSoup object of the article page.
+        :return: datetime object with timezone or None if not found.
+        """
+        try:
+            # Find all script tags with type application/ld+json
+            script_tags = soup.find_all('script', type='application/ld+json')
+
+            for script in script_tags:
+                try:
+                    data = json.loads(script.string)
+
+                    # Handle both single object and list of objects
+                    if isinstance(data, list):
+                        items = data
+                    else:
+                        items = [data]
+
+                    # Look for NewsArticle type
+                    for item in items:
+                        if item.get('@type') == 'NewsArticle' and 'datePublished' in item:
+                            date_str = item['datePublished']
+                            # Parse ISO 8601 format: 2025-11-17T19:24:43-03:00
+                            return datetime.fromisoformat(date_str)
+
+                except (json.JSONDecodeError, KeyError, ValueError) as e:
+                    logging.debug(f"Error parsing JSON-LD: {e}")
+                    continue
+
+        except Exception as e:
+            logging.debug(f"Error extracting datetime from JSON-LD: {e}")
+
+        return None
+
+    def _extract_updated_datetime_from_jsonld(self, soup) -> Optional[datetime]:
+        """
+        Extract update datetime from JSON-LD NewsArticle schema.
+
+        :param soup: BeautifulSoup object of the article page.
+        :return: datetime object with timezone or None if not found.
+        """
+        try:
+            script_tags = soup.find_all('script', type='application/ld+json')
+
+            for script in script_tags:
+                try:
+                    data = json.loads(script.string)
+
+                    if isinstance(data, list):
+                        items = data
+                    else:
+                        items = [data]
+
+                    for item in items:
+                        if item.get('@type') == 'NewsArticle' and 'dateModified' in item:
+                            date_str = item['dateModified']
+                            return datetime.fromisoformat(date_str)
+
+                except (json.JSONDecodeError, KeyError, ValueError) as e:
+                    logging.debug(f"Error parsing JSON-LD for update date: {e}")
+                    continue
+
+        except Exception as e:
+            logging.debug(f"Error extracting update datetime from JSON-LD: {e}")
+
+        return None
+
+    def _extract_datetime_from_text(self, soup) -> Tuple[Optional[datetime], Optional[datetime]]:
+        """
+        Parse datetime from text patterns like "Publicado em DD/MM/YYYY HH:MMh".
+        Handles multiple formats:
+        - DD/MM/YYYY HH:MMh (standard gov.br format, e.g., "17/11/2025 19h24")
+        - DD/MM/YYYY - HH:MM (EBC format, e.g., "17/11/2025 - 18:58")
+
+        :param soup: BeautifulSoup object of the article page.
+        :return: Tuple of (published_datetime, updated_datetime). Either can be None.
+        """
+        published_dt = None
+        updated_dt = None
+        brasilia_tz = timezone(timedelta(hours=-3))
+
+        try:
+            # Search for text containing "Publicado em" or "publicado em"
+            text_elements = soup.find_all(string=re.compile(r'[Pp]ublicado em', re.IGNORECASE))
+
+            for elem in text_elements:
+                text = elem.strip()
+
+                # Pattern 1: DD/MM/YYYY HH:MMh (e.g., "Publicado em 17/11/2025 19h24")
+                match = re.search(r'(\d{2})/(\d{2})/(\d{4})\s+(\d{1,2})h(\d{2})', text)
+                if match:
+                    day, month, year, hour, minute = match.groups()
+                    published_dt = datetime(
+                        int(year), int(month), int(day),
+                        int(hour), int(minute),
+                        tzinfo=brasilia_tz
+                    )
+                    break
+
+                # Pattern 2: DD/MM/YYYY - HH:MM (e.g., "Publicado em 17/11/2025 - 18:58")
+                match = re.search(r'(\d{2})/(\d{2})/(\d{4})\s*-\s*(\d{1,2}):(\d{2})', text)
+                if match:
+                    day, month, year, hour, minute = match.groups()
+                    published_dt = datetime(
+                        int(year), int(month), int(day),
+                        int(hour), int(minute),
+                        tzinfo=brasilia_tz
+                    )
+                    break
+
+            # Search for "Atualizado em" or "atualizado em"
+            text_elements = soup.find_all(string=re.compile(r'[Aa]tualizado em', re.IGNORECASE))
+
+            for elem in text_elements:
+                text = elem.strip()
+
+                # Pattern 1: DD/MM/YYYY HH:MMh
+                match = re.search(r'(\d{2})/(\d{2})/(\d{4})\s+(\d{1,2})h(\d{2})', text)
+                if match:
+                    day, month, year, hour, minute = match.groups()
+                    updated_dt = datetime(
+                        int(year), int(month), int(day),
+                        int(hour), int(minute),
+                        tzinfo=brasilia_tz
+                    )
+                    break
+
+                # Pattern 2: DD/MM/YYYY - HH:MM
+                match = re.search(r'(\d{2})/(\d{2})/(\d{4})\s*-\s*(\d{1,2}):(\d{2})', text)
+                if match:
+                    day, month, year, hour, minute = match.groups()
+                    updated_dt = datetime(
+                        int(year), int(month), int(day),
+                        int(hour), int(minute),
+                        tzinfo=brasilia_tz
+                    )
+                    break
+
+        except Exception as e:
+            logging.debug(f"Error extracting datetime from text: {e}")
+
+        return published_dt, updated_dt
+
+    def extract_published_datetime(self, url: str) -> Tuple[Optional[datetime], Optional[datetime]]:
+        """
+        Extract published and updated datetimes from article page.
+        Uses multiple extraction strategies with priority:
+        1. JSON-LD schema (most reliable)
+        2. Text parsing ("Publicado em...")
+        3. Fallback to date at midnight if only date available
 
         :param url: The URL of the article.
-        :return: A tuple containing the article content in Markdown format and the first image URL (or None).
+        :return: Tuple of (published_datetime, updated_datetime). Either can be None.
+        """
+        try:
+            response = self.fetch_page(url)
+            if not response:
+                return None, None
+
+            soup = BeautifulSoup(response.content, 'html.parser')
+
+            # Strategy 1: Try JSON-LD first (most reliable)
+            published_dt = self._extract_datetime_from_jsonld(soup)
+            updated_dt = self._extract_updated_datetime_from_jsonld(soup)
+
+            if published_dt:
+                logging.debug(f"Extracted datetime from JSON-LD: {published_dt}")
+                return published_dt, updated_dt
+
+            # Strategy 2: Try text parsing
+            published_dt, updated_dt = self._extract_datetime_from_text(soup)
+
+            if published_dt:
+                logging.debug(f"Extracted datetime from text: {published_dt}")
+                return published_dt, updated_dt
+
+            # No datetime found
+            logging.debug(f"Could not extract datetime from {url}")
+            return None, None
+
+        except Exception as e:
+            logging.error(f"Error extracting datetime from {url}: {str(e)}")
+            return None, None
+
+    def get_article_content(self, url: str) -> Tuple[str, Optional[str], Optional[datetime], Optional[datetime]]:
+        """
+        Get the content of a news article from its URL, converting the HTML to Markdown
+        to preserve formatting, links, and media references. Extracts the first image,
+        publication datetime, and update datetime.
+
+        :param url: The URL of the article.
+        :return: A tuple containing (content, image_url, published_datetime, updated_datetime).
+                 Content is in Markdown format. Datetimes can be None if not found.
         """
         try:
             article_body = self._fetch_article_body(url)
             if article_body is None:
-                return "Error retrieving content", None
+                return "Error retrieving content", None, None, None
 
             # Extract image before cleaning
             image_url = self._extract_image_url(article_body)
+
+            # Extract datetimes (using full page soup, not just article_body)
+            published_dt, updated_dt = self.extract_published_datetime(url)
 
             # Clean HTML with validation
             cleaned_html = self._clean_html_with_validation(article_body, url)
@@ -363,13 +556,13 @@ class WebScraper:
 
             # Final validation
             if not self._validate_final_content(cleaned_content, url):
-                return "Error retrieving content", None
+                return "Error retrieving content", None, None, None
 
-            return cleaned_content, image_url
+            return cleaned_content, image_url, published_dt, updated_dt
 
         except Exception as e:
             logging.error(f"Error retrieving content from {url}: {str(e)}")
-            return "Error retrieving content", None
+            return "Error retrieving content", None, None, None
 
     def _fetch_article_body(self, url: str):
         """
