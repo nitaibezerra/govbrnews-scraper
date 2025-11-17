@@ -1,8 +1,9 @@
+import json
 import logging
 import random
 import re
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timezone, timedelta
 from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 
@@ -44,6 +45,88 @@ class EBCWebScraper:
         b = (max_val - mean) / std
         sleep_time = truncnorm.rvs(a, b, loc=mean, scale=std)
         return sleep_time
+
+    def _parse_ebc_datetime(self, date_str: str) -> Optional[datetime]:
+        """
+        Parse EBC datetime string to datetime object with timezone.
+        Handles formats:
+        - "DD/MM/YYYY - HH:MM" (Agência Brasil format)
+        - "DD/MM/YYYY" (date only, returns midnight)
+
+        :param date_str: Date string from EBC.
+        :return: datetime object with timezone or None if parsing fails.
+        """
+        brasilia_tz = timezone(timedelta(hours=-3))
+
+        try:
+            if not date_str:
+                return None
+
+            # Clean the string
+            date_str = date_str.strip()
+
+            # Pattern 1: DD/MM/YYYY - HH:MM (with time)
+            match = re.search(r'(\d{2})/(\d{2})/(\d{4})\s*-\s*(\d{1,2}):(\d{2})', date_str)
+            if match:
+                day, month, year, hour, minute = match.groups()
+                return datetime(
+                    int(year), int(month), int(day),
+                    int(hour), int(minute),
+                    tzinfo=brasilia_tz
+                )
+
+            # Pattern 2: DD/MM/YYYY (date only - use midnight)
+            match = re.search(r'(\d{2})/(\d{2})/(\d{4})', date_str)
+            if match:
+                day, month, year = match.groups()
+                return datetime(
+                    int(year), int(month), int(day),
+                    0, 0,  # midnight
+                    tzinfo=brasilia_tz
+                )
+
+        except Exception as e:
+            logging.warning(f"Could not parse EBC datetime '{date_str}': {e}")
+
+        return None
+
+    def _extract_datetime_from_jsonld(self, soup) -> Tuple[Optional[datetime], Optional[datetime]]:
+        """
+        Extract datetime from JSON-LD NewsArticle schema for EBC sites.
+
+        :param soup: BeautifulSoup object of the article page.
+        :return: Tuple of (published_datetime, updated_datetime). Either can be None.
+        """
+        published_dt = None
+        updated_dt = None
+
+        try:
+            script_tags = soup.find_all('script', type='application/ld+json')
+
+            for script in script_tags:
+                try:
+                    data = json.loads(script.string)
+
+                    if isinstance(data, list):
+                        items = data
+                    else:
+                        items = [data]
+
+                    for item in items:
+                        if item.get('@type') == 'NewsArticle':
+                            if 'datePublished' in item and not published_dt:
+                                published_dt = datetime.fromisoformat(item['datePublished'])
+                            if 'dateModified' in item and not updated_dt:
+                                updated_dt = datetime.fromisoformat(item['dateModified'])
+
+                except (json.JSONDecodeError, KeyError, ValueError) as e:
+                    logging.debug(f"Error parsing JSON-LD: {e}")
+                    continue
+
+        except Exception as e:
+            logging.debug(f"Error extracting datetime from JSON-LD: {e}")
+
+        return published_dt, updated_dt
 
     def scrape_news(self) -> List[Dict[str, str]]:
         """
@@ -186,7 +269,7 @@ class EBCWebScraper:
         Scrape a single news page from EBC and return structured data.
 
         :param url: URL of the news article.
-        :return: Dictionary with keys ['title', 'url', 'source', 'date', 'content', 'image', 'agency', 'error']
+        :return: Dictionary with keys including 'published_datetime' and 'updated_datetime'
         """
         try:
             response = self.fetch_page(url)
@@ -196,6 +279,8 @@ class EBCWebScraper:
                     'url': url,
                     'source': '',
                     'date': '',
+                    'published_datetime': None,
+                    'updated_datetime': None,
                     'content': '',
                     'image': '',
                     'video_url': '',
@@ -211,12 +296,20 @@ class EBCWebScraper:
                 'url': url,
                 'source': '',
                 'date': '',
+                'published_datetime': None,
+                'updated_datetime': None,
                 'content': '',
                 'image': '',
                 'video_url': '',
                 'agency': '',
                 'error': '',
             }
+
+            # Try to extract datetime from JSON-LD first (most reliable)
+            published_dt, updated_dt = self._extract_datetime_from_jsonld(soup)
+            if published_dt:
+                news_data['published_datetime'] = published_dt
+                news_data['updated_datetime'] = updated_dt
 
             # Check if this is a TV Brasil URL (different structure)
             is_tvbrasil = 'tvbrasil.ebc.com.br' in url
@@ -229,6 +322,12 @@ class EBCWebScraper:
                 # Original Agência Brasil scraping strategy
                 news_data['agency'] = 'agencia_brasil'
                 self._scrape_agencia_brasil_content(soup, news_data)
+
+            # If JSON-LD didn't work, try parsing from the date field extracted by scrape methods
+            if not news_data['published_datetime'] and news_data['date']:
+                parsed_dt = self._parse_ebc_datetime(news_data['date'])
+                if parsed_dt:
+                    news_data['published_datetime'] = parsed_dt
 
             # Clean up the content - remove excessive whitespace
             if news_data['content']:
@@ -243,6 +342,8 @@ class EBCWebScraper:
                 'url': url,
                 'source': '',
                 'date': '',
+                'published_datetime': None,
+                'updated_datetime': None,
                 'content': '',
                 'image': '',
                 'video_url': '',

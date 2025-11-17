@@ -100,6 +100,10 @@ class EBCScrapeManager:
             # Parse the date from EBC format to date object
             published_at = self._parse_ebc_date(item.get("date", ""))
 
+            # Get datetimes (already extracted by EBCWebScraper)
+            published_datetime = item.get("published_datetime")
+            updated_datetime = item.get("updated_datetime")
+
             # Use the agency from the scraped data (either 'agencia_brasil' or 'tvbrasil')
             # Fallback to 'ebc' if not specified
             agency = item.get("agency", "ebc")
@@ -108,6 +112,8 @@ class EBCScrapeManager:
                 "title": item.get("title", "").strip(),
                 "url": item.get("url", "").strip(),
                 "published_at": published_at,
+                "published_datetime": published_datetime,
+                "updated_datetime": updated_datetime,
                 "category": "Notícias",  # EBC doesn't have specific categories like gov.br
                 "tags": [],  # EBC doesn't provide tags in the same format
                 "content": item.get("content", "").strip(),
@@ -178,6 +184,10 @@ class EBCScrapeManager:
             ordered_column_data["agency"] = column_data.pop("agency")
         if "published_at" in column_data:
             ordered_column_data["published_at"] = column_data.pop("published_at")
+        if "published_datetime" in column_data:
+            ordered_column_data["published_datetime"] = column_data.pop("published_datetime")
+        if "updated_datetime" in column_data:
+            ordered_column_data["updated_datetime"] = column_data.pop("updated_datetime")
 
         # Add remaining columns in order
         for key in ["title", "url", "category", "tags", "content", "image", "video_url", "extracted_at"]:
