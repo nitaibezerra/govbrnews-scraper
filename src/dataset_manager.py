@@ -155,6 +155,13 @@ class DatasetManager:
         df_existing = hf_dataset.to_pandas()
         df_new = pd.DataFrame(new_data)
 
+        # Clean datetime columns in new data to avoid NaT conversion issues
+        datetime_cols = ['published_datetime', 'updated_datetime', 'extracted_at']
+        for col in datetime_cols:
+            if col in df_new.columns:
+                # Replace None with pd.NaT for proper datetime handling
+                df_new[col] = pd.to_datetime(df_new[col], errors='coerce')
+
         # Ensure both DataFrames have same columns
         all_cols = set(df_existing.columns).union(df_new.columns)
         for col in all_cols:
@@ -212,6 +219,13 @@ class DatasetManager:
         then filled for any matching row.
         """
         df = hf_dataset.to_pandas()
+
+        # Clean datetime columns in updated_df to avoid NaT conversion issues
+        datetime_cols = ['published_datetime', 'updated_datetime', 'extracted_at']
+        for col in datetime_cols:
+            if col in updated_df.columns:
+                # Replace None with pd.NaT for proper datetime handling
+                updated_df[col] = pd.to_datetime(updated_df[col], errors='coerce')
 
         # 1. Identify & add new columns if needed
         for col in updated_df.columns:
