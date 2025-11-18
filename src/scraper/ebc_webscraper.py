@@ -90,6 +90,46 @@ class EBCWebScraper:
 
         return None
 
+    def _extract_tags_from_page(self, soup) -> List[str]:
+        """
+        Extract tags from EBC pages (both Agência Brasil and TV Brasil).
+        Tags are usually found as links with '/tags/' in the href.
+
+        :param soup: BeautifulSoup object of the article page.
+        :return: List of tag strings.
+        """
+        try:
+            # Look for tag links (standard pattern: <a href="/tags/...">)
+            tag_links = soup.find_all('a', href=lambda href: href and '/tags/' in href)
+
+            if tag_links:
+                tags = [link.get_text().strip() for link in tag_links if link.get_text().strip()]
+                # Remove duplicates while preserving order
+                seen = set()
+                unique_tags = []
+                for tag in tags:
+                    tag_lower = tag.lower()
+                    if tag_lower not in seen:
+                        seen.add(tag_lower)
+                        unique_tags.append(tag)
+
+                if unique_tags:
+                    logging.debug(f"Found {len(unique_tags)} tags from EBC page")
+                    return unique_tags
+
+            # Fallback: look for row-tags div (Agência Brasil specific)
+            row_tags = soup.find('div', class_='row-tags')
+            if row_tags:
+                tag_links = row_tags.find_all('a')
+                tags = [link.get_text().strip() for link in tag_links if link.get_text().strip()]
+                if tags:
+                    return tags
+
+        except Exception as e:
+            logging.debug(f"Error extracting tags from EBC page: {e}")
+
+        return []
+
     def _extract_datetime_from_jsonld(self, soup) -> Tuple[Optional[datetime], Optional[datetime]]:
         """
         Extract datetime from JSON-LD NewsArticle schema for EBC sites.
@@ -281,6 +321,7 @@ class EBCWebScraper:
                     'date': '',
                     'published_datetime': None,
                     'updated_datetime': None,
+                    'tags': [],
                     'content': '',
                     'image': '',
                     'video_url': '',
@@ -298,6 +339,7 @@ class EBCWebScraper:
                 'date': '',
                 'published_datetime': None,
                 'updated_datetime': None,
+                'tags': [],
                 'content': '',
                 'image': '',
                 'video_url': '',
@@ -310,6 +352,9 @@ class EBCWebScraper:
             if published_dt:
                 news_data['published_datetime'] = published_dt
                 news_data['updated_datetime'] = updated_dt
+
+            # Extract tags from the page
+            news_data['tags'] = self._extract_tags_from_page(soup)
 
             # Check if this is a TV Brasil URL (different structure)
             is_tvbrasil = 'tvbrasil.ebc.com.br' in url
@@ -344,6 +389,7 @@ class EBCWebScraper:
                 'date': '',
                 'published_datetime': None,
                 'updated_datetime': None,
+                'tags': [],
                 'content': '',
                 'image': '',
                 'video_url': '',

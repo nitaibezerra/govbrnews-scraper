@@ -182,7 +182,7 @@ class WebScraper:
         :return: A boolean indicating whether to continue processing further news items.
         """
         title, url = self.extract_title_and_url(item)
-        category = self.extract_category(item)
+        category_from_listing = self.extract_category(item)
         news_date = self.extract_date(item)
 
         if news_date:
@@ -197,8 +197,17 @@ class WebScraper:
                 )
                 return True  # Skip this item
 
-        tags = self.extract_tags(item)
-        content, image_url, published_dt, updated_dt = self.get_article_content(url)
+        # Extract tags from listing (rarely works, but try anyway)
+        tags_from_listing = self.extract_tags(item)
+
+        # Get article content and metadata (tags, editorial_lead, subtitle, category from article page)
+        content, image_url, published_dt, updated_dt, tags_from_article, editorial_lead, subtitle, category_from_article = self.get_article_content(url)
+
+        # Use tags from article page if found, otherwise use from listing
+        final_tags = tags_from_article if tags_from_article else tags_from_listing
+
+        # Use category from listing if found, otherwise use from article page
+        final_category = category_from_listing if category_from_listing != "No Category" else (category_from_article or category_from_listing)
 
         logging.info(f"Retrieved article: {news_date} - {url}\n")
 
@@ -209,8 +218,10 @@ class WebScraper:
                 "published_at": news_date if news_date else None,
                 "published_datetime": published_dt,
                 "updated_datetime": updated_dt,
-                "category": category,
-                "tags": tags,
+                "category": final_category,
+                "tags": final_tags,
+                "editorial_lead": editorial_lead,
+                "subtitle": subtitle,
                 "content": content,
                 "image": image_url,
                 "agency": self.agency,
@@ -320,7 +331,9 @@ class WebScraper:
 
     def extract_tags(self, item) -> List[str]:
         """
-        Extract the tags from a news item.
+        Extract the tags from a news item in the listing page.
+        NOTE: This method rarely finds tags as they're usually only in the article page.
+        Use _extract_tags_from_article_page() for better results.
 
         :param item: A BeautifulSoup tag representing a single news item.
         :return: A list of tags as strings.
@@ -337,6 +350,122 @@ class WebScraper:
             return [tag.get_text().strip() for tag in tag_links]
 
         return []
+
+    def _extract_tags_from_article_page(self, soup) -> List[str]:
+        """
+        Extract tags from the individual article page.
+        Tags are usually found as links with 'origem=keyword' in the href.
+
+        :param soup: BeautifulSoup object of the full article page.
+        :return: List of tag strings.
+        """
+        try:
+            # Look for links with origem=keyword parameter (standard gov.br structure)
+            tag_links = soup.find_all('a', href=lambda href: href and 'origem=keyword' in href)
+
+            if tag_links:
+                tags = [link.get_text().strip() for link in tag_links if link.get_text().strip()]
+                logging.debug(f"Found {len(tags)} tags from article page")
+                return tags
+
+            # Fallback: look for keyword section
+            keywords_section = soup.find('div', class_='keywords')
+            if keywords_section:
+                tag_links = keywords_section.find_all('a')
+                tags = [link.get_text().strip() for link in tag_links if link.get_text().strip()]
+                return tags
+
+        except Exception as e:
+            logging.debug(f"Error extracting tags from article page: {e}")
+
+        return []
+
+    def _extract_editorial_lead(self, article_body) -> Optional[str]:
+        """
+        Extract editorial lead/kicker (e.g., "COP30 E O BRASIL") from article.
+        This is typically formatted text that provides context, often found in SECOM articles.
+
+        :param article_body: BeautifulSoup element of article content.
+        :return: Editorial lead string or None if not found.
+        """
+        try:
+            # SECOM structure: <p class="nitfSubtitle">
+            nitf_subtitle = article_body.find('p', class_='nitfSubtitle')
+            if nitf_subtitle:
+                text = nitf_subtitle.get_text().strip()
+                if text:
+                    logging.debug(f"Found editorial lead: {text}")
+                    return text
+
+            # Alternative: look for first <strong> or <p> with all caps short text
+            first_p = article_body.find('p')
+            if first_p:
+                text = first_p.get_text().strip()
+                # Check if it's short (< 50 chars) and mostly uppercase
+                if len(text) < 50 and text.isupper() and len(text) > 5:
+                    return text
+
+        except Exception as e:
+            logging.debug(f"Error extracting editorial lead: {e}")
+
+        return None
+
+    def _extract_subtitle(self, article_body) -> Optional[str]:
+        """
+        Extract subtitle/lead from article (descriptive text that complements the title).
+        Typically formatted as <p class="discreet"> or similar.
+
+        :param article_body: BeautifulSoup element of article content.
+        :return: Subtitle string or None if not found.
+        """
+        try:
+            # Look for paragraph with class "discreet" (common pattern)
+            discreet_p = article_body.find('p', class_='discreet')
+            if discreet_p:
+                text = discreet_p.get_text().strip()
+                if text:
+                    logging.debug(f"Found subtitle: {text[:50]}...")
+                    return text
+
+            # Alternative: look for <p class="description">
+            description_p = article_body.find('p', class_='description')
+            if description_p:
+                text = description_p.get_text().strip()
+                if text:
+                    return text
+
+        except Exception as e:
+            logging.debug(f"Error extracting subtitle: {e}")
+
+        return None
+
+    def _extract_category_from_article_page(self, soup) -> Optional[str]:
+        """
+        Extract category from individual article page (fallback when not found in listing).
+
+        :param soup: BeautifulSoup object of the full article page.
+        :return: Category string or None if not found.
+        """
+        try:
+            # Look for breadcrumb or category indicators
+            # Pattern 1: Look in portal-breadcrumbs
+            breadcrumbs = soup.find('nav', class_='portal-breadcrumbs')
+            if breadcrumbs:
+                links = breadcrumbs.find_all('a')
+                if len(links) >= 2:  # Skip first (usually "Home")
+                    category = links[1].get_text().strip()
+                    if category and category.lower() not in ['home', 'início']:
+                        return category
+
+            # Pattern 2: Look for category in metadata
+            category_meta = soup.find('meta', attrs={'name': 'category'})
+            if category_meta and category_meta.get('content'):
+                return category_meta.get('content').strip()
+
+        except Exception as e:
+            logging.debug(f"Error extracting category from article page: {e}")
+
+        return None
 
     def _extract_datetime_from_jsonld(self, soup) -> Optional[datetime]:
         """
@@ -526,29 +655,43 @@ class WebScraper:
             logging.error(f"Error extracting datetime from {url}: {str(e)}")
             return None, None
 
-    def get_article_content(self, url: str) -> Tuple[str, Optional[str], Optional[datetime], Optional[datetime]]:
+    def get_article_content(self, url: str) -> Tuple[str, Optional[str], Optional[datetime], Optional[datetime], List[str], Optional[str], Optional[str], Optional[str]]:
         """
         Get the content of a news article from its URL, converting the HTML to Markdown
-        to preserve formatting, links, and media references. Extracts the first image,
-        publication datetime, and update datetime.
+        to preserve formatting, links, and media references. Extracts metadata including
+        image, datetimes, tags, editorial lead, subtitle, and category.
 
         :param url: The URL of the article.
-        :return: A tuple containing (content, image_url, published_datetime, updated_datetime).
-                 Content is in Markdown format. Datetimes can be None if not found.
+        :return: A tuple containing (content, image_url, published_datetime, updated_datetime,
+                 tags, editorial_lead, subtitle, category).
+                 Content is in Markdown format. Tags is a list, others can be None if not found.
         """
         try:
-            article_body = self._fetch_article_body(url)
+            response = self.fetch_page(url)
+            if not response:
+                return "Error retrieving content", None, None, None, [], None, None, None
+
+            soup = BeautifulSoup(response.content, 'html.parser')
+            article_body = soup.find("div", id="content")
+
             if article_body is None:
-                return "Error retrieving content", None, None, None
+                logging.warning(f"No content div found for {url}")
+                return "Error retrieving content", None, None, None, [], None, None, None
+
+            # Extract metadata from full page
+            tags = self._extract_tags_from_article_page(soup)
+            editorial_lead = self._extract_editorial_lead(article_body)
+            subtitle = self._extract_subtitle(article_body)
+            category = self._extract_category_from_article_page(soup)
 
             # Extract image before cleaning
             image_url = self._extract_image_url(article_body)
 
-            # Extract datetimes (using full page soup, not just article_body)
+            # Extract datetimes
             published_dt, updated_dt = self.extract_published_datetime(url)
 
-            # Clean HTML with validation
-            cleaned_html = self._clean_html_with_validation(article_body, url)
+            # Clean HTML with validation (pass editorial_lead and subtitle for removal)
+            cleaned_html = self._clean_html_with_validation(article_body, url, editorial_lead, subtitle)
 
             # Convert to markdown and clean
             content = md(str(cleaned_html))
@@ -556,13 +699,13 @@ class WebScraper:
 
             # Final validation
             if not self._validate_final_content(cleaned_content, url):
-                return "Error retrieving content", None, None, None
+                return "Error retrieving content", None, None, None, tags, editorial_lead, subtitle, category
 
-            return cleaned_content, image_url, published_dt, updated_dt
+            return cleaned_content, image_url, published_dt, updated_dt, tags, editorial_lead, subtitle, category
 
         except Exception as e:
             logging.error(f"Error retrieving content from {url}: {str(e)}")
-            return "Error retrieving content", None, None, None
+            return "Error retrieving content", None, None, None, [], None, None, None
 
     def _fetch_article_body(self, url: str):
         """
@@ -594,19 +737,21 @@ class WebScraper:
         first_img = article_body.find("img")
         return first_img["src"] if first_img else None
 
-    def _clean_html_with_validation(self, article_body, url: str):
+    def _clean_html_with_validation(self, article_body, url: str, editorial_lead: Optional[str] = None, subtitle: Optional[str] = None):
         """
         Clean HTML content with validation and fallback mechanism.
 
         :param article_body: Original BeautifulSoup element
         :param url: URL for logging purposes
+        :param editorial_lead: Editorial lead text to remove from content
+        :param subtitle: Subtitle text to remove from content
         :return: Cleaned BeautifulSoup element
         """
         # Count content before cleaning
         original_stats = self._count_content_stats(article_body)
 
-        # Clean the HTML content
-        cleaned_html = self._clean_html_content(article_body)
+        # Clean the HTML content (pass editorial_lead and subtitle for targeted removal)
+        cleaned_html = self._clean_html_content(article_body, editorial_lead, subtitle)
 
         # Validate cleaning didn't remove too much
         cleaned_stats = self._count_content_stats(cleaned_html)
@@ -670,12 +815,15 @@ class WebScraper:
 
         return True
 
-    def _clean_html_content(self, article_body):
+    def _clean_html_content(self, article_body, editorial_lead: Optional[str] = None, subtitle: Optional[str] = None):
         """
         Clean HTML content by removing junk elements like sharing buttons,
         metadata, social media links, and other non-content elements.
+        Also removes editorial lead and subtitle text if provided.
 
         :param article_body: BeautifulSoup element representing the article content
+        :param editorial_lead: Editorial lead text to remove
+        :param subtitle: Subtitle text to remove
         :return: Cleaned BeautifulSoup element
         """
         # Make a copy to avoid modifying the original
@@ -685,6 +833,37 @@ class WebScraper:
         h1_tags = cleaned_body.find_all('h1')
         for h1 in h1_tags:
             h1.decompose()
+
+        # Remove editorial leads/kickers (already extracted separately)
+        for p in cleaned_body.find_all('p', class_='nitfSubtitle'):
+            p.decompose()
+
+        # Remove breadcrumb/section navigation
+        for p in cleaned_body.find_all('p', class_='section'):
+            p.decompose()
+
+        # Remove subtitle/lead (already extracted separately)
+        for p in cleaned_body.find_all('p', class_='discreet'):
+            p.decompose()
+
+        for p in cleaned_body.find_all('p', class_='description'):
+            p.decompose()
+
+        # Remove editorial lead text if provided (for cases where it's not in a specific class)
+        if editorial_lead:
+            for p in cleaned_body.find_all('p'):
+                text = p.get_text().strip()
+                if text == editorial_lead:
+                    p.decompose()
+                    break  # Only remove the first match
+
+        # Remove subtitle text if provided (for cases where it's not in a specific class)
+        if subtitle:
+            for p in cleaned_body.find_all('p'):
+                text = p.get_text().strip()
+                if text == subtitle:
+                    p.decompose()
+                    break  # Only remove the first match
 
         # Remove sharing elements
         self._remove_sharing_elements(cleaned_body)
