@@ -163,6 +163,12 @@ class ScrapeManager:
             ordered_column_data["published_datetime"] = column_data.pop("published_datetime")
         if "updated_datetime" in column_data:
             ordered_column_data["updated_datetime"] = column_data.pop("updated_datetime")
+        if "title" in column_data:
+            ordered_column_data["title"] = column_data.pop("title")
+        if "editorial_lead" in column_data:
+            ordered_column_data["editorial_lead"] = column_data.pop("editorial_lead")
+        if "subtitle" in column_data:
+            ordered_column_data["subtitle"] = column_data.pop("subtitle")
         ordered_column_data.update(column_data)
 
         return ordered_column_data
