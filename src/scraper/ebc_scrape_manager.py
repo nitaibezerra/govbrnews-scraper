@@ -115,7 +115,9 @@ class EBCScrapeManager:
                 "published_datetime": published_datetime,
                 "updated_datetime": updated_datetime,
                 "category": "Notícias",  # EBC doesn't have specific categories like gov.br
-                "tags": [],  # EBC doesn't provide tags in the same format
+                "tags": item.get("tags", []),  # Now extracted from article pages
+                "editorial_lead": None,  # EBC articles don't typically have editorial leads
+                "subtitle": None,  # EBC articles don't typically have subtitles in the same format
                 "content": item.get("content", "").strip(),
                 "image": item.get("image", "").strip(),
                 "video_url": item.get("video_url", "").strip(),
@@ -189,8 +191,8 @@ class EBCScrapeManager:
         if "updated_datetime" in column_data:
             ordered_column_data["updated_datetime"] = column_data.pop("updated_datetime")
 
-        # Add remaining columns in order
-        for key in ["title", "url", "category", "tags", "content", "image", "video_url", "extracted_at"]:
+        # Add remaining columns in order (matching govbrnews schema)
+        for key in ["title", "editorial_lead", "subtitle", "url", "category", "tags", "content", "image", "video_url", "extracted_at"]:
             if key in column_data:
                 ordered_column_data[key] = column_data.pop(key)
 
