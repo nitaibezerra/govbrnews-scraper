@@ -128,13 +128,13 @@ class DatasetManager:
         Load an existing dataset from the Hugging Face Hub, or return None if not found.
         """
         try:
-            # Clear cache to avoid corruption issues
-            # cache_dir = Path.home() / ".cache" / "huggingface" / "datasets" / self.dataset_path.replace("/", "___")
-            # if cache_dir.exists():
-            #     logging.info(f"Clearing cached dataset at {cache_dir}")
-            #     shutil.rmtree(cache_dir, ignore_errors=True)
+            # Clear cache to avoid schema corruption issues when fields are added
+            cache_dir = Path.home() / ".cache" / "huggingface" / "datasets" / self.dataset_path.replace("/", "___")
+            if cache_dir.exists():
+                logging.info(f"Clearing cached dataset at {cache_dir}")
+                shutil.rmtree(cache_dir, ignore_errors=True)
 
-            existing_dataset = load_dataset(self.dataset_path, split="train")
+            existing_dataset = load_dataset(self.dataset_path, split="train", download_mode="force_redownload")
             logging.info(
                 f"Existing dataset loaded from {self.dataset_path}. "
                 f"\nRow count: {len(existing_dataset)}"
