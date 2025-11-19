@@ -61,6 +61,11 @@ def main():
         action='store_true',
         help='Process agencies sequentially instead of in bulk'
     )
+    parser.add_argument(
+        '--yes', '-y',
+        action='store_true',
+        help='Skip confirmation prompt (auto-confirm)'
+    )
 
     args = parser.parse_args()
 
@@ -78,11 +83,15 @@ def main():
     logging.info(f"Update mode: ENABLED (will overwrite existing entries)")
     logging.info("="*80)
 
-    # Confirm before proceeding
-    response = input("\nThis will UPDATE existing articles in the dataset. Continue? (y/n): ")
-    if response.lower() != 'y':
-        logging.info("Cancelled by user.")
-        return
+    # Confirm before proceeding (skip if --yes flag is used)
+    if not args.yes:
+        response = input("\nThis will UPDATE existing articles in the dataset. Continue? (y/n): ")
+        if response.lower() != 'y':
+            logging.info("Cancelled by user.")
+            return
+    else:
+        logging.info("Auto-confirmed (--yes flag used)")
+        logging.info("")
 
     try:
         # Initialize dataset manager
