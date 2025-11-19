@@ -215,8 +215,7 @@ class WebScraper:
             {
                 "title": title,
                 "url": url,
-                "published_at": news_date if news_date else None,
-                "published_datetime": published_dt,
+                "published_at": published_dt if published_dt else None,
                 "updated_datetime": updated_dt,
                 "category": final_category,
                 "tags": final_tags,

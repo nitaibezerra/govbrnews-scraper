@@ -156,7 +156,7 @@ class DatasetManager:
         df_new = pd.DataFrame(new_data)
 
         # Clean datetime columns in new data to avoid NaT conversion issues
-        datetime_cols = ['published_datetime', 'updated_datetime', 'extracted_at']
+        datetime_cols = ['published_at', 'updated_datetime', 'extracted_at']
         for col in datetime_cols:
             if col in df_new.columns:
                 # Replace None with pd.NaT for proper datetime handling
@@ -221,7 +221,7 @@ class DatasetManager:
         df = hf_dataset.to_pandas()
 
         # Clean datetime columns in updated_df to avoid NaT conversion issues
-        datetime_cols = ['published_datetime', 'updated_datetime', 'extracted_at']
+        datetime_cols = ['published_at', 'updated_datetime', 'extracted_at']
         for col in datetime_cols:
             if col in updated_df.columns:
                 # Replace None with pd.NaT for proper datetime handling

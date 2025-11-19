@@ -232,7 +232,7 @@ class TestDateTimeIntegration:
     """Integration tests for datetime extraction in full scraping workflow"""
 
     def test_webscraper_article_content_returns_datetimes(self):
-        """Test that get_article_content returns 4 values including datetimes"""
+        """Test that get_article_content returns 8 values including datetimes"""
         scraper = WebScraper("2025-01-01", "https://www.gov.br/test/pt-br/noticias")
 
         # We can't test with real URL in unit tests, but we can verify the signature
@@ -240,8 +240,8 @@ class TestDateTimeIntegration:
         result = scraper.get_article_content("https://example.com/nonexistent")
 
         assert isinstance(result, tuple)
-        assert len(result) == 4
-        content, image_url, published_dt, updated_dt = result
+        assert len(result) == 8
+        content, image_url, published_dt, updated_dt, tags, editorial_lead, subtitle, category = result
         assert isinstance(content, str)
         # Datetimes will be None for failed fetch, but structure is correct
 
@@ -254,7 +254,6 @@ class TestDateTimeIntegration:
             "title": "Test",
             "url": "https://example.com",
             "published_at": None,
-            "published_datetime": None,
             "updated_datetime": None,
             "category": "Test",
             "tags": [],
@@ -266,7 +265,6 @@ class TestDateTimeIntegration:
 
         # Verify structure has all required fields
         assert "published_at" in news_item
-        assert "published_datetime" in news_item
         assert "updated_datetime" in news_item
 
 
