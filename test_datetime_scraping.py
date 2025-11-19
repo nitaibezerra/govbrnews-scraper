@@ -53,17 +53,16 @@ def test_standard_scraper():
                 print(f"\nFirst Article Details:")
                 print(f"  Title: {article.get('title', 'N/A')[:80]}...")
                 print(f"  URL: {article.get('url', 'N/A')}")
-                print(f"  published_at (date): {article.get('published_at')}")
-                print(f"  published_datetime: {article.get('published_datetime')}")
+                print(f"  published_at (datetime): {article.get('published_at')}")
                 print(f"  updated_datetime: {article.get('updated_datetime')}")
 
                 # Validate datetime extraction
-                if article.get('published_datetime'):
+                if article.get('published_at'):
                     print(f"\n  ✓ DATETIME EXTRACTION SUCCESSFUL")
-                    print(f"  Timezone: {article['published_datetime'].tzinfo}")
-                    print(f"  ISO format: {article['published_datetime'].isoformat()}")
+                    print(f"  Timezone: {article['published_at'].tzinfo}")
+                    print(f"  ISO format: {article['published_at'].isoformat()}")
                 else:
-                    print(f"\n  ✗ WARNING: No datetime extracted (only date)")
+                    print(f"\n  ✗ WARNING: No published_at extracted")
 
                 if article.get('updated_datetime'):
                     print(f"  ✓ Update datetime also extracted: {article['updated_datetime']}")
@@ -104,13 +103,13 @@ def test_ebc_scraper():
                 print(f"  Title: {article.get('title', 'N/A')[:80]}...")
                 print(f"  URL: {article.get('url', 'N/A')}")
                 print(f"  date (string): {article.get('date')}")
-                print(f"  published_datetime: {article.get('published_datetime')}")
+                print(f"  published_at (datetime): {article.get('published_at')}")
                 print(f"  updated_datetime: {article.get('updated_datetime')}")
 
-                if article.get('published_datetime'):
+                if article.get('published_at'):
                     print(f"\n  ✓ DATETIME EXTRACTION SUCCESSFUL")
-                    print(f"  Timezone: {article['published_datetime'].tzinfo}")
-                    print(f"  ISO format: {article['published_datetime'].isoformat()}")
+                    print(f"  Timezone: {article['published_at'].tzinfo}")
+                    print(f"  ISO format: {article['published_at'].isoformat()}")
                 else:
                     print(f"\n  ✗ WARNING: No datetime extracted")
 
