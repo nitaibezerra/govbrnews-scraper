@@ -97,11 +97,8 @@ class EBCScrapeManager:
                 logging.warning(f"Skipping item with error: {item['error']}")
                 continue
 
-            # Parse the date from EBC format to date object
-            published_at = self._parse_ebc_date(item.get("date", ""))
-
             # Get datetimes (already extracted by EBCWebScraper)
-            published_datetime = item.get("published_datetime")
+            published_dt = item.get("published_datetime")
             updated_datetime = item.get("updated_datetime")
 
             # Use the agency from the scraped data (either 'agencia_brasil' or 'tvbrasil')
@@ -111,8 +108,7 @@ class EBCScrapeManager:
             converted_item = {
                 "title": item.get("title", "").strip(),
                 "url": item.get("url", "").strip(),
-                "published_at": published_at,
-                "published_datetime": published_datetime,
+                "published_at": published_dt if published_dt else None,
                 "updated_datetime": updated_datetime,
                 "category": "Notícias",  # EBC doesn't have specific categories like gov.br
                 "tags": item.get("tags", []),  # Now extracted from article pages
@@ -186,8 +182,6 @@ class EBCScrapeManager:
             ordered_column_data["agency"] = column_data.pop("agency")
         if "published_at" in column_data:
             ordered_column_data["published_at"] = column_data.pop("published_at")
-        if "published_datetime" in column_data:
-            ordered_column_data["published_datetime"] = column_data.pop("published_datetime")
         if "updated_datetime" in column_data:
             ordered_column_data["updated_datetime"] = column_data.pop("updated_datetime")
 
