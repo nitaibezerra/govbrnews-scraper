@@ -1,7 +1,7 @@
 import os
 import logging
 import argparse
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from typing import Dict, Optional, Union, Tuple, List
 from time import time, sleep
 
@@ -590,14 +590,23 @@ class EnrichmentManager:
         df['published_at'] = pd.to_datetime(df['published_at'], errors='coerce')
         df = df.dropna(subset=['published_at'])
 
+        # Brasília timezone (UTC-3)
+        brasilia_tz = timezone(timedelta(hours=-3))
+
         if start_date:
             if isinstance(start_date, str):
                 start_date = pd.to_datetime(start_date)
+            # Make start_date timezone-aware if it's naive
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=brasilia_tz)
             df = df[df['published_at'] >= start_date]
 
         if end_date:
             if isinstance(end_date, str):
                 end_date = pd.to_datetime(end_date)
+            # Make end_date timezone-aware if it's naive
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=brasilia_tz)
             df = df[df['published_at'] <= end_date]
 
         logging.info(f"Filtered to {len(df)} records in date range")
