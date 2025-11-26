@@ -60,15 +60,17 @@ class UploadToCogfyManager:
         df = dataset.to_pandas()
         return df.sort_values(by="published_at", ascending=True), dataset.features
 
-    def _setup_collection_fields(self, features: dict) -> dict:
+    def _setup_collection_fields(self, features: dict) -> tuple:
         """
-        Sets up the collection fields and returns the field ID mapping.
+        Sets up the collection fields and returns the field ID and type mappings.
 
         Args:
             features: The dataset features dictionary
 
         Returns:
-            dict: Mapping of field names to their IDs
+            tuple: (field_id_map, cogfy_type_map) where:
+                - field_id_map: Mapping of field names to their IDs
+                - cogfy_type_map: Mapping of field names to their Cogfy types
         """
         field_mapping = {
             field_name: self._map_hf_type_to_cogfy_type(field_type.dtype)
@@ -79,7 +81,11 @@ class UploadToCogfyManager:
         self.collection_manager.ensure_fields(field_mapping)
 
         fields = self.collection_manager.list_columns()
-        return {field.name: field.id for field in fields}
+        field_id_map = {field.name: field.id for field in fields}
+        # Use actual Cogfy types instead of mapped HuggingFace types
+        cogfy_type_map = {field.name: field.type for field in fields}
+
+        return field_id_map, cogfy_type_map
 
     def _map_hf_type_to_cogfy_type(self, hf_type: str) -> str:
         """
@@ -98,7 +104,18 @@ class UploadToCogfyManager:
             "timestamp[ns]": "date",
             "list": "text"  # For tags, we'll store as comma-separated text
         }
+
+        # Check for timestamp with timezone (e.g., "timestamp[us, tz=pytz.FixedOffset(-180)]")
+        if "timestamp[" in hf_type:
+            return "date"
+
         return type_mapping.get(hf_type, "text")
+
+    # Fields to exclude from upload (legacy/deprecated fields)
+    EXCLUDED_FIELDS = {
+        'published_at_old',      # Legacy field from migration
+        'published_datetime',    # Legacy field, replaced by published_at
+    }
 
     def _create_record_properties(self, row: pd.Series, field_id_map: dict, field_mapping: dict) -> dict:
         """
@@ -107,7 +124,7 @@ class UploadToCogfyManager:
         Args:
             row: The pandas Series containing the record data
             field_id_map: Mapping of field names to their IDs
-            field_mapping: Mapping of field names to their types
+            field_mapping: Mapping of field names to their Cogfy types
 
         Returns:
             dict: The properties dictionary for the record
@@ -115,17 +132,35 @@ class UploadToCogfyManager:
         properties = {}
 
         for field_name, field_id in field_id_map.items():
+            # Skip excluded/legacy fields
+            if field_name in self.EXCLUDED_FIELDS:
+                continue
+
+            # Skip fields that don't exist in the row data
+            if field_name not in row.index:
+                continue
+
             value = row.get(field_name)
 
             if value is None or (isinstance(value, str) and value == "") or (isinstance(value, numpy.ndarray) and value.size == 0):
                 continue
 
-            if field_mapping[field_name] == "text":
+            # Skip NaT (Not a Time) values for datetime fields (but not for arrays)
+            if not isinstance(value, numpy.ndarray):
+                try:
+                    if pd.isna(value):
+                        continue
+                except (ValueError, TypeError):
+                    pass  # Value is not NA-checkable, proceed
+
+            cogfy_type = field_mapping.get(field_name, "text")
+
+            if cogfy_type == "text":
                 properties[field_id] = {
                     "type": "text",
                     "text": {"value": str(value)}
                 }
-            elif field_mapping[field_name] == "date":
+            elif cogfy_type == "date":
                 if isinstance(value, pd.Timestamp):
                     value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
                 elif isinstance(value, date):
@@ -178,6 +213,11 @@ class UploadToCogfyManager:
                 if any(keyword in error_msg.lower() for keyword in ['unauthorized', 'forbidden', 'authentication', 'permission']):
                     logging.error(f"Authentication/permission error: {error_msg}")
                     return False
+
+                # 400 Bad Request indicates schema/type mismatch - fatal error, do not retry
+                if "400" in error_msg and "bad request" in error_msg.lower():
+                    logging.error(f"Bad Request error (schema mismatch): {error_msg}")
+                    raise Exception(f"Fatal schema error: {error_msg}")
 
                 if attempt < max_retries:
                     # Calculate delay with exponential backoff
@@ -377,14 +417,12 @@ class UploadToCogfyManager:
             logging.warning("No records found matching the specified filters")
             return
 
-        # Setup collection fields
-        field_id_map = self._setup_collection_fields(features)
+        # Setup collection fields and get actual Cogfy types
+        field_id_map, cogfy_type_map = self._setup_collection_fields(features)
         self._unique_id_field_id = self._get_unique_id_field_id(field_id_map)
 
-        field_mapping = {
-            field_name: self._map_hf_type_to_cogfy_type(field_type.dtype)
-            for field_name, field_type in features.items()
-        }
+        # Use actual Cogfy types instead of HuggingFace mapped types
+        field_mapping = cogfy_type_map
 
         # Get published_at field ID for querying
         published_at_field_id = field_id_map.get('published_at')
