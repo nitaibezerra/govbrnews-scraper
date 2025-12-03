@@ -117,6 +117,32 @@ class UploadToCogfyManager:
         'published_datetime',    # Legacy field, replaced by published_at
     }
 
+    @staticmethod
+    def _format_datetime_for_cogfy(value) -> str:
+        """
+        Format a datetime value for Cogfy API.
+
+        Converts timezone-aware timestamps to UTC before formatting with 'Z' suffix.
+        This ensures the datetime is correctly interpreted by the API.
+
+        Args:
+            value: A pd.Timestamp or date object
+
+        Returns:
+            str: ISO 8601 formatted datetime string with 'Z' suffix (UTC)
+        """
+        if isinstance(value, pd.Timestamp):
+            # Convert to UTC before formatting with Z suffix
+            if value.tzinfo is not None:
+                value_utc = value.tz_convert('UTC')
+            else:
+                value_utc = value
+            return value_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+        elif isinstance(value, date):
+            return datetime.combine(value, time(hour=12)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        else:
+            raise ValueError(f"Unsupported datetime type: {type(value)}")
+
     def _create_record_properties(self, row: pd.Series, field_id_map: dict, field_mapping: dict) -> dict:
         """
         Creates the properties dictionary for a record.
@@ -161,18 +187,10 @@ class UploadToCogfyManager:
                     "text": {"value": str(value)}
                 }
             elif cogfy_type == "date":
-                if isinstance(value, pd.Timestamp):
-                    # Convert to UTC before formatting with Z suffix
-                    if value.tzinfo is not None:
-                        value_utc = value.tz_convert('UTC')
-                    else:
-                        value_utc = value
-                    value = value_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-                elif isinstance(value, date):
-                    value = datetime.combine(value, time(hour=12)).strftime("%Y-%m-%dT%H:%M:%SZ")
+                formatted_value = self._format_datetime_for_cogfy(value)
                 properties[field_id] = {
                     "type": "date",
-                    "date": {"value": value}
+                    "date": {"value": formatted_value}
                 }
 
         return properties
