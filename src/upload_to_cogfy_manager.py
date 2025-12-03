@@ -162,7 +162,12 @@ class UploadToCogfyManager:
                 }
             elif cogfy_type == "date":
                 if isinstance(value, pd.Timestamp):
-                    value = value.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    # Convert to UTC before formatting with Z suffix
+                    if value.tzinfo is not None:
+                        value_utc = value.tz_convert('UTC')
+                    else:
+                        value_utc = value
+                    value = value_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
                 elif isinstance(value, date):
                     value = datetime.combine(value, time(hour=12)).strftime("%Y-%m-%dT%H:%M:%SZ")
                 properties[field_id] = {
