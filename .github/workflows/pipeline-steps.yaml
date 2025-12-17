@@ -22,7 +22,7 @@ jobs:
     name: News Scraper
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      image: ghcr.io/destaquesgovbr/scraper:latest
       options: --workdir /app
     steps:
       - name: Run news scraper
@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [scraper]
     container:
-      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      image: ghcr.io/destaquesgovbr/scraper:latest
       options: --workdir /app
     steps:
       - name: Run EBC news scraper
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [scraper, ebc-scraper]
     container:
-      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      image: ghcr.io/destaquesgovbr/scraper:latest
       options: --workdir /app
     steps:
       - name: Upload news to Cogfy
@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [upload-to-cogfy]
     container:
-      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      image: ghcr.io/destaquesgovbr/scraper:latest
       options: --workdir /app
     steps:
       - name: Wait for Cogfy processing

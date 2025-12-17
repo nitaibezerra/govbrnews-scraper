@@ -190,7 +190,7 @@ Update `.github/workflows/main-workflow.yaml`:
   runs-on: ubuntu-latest
   needs: [setup-dates, scraper]  # Run after gov.br scraper
   container:
-    image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+    image: ghcr.io/destaquesgovbr/scraper:latest
     options: --workdir /app
   steps:
     - name: Run {source} news scraper

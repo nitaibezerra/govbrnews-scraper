@@ -7,7 +7,7 @@ jobs:
   run-scheduled-scraper:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/nitaibezerra/govbrnews-scraper:latest
+      image: ghcr.io/destaquesgovbr/scraper:latest
       options: --workdir /app
 
     steps:

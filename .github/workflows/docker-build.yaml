@@ -32,9 +32,9 @@ jobs:
       - name: Build and push the image
         run: |
           # 1) Build the Docker image (tag with "latest" + a short SHA)
-          docker build -t ghcr.io/nitaibezerra/govbrnews-scraper:latest \
-                       -t ghcr.io/nitaibezerra/govbrnews-scraper:${{ github.sha }} .
+          docker build -t ghcr.io/destaquesgovbr/scraper:latest \
+                       -t ghcr.io/destaquesgovbr/scraper:${{ github.sha }} .
 
           # 2) Push both tags
-          docker push ghcr.io/nitaibezerra/govbrnews-scraper:latest
-          docker push ghcr.io/nitaibezerra/govbrnews-scraper:${{ github.sha }}
+          docker push ghcr.io/destaquesgovbr/scraper:latest
+          docker push ghcr.io/destaquesgovbr/scraper:${{ github.sha }}

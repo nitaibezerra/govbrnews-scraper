@@ -444,7 +444,7 @@ The project uses GitHub Actions for automated daily news processing ([.github/wo
    - Manual dispatch: Custom date range via workflow inputs
 
 2. **scraper** - Main gov.br news scraper
-   - Container: `ghcr.io/nitaibezerra/govbrnews-scraper:latest`
+   - Container: `ghcr.io/destaquesgovbr/scraper:latest`
    - Command: `python src/main.py scrape --start-date X --end-date Y`
    - Publishes to Hugging Face dataset
 
