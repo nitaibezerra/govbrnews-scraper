@@ -27,7 +27,7 @@
 
 ### O que foi feito no PR #45
 
-O [PR #45](https://github.com/nitaibezerra/govbrnews-scraper/pull/45) introduziu campos de datetime completos no scraper, mantendo retrocompatibilidade:
+O [PR #45](https://github.com/destaquesgovbr/scraper/pull/45) introduziu campos de datetime completos no scraper, mantendo retrocompatibilidade:
 
 **Campos adicionados:**
 - `published_datetime`: Timestamp completo com hora e timezone (ISO 8601, e.g., "2025-11-17T19:24:43-03:00")
@@ -1038,7 +1038,7 @@ if __name__ == "__main__":
 
 ### Documentação de Referência
 
-- [PR #45 - Datetime Fields](https://github.com/nitaibezerra/govbrnews-scraper/pull/45)
+- [PR #45 - Datetime Fields](https://github.com/destaquesgovbr/scraper/pull/45)
 - [Typesense Timestamps](https://typesense.org/docs/latest/api/documents.html#indexing-dates)
 - [Pandas Datetime](https://pandas.pydata.org/docs/user_guide/timeseries.html)
 - [Python ZoneInfo](https://docs.python.org/3/library/zoneinfo.html)
@@ -1048,23 +1048,23 @@ if __name__ == "__main__":
 
 ```bash
 # Scraper
-cd /Users/nitai/Dropbox/dev-mgi/govbrnews-scraper-main
+cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr/scraper-main
 python scripts/backfill_published_datetime.py
 python scripts/rename_published_at_fields.py
 pytest tests/
 
 # Typesense Docker
-cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr-typesense
+cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr/typesense
 ./run-typesense-server.sh cleanup
 ./run-typesense-server.sh
 
 # Infra
-cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr-infra/scripts/typesense/python
+cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr/infra/scripts/typesense/python
 python scripts/load_data.py --mode full --force
 python scripts/load_data.py --mode incremental --days 30
 
 # Portal
-cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr-portal
+cd /Users/nitai/Dropbox/dev-mgi/destaquesgovbr/portal
 npm run dev
 npm run build
 npm run test
@@ -1074,7 +1074,7 @@ npm run test
 
 - **Responsável pela migração**: Nitai Bezerra
 - **Repositórios**:
-  - Scraper: https://github.com/nitaibezerra/govbrnews-scraper
+  - Scraper: https://github.com/destaquesgovbr/scraper
   - Portal: (URL se disponível)
   - Infra: (URL se disponível)
 

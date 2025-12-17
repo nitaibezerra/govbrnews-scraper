@@ -30,21 +30,40 @@ Para carregar o dataset diretamente no Python utilizando a biblioteca `datasets`
 
 3. **Explore o Dataset:**
 
-   O dataset inclui os seguintes campos:
-   - `unique_id`: Identificador único de cada notícia.
-   - `agency`: Agência governamental que publicou a notícia.
-   - `published_at`: Data de publicação da notícia (apenas data, mantido por compatibilidade).
-   - `published_datetime`: Data e hora completa de publicação da notícia (ISO 8601 com timezone UTC-3).
-   - `updated_datetime`: Data e hora de atualização da notícia, quando disponível (ISO 8601 com timezone UTC-3).
-   - `title`: Título da notícia.
-   - `url`: URL da notícia original.
-   - `image`: Link para a imagem principal da notícia.
-   - `category`: Categoria da notícia (se disponível).
-   - `tags`: Lista de tags associadas à notícia (se disponíveis).
-   - `content`: Conteúdo completo da notícia em formato Markdown.
-   - `extracted_at`: Data e hora em que a notícia foi extraída.
+   O dataset inclui os seguintes campos, organizados por categoria:
 
-   **Nota sobre timestamps:** A partir de novembro de 2025, o dataset inclui `published_datetime` e `updated_datetime` com informações completas de data e hora (timezone UTC-3). A coluna `published_at` (apenas data) é mantida para compatibilidade com sistemas existentes. Notícias coletadas antes desta atualização terão `None` nestes novos campos.
+   **Identificação:**
+   - `unique_id`: Identificador único (hash MD5 de agency + published_at + title)
+   - `agency`: Identificador do órgão governamental
+
+   **Datas:**
+   - `published_at`: Data e hora de publicação (ISO 8601, UTC)
+   - `updated_datetime`: Data e hora de atualização, quando disponível (ISO 8601, UTC)
+   - `extracted_at`: Data e hora da extração
+
+   **Conteúdo Principal:**
+   - `title`: Título da notícia
+   - `subtitle`: Subtítulo, quando disponível
+   - `editorial_lead`: Lead editorial / linha fina
+   - `url`: URL original da notícia
+   - `content`: Conteúdo completo em formato Markdown
+
+   **Mídia:**
+   - `image`: URL da imagem principal
+   - `video_url`: URL de vídeo incorporado, quando disponível
+
+   **Classificação:**
+   - `category`: Categoria da notícia (se disponível no site)
+   - `tags`: Lista de tags associadas (se disponíveis)
+
+   **Enriquecimento por IA (LLM):**
+   - `theme_1_level_1_code` / `theme_1_level_1_label`: Tema nível 1 (ex: "01" / "Economia e Finanças")
+   - `theme_1_level_2_code` / `theme_1_level_2_label`: Tema nível 2 (ex: "01.01" / "Política Econômica")
+   - `theme_1_level_3_code` / `theme_1_level_3_label`: Tema nível 3 (ex: "01.01.01" / "Política Fiscal")
+   - `most_specific_theme_code` / `most_specific_theme_label`: Tema mais específico disponível
+   - `summary`: Resumo gerado automaticamente por LLM
+
+   **Nota:** Os timestamps estão em UTC. O enriquecimento por IA é feito via integração com Cogfy/LLM e classifica as notícias em 25 temas hierárquicos de 3 níveis.
 
 ---
 
