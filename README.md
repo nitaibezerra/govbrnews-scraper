@@ -1,5 +1,7 @@
 # GovBR News Scraper
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 ## Introdução
 
 O **GovBR News Scraper** é uma ferramenta experimental desenvolvida pelo Ministério da Gestão e Inovação em Serviços Públicos (MGI) para coletar e organizar notícias de sites de agências governamentais no domínio gov.br. O objetivo é facilitar o monitoramento e a análise dessas publicações, extraindo metadados relevantes (título, data, categoria, conteúdo, etc.) e disponibilizando-os em formato estruturado. A raspagem é atualizada diariamente, tornando o serviço útil para pesquisadores, jornalistas e desenvolvedores que buscam acompanhar as últimas notícias governamentais.
