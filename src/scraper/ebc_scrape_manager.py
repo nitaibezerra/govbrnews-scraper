@@ -2,9 +2,8 @@ import hashlib
 import logging
 from collections import OrderedDict
 from datetime import date, datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 
-from dataset_manager import DatasetManager
 from scraper.ebc_webscraper import EBCWebScraper
 
 # Set up logging configuration
@@ -28,8 +27,14 @@ class EBCScrapeManager:
         a dataset manager.
     """
 
-    def __init__(self, dataset_manager: DatasetManager):
-        self.dataset_manager = dataset_manager
+    def __init__(self, storage: Any):
+        """
+        Initialize EBCScrapeManager with a storage backend.
+
+        Args:
+            storage: Storage backend (StorageWrapper or DatasetManager)
+        """
+        self.dataset_manager = storage  # Keep attribute name for compatibility
 
     def run_scraper(
         self,

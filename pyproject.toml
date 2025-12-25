@@ -24,6 +24,11 @@ retry = "^0.9.2"
 markdownify = "^0.14.1"
 algoliasearch = "^4.13.0"
 scipy = "^1.16.2"
+# Data platform for PostgreSQL storage (optional - only needed for dual_write mode)
+data-platform = { path = "../data-platform", develop = true, optional = true }
+
+[tool.poetry.extras]
+postgres = ["data-platform"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.3"
