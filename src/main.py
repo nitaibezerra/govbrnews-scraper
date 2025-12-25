@@ -2,7 +2,7 @@ import argparse
 import logging
 
 from enrichment.augmentation_manager import AugmentationManager
-from dataset_manager import DatasetManager
+from storage_wrapper import StorageWrapper
 from dotenv import load_dotenv
 from scraper.scrape_manager import ScrapeManager
 from scraper.ebc_scrape_manager import EBCScrapeManager
@@ -20,8 +20,8 @@ def run_scraper(args):
     """
     Executes the scraper logic using the arguments provided by the 'scrape' subcommand.
     """
-    dataset_manager = DatasetManager()
-    scrape_manager = ScrapeManager(dataset_manager)
+    storage = StorageWrapper()
+    scrape_manager = ScrapeManager(storage)
 
     # Convert agency input into a list (comma-separated values)
     agencies = args.agencies.split(",") if args.agencies else None
@@ -35,8 +35,8 @@ def run_ebc_scraper(args):
     """
     Executes the EBC scraper logic using the arguments provided by the 'scrape-ebc' subcommand.
     """
-    dataset_manager = DatasetManager()
-    ebc_scrape_manager = EBCScrapeManager(dataset_manager)
+    storage = StorageWrapper()
+    ebc_scrape_manager = EBCScrapeManager(storage)
 
     ebc_scrape_manager.run_scraper(
         args.start_date, args.end_date, args.sequential, args.allow_update

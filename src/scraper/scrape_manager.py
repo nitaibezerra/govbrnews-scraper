@@ -3,10 +3,9 @@ import logging
 import os
 from collections import OrderedDict
 from datetime import date
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import yaml
-from dataset_manager import DatasetManager
 from scraper.webscraper import WebScraper
 
 # Set up logging configuration
@@ -31,8 +30,14 @@ class ScrapeManager:
         a dataset manager.
     """
 
-    def __init__(self, dataset_manager: DatasetManager):
-        self.dataset_manager = dataset_manager
+    def __init__(self, storage: Any):
+        """
+        Initialize ScrapeManager with a storage backend.
+
+        Args:
+            storage: Storage backend (StorageWrapper or DatasetManager)
+        """
+        self.dataset_manager = storage  # Keep attribute name for compatibility
 
     def _load_urls_from_yaml(self, file_name: str, agency: str = None) -> List[str]:
         """
